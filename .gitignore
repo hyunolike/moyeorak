@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDEs and editors
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.sw?
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Java / Gradle
+.gradle/
+build/
+out/
+!backend/gradle/wrapper/gradle-wrapper.jar
+
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
+storybook-static/
+coverage/
+
+# Local assistant/tooling state
+.claude/
+CLAUDE.local.md
