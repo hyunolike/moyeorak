@@ -55,17 +55,20 @@
 
 ```text
 moyeorak
-├── frontend/  React, Vite, TypeScript client
-└── backend/   Spring Boot API server
+├── frontend/            New main frontend workspace
+├── backend/             New main backend workspace
+└── reference/
+    ├── frontend/        Previous team frontend Git submodule
+    └── backend/         Previous team backend Git submodule
 ```
 
-Frontend routes are organized by domain under `frontend/src/domains`: `meeting`, `schedule`, and `location`. Shared UI, hooks, providers, and utilities live in `frontend/src/shared`.
+The previous team frontend is preserved under `reference/frontend/`. Its routes are organized by domain under `reference/frontend/src/domains`: `meeting`, `schedule`, and `location`. Shared UI, hooks, providers, and utilities live in `reference/frontend/src/shared`.
 
 ### Frontend Architecture
 
 ```mermaid
 flowchart TD
-    Browser[Browser] --> Routes["React Router<br/>frontend/src/routes.tsx"]
+    Browser[Browser] --> Routes["React Router<br/>reference/frontend/src/routes.tsx"]
     Routes --> Meeting[meeting domain]
     Routes --> Schedule[schedule domain]
     Routes --> Location[location domain]
@@ -96,7 +99,7 @@ flowchart TD
     Axios --> BackendAPI[Backend API]
 ```
 
-Backend domains are organized under `backend/src/main/java/com/dnd/moyeolak/domain`: `meeting`, `participant`, `schedule`, and `location`. The backend uses MySQL for primary domain data and PostgreSQL/PostGIS for station spatial data. External integrations include Kakao, Google, and ODsay clients for place search, directions, nearby places, and transit routes.
+The previous team backend is preserved under `reference/backend/`. Its domains are organized under `reference/backend/src/main/java/com/dnd/moyeolak/domain`: `meeting`, `participant`, `schedule`, and `location`. The backend uses MySQL for primary domain data and PostgreSQL/PostGIS for station spatial data. External integrations include Kakao, Google, and ODsay clients for place search, directions, nearby places, and transit routes.
 
 ### Backend Architecture
 
@@ -138,7 +141,7 @@ flowchart TD
 ### Backend
 
 ```bash
-cd backend
+cd reference/backend
 cp .env.example .env
 docker-compose up -d
 ./gradlew bootRun --args='--spring.profiles.active=local'
@@ -147,14 +150,14 @@ docker-compose up -d
 Run tests:
 
 ```bash
-cd backend
+cd reference/backend
 ./gradlew test
 ```
 
 ### Frontend
 
 ```bash
-cd frontend
+cd reference/frontend
 cp .env.example .env
 pnpm install
 pnpm dev
@@ -163,14 +166,16 @@ pnpm dev
 Build and check:
 
 ```bash
-cd frontend
+cd reference/frontend
 pnpm check
 pnpm build
 ```
 
 ## Links
 
-- [Backend README](./backend/README.md)
-- [Frontend README](./frontend/README.md)
+- [New backend workspace](./backend/README.md)
+- [New frontend workspace](./frontend/README.md)
+- [Reference backend README](./reference/backend/README.md)
+- [Reference frontend README](./reference/frontend/README.md)
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Storybook: `http://localhost:6006`

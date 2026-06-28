@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**모여락(Moyeorak)** — a meeting coordination service that helps groups find optimal meeting times and locations. The repo is a monorepo with `frontend/` and `backend/` as git submodules, each with their own git history.
+**모여락(Moyeorak)** — a meeting coordination service that helps groups find optimal meeting times and locations. The repo is a monorepo with new main workspaces at `frontend/` and `backend/`. The previous team implementations are preserved as git submodules under `reference/frontend/` and `reference/backend/`.
 
 ---
 
 ## Backend (`backend/`)
+
+The root `backend/` directory is reserved for the new main backend implementation. The existing Spring Boot backend described below lives at `reference/backend/`.
 
 **Stack:** Spring Boot 4.0.1 · Java 25 · Gradle · MySQL (primary) + PostgreSQL/PostGIS (secondary) · Caffeine cache · Prometheus/Loki/Grafana
 
@@ -16,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Start infrastructure (MySQL, Redis, PostgreSQL, monitoring)
-cd backend && docker-compose up -d
+cd reference/backend && docker-compose up -d
 
 # Run app (local profile)
 ./gradlew bootRun --args='--spring.profiles.active=local'
@@ -68,12 +70,14 @@ Copy `.env.example` → `.env` and fill in API keys before running.
 
 ## Frontend (`frontend/`)
 
+The root `frontend/` directory is reserved for the new main frontend implementation. The existing React frontend described below lives at `reference/frontend/`.
+
 **Stack:** React 19 · Vite 7 · TypeScript 5.9 · TailwindCSS v4 · Biome · TanStack Query v5 · React Router v7 · pnpm 10
 
 ### Commands
 
 ```bash
-cd frontend
+cd reference/frontend
 
 pnpm dev              # start dev server
 pnpm build            # type-check + production build
@@ -138,4 +142,4 @@ Use `[BE]` / `[FE]` in PR titles when useful, but keep commits machine-readable 
 
 Entity schema changes (`@Entity`) must include a corresponding `db/migration/V{N}__*.sql` file.
 
-PR body template: `.github/pull_request_template.md` (shared) and `backend/.github/pull_request_template.md`.
+PR body template: `.github/pull_request_template.md` (shared) and `reference/backend/.github/pull_request_template.md`.

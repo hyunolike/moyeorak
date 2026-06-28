@@ -2,17 +2,17 @@
 
 ## Project Structure & Module Organization
 
-This repository contains two submodules: `backend/` and `frontend/`. Backend source lives under `backend/src/main/java/com/dnd/moyeolak`, tests in `backend/src/test/java`, and test resources in `backend/src/test/resources`. Backend docs, monitoring config, k6 scripts, and Docker files are under `backend/docs`, `backend/monitoring`, `backend/k6`, and `backend/docker-compose*.yml`. Frontend source lives in `frontend/src`; assets are in `frontend/src/assets` and `frontend/public`; shared UI and utilities are under `frontend/src/shared`.
+This repository keeps the previous team implementation as Git submodules under `reference/backend/` and `reference/frontend/`. New long-term main work should happen in root-level `backend/` and `frontend/`. Until the new implementations are scaffolded, use the `reference/` modules only as read-only reference material unless a task explicitly targets them.
 
 ## Build, Test, and Development Commands
 
-Run backend commands from `backend/`:
+Run backend commands from `backend/` once the new backend is scaffolded. For the previous team backend, run commands from `reference/backend/`:
 
 - `./gradlew bootRun`: start the API, loading `.env` when present.
 - `./gradlew test`: run JUnit tests and generate JaCoCo reports.
 - `./gradlew build`: compile, test, and package.
 
-Run frontend commands from `frontend/`:
+Run frontend commands from `frontend/` once the new frontend is scaffolded. For the previous team frontend, run commands from `reference/frontend/`:
 
 - `pnpm install`: install dependencies with the pinned pnpm version.
 - `pnpm dev`: start the Vite development server.
