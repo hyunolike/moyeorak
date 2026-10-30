@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { schedulePolls } from "@/db/schema";
+import { meetingEvents, schedulePolls } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
   createMeeting,
@@ -53,6 +53,29 @@ test("saveScheduleVote는 두 번 저장하면 마지막 것만 남는다", asyn
   expect(summary.votes[0]).toMatchObject({ participantId, name: "현호" });
   expect(summary.votes[0].slots).toEqual([at("15:00"), at("16:00")]);
   expect(summary.best[0].available).toEqual(["현호"]);
+});
+
+test("투표와 확정은 이벤트를 남긴다", async () => {
+  const { meetingId, participantId, at } = await setup("schedule");
+  await saveScheduleVote(meetingId, participantId, [at("14:00")]);
+  await confirmSchedule(meetingId, at("14:00"), at("16:00"));
+  const rows = await db
+    .select()
+    .from(meetingEvents)
+    .where(eq(meetingEvents.meetingId, meetingId));
+  expect(rows.map((r) => r.type)).toEqual(
+    expect.arrayContaining(["vote_done", "confirmed"]),
+  );
+});
+
+test("scope=both의 일정 확정은 confirmed 이벤트를 남기지 않는다", async () => {
+  const { meetingId, at } = await setup("both");
+  await confirmSchedule(meetingId, at("14:00"), at("16:00"));
+  const rows = await db
+    .select()
+    .from(meetingEvents)
+    .where(eq(meetingEvents.meetingId, meetingId));
+  expect(rows.map((r) => r.type)).not.toContain("confirmed");
 });
 
 test("saveScheduleVote는 범위 밖 슬롯에 InvalidSlotsError", async () => {

@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { meetings, participants, schedulePolls } from "@/db/schema";
 import { newId } from "@/lib/nanoid";
+import { recordEvent } from "@/server/events/record-event";
 import {
   MeetingFullError,
   MeetingNotFoundError,
@@ -73,7 +74,7 @@ export async function createMeeting(
       startMinute: POLL_START_MINUTE,
       endMinute: POLL_END_MINUTE,
     });
-    // TODO(Task 8): recordEvent(meetingId, "created", tx)
+    await recordEvent(meetingId, "created", tx);
     return { meetingId, participantId: host.id };
   });
 }
@@ -154,7 +155,7 @@ export async function joinMeeting(
       .insert(participants)
       .values({ meetingId, name: input.name, deviceKey: input.deviceKey })
       .returning({ id: participants.id });
-    // TODO(Task 8): recordEvent(meetingId, "joined", tx)
+    await recordEvent(meetingId, "joined", tx);
     return { participantId: row.id, created: true };
   });
 }

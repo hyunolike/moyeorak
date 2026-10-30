@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { db } from "@/db/client";
+import { meetingEvents } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
   deleteDeparture,
@@ -39,6 +41,13 @@ test("upsertDeparture는 같은 참여자가 다시 등록하면 갱신한다", 
   const list = await listDepartures(meetingId);
   expect(list).toHaveLength(1);
   expect(list[0]).toMatchObject({ label: "판교역", lat: 37.3947 });
+});
+
+test("upsertDeparture는 departure_done 이벤트를 남긴다", async () => {
+  const { meetingId, participantId } = await setup();
+  await upsertDeparture(meetingId, participantId, place);
+  const rows = await db.select().from(meetingEvents);
+  expect(rows.map((r) => r.type)).toContain("departure_done");
 });
 
 test("listDepartures는 참여자 이름을 붙여 돌려준다", async () => {

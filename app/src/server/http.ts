@@ -1,4 +1,6 @@
+import { unstable_rethrow } from "next/navigation";
 import { ZodError } from "zod";
+import { UnauthorizedError } from "@/server/admin-auth";
 import { ExternalApiError } from "@/server/clients/errors";
 import {
   MeetingFullError,
@@ -30,6 +32,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],
   [ExternalApiError, 502],
+  [UnauthorizedError, 401],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {
@@ -68,6 +71,7 @@ export async function toResponse(
     const data = await fn();
     return Response.json({ data }, { status: opts.status ?? 200 });
   } catch (e) {
+    unstable_rethrow(e);
     if (e instanceof ZodError) {
       return errorResponse(
         400,

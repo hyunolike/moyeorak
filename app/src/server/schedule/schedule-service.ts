@@ -6,6 +6,7 @@ import {
   schedulePolls,
   scheduleVotes,
 } from "@/db/schema";
+import { recordEvent } from "@/server/events/record-event";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import {
   AlreadyConfirmedError,
@@ -71,7 +72,7 @@ export async function saveScheduleVote(
         target: scheduleVotes.participantId,
         set: { slots: unique },
       });
-    // TODO(Task 8): recordEvent(meetingId, "vote_done", tx)
+    await recordEvent(meetingId, "vote_done", tx);
   });
 }
 
@@ -160,7 +161,7 @@ export async function confirmSchedule(
       .update(meetings)
       .set({ status: "confirmed", confirmedAt: new Date() })
       .where(eq(meetings.id, meetingId));
-    // TODO(Task 8): recordEvent(meetingId, "confirmed", tx)
+    await recordEvent(meetingId, "confirmed", tx);
     return { status: "confirmed" as const };
   });
 }
