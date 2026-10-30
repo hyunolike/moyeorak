@@ -15,3 +15,12 @@ export class AiConfigError extends Error {
     this.name = "AiConfigError";
   }
 }
+
+/** 모델 응답이 두 번 연속 스키마를 어겼을 때. 응답은 422. */
+export class ParseFailedError extends Error {
+  readonly code = "PARSE_FAILED";
+  constructor() {
+    super("말씀하신 시간을 알아듣지 못했어요. 시간표에서 직접 골라 주세요.");
+    this.name = "ParseFailedError";
+  }
+}

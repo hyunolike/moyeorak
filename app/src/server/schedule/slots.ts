@@ -21,12 +21,29 @@ export type BestSlot = {
 };
 
 /** 서울 시각 기준 날짜(YYYY-MM-DD)와 자정부터의 분 */
-function seoulParts(d: Date): { date: string; minute: number } {
+export function seoulParts(d: Date): { date: string; minute: number } {
   const shifted = new Date(d.getTime() + SEOUL_OFFSET_MS);
   return {
     date: shifted.toISOString().slice(0, 10),
     minute: shifted.getUTCHours() * 60 + shifted.getUTCMinutes(),
   };
+}
+
+/**
+ * 서울 날짜(YYYY-MM-DD)의 자정 시각. 달력에 없는 날짜(예: 2026-02-30)는
+ * 다음 달로 넘기지 않고 Invalid Date를 돌려준다.
+ */
+export function seoulMidnight(date: string): Date {
+  const utc = Date.parse(`${date}T00:00:00Z`);
+  if (Number.isNaN(utc) || new Date(utc).toISOString().slice(0, 10) !== date) {
+    return new Date(Number.NaN);
+  }
+  return new Date(utc - SEOUL_OFFSET_MS);
+}
+
+/** 자정(seoulMidnight)에서 minute분 뒤의 칸 시작 시각 */
+export function slotInstant(midnight: Date, minute: number): Date {
+  return new Date(midnight.getTime() + minute * 60 * 1000);
 }
 
 export function validateSlots(
