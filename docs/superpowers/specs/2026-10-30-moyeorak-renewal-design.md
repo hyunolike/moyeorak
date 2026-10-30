@@ -25,7 +25,7 @@
 | 공유 수 | 모임당 공유 버튼 사용 횟수 | 유입 경로 건강 상태 |
 | 제안 수락률 | 에이전트가 낸 제안 중 호스트가 받아들인 비율 | AI 기능이 쓸모 있는지 |
 
-확정률과 참여 완료율은 지금 DB에서 바로 뽑을 수 있다(`schedule_poll.status`, `location_poll.status`, `participant`와 `schedule_vote` 조인). 리뉴얼 첫 주에 Grafana 대시보드에 이 여섯 개를 올리고, 그 수치를 기준선으로 삼는다.
+확정률과 참여 완료율은 지금 DB에서 바로 뽑을 수 있다(`schedule_poll.status`, `location_poll.status`, `participant`와 `schedule_vote` 조인). 리뉴얼 첫 주에 기존 DB에 SQL을 직접 돌려 이 여섯 개의 현재 값을 기록하고 기준선으로 삼는다. 새 앱에서는 관리자 지표 페이지가 같은 수치를 계속 보여준다.
 
 ## 3. 목표와 비목표
 
@@ -65,7 +65,7 @@
 - 글꼴: Pretendard 유지.
 - 모바일 우선 레이아웃 유지. 데스크톱은 가운데 모바일 폭으로 띄우는 지금 방식 그대로.
 - 컴포넌트는 기존 `shared/components`를 확장한다. 새로 필요한 것은 말풍선, 제안 카드, 진행 단계 표시, 자연어 입력창, 참여자 상태 칩(응답함/안 함)이다.
-- Storybook이 이미 있으니 새 컴포넌트는 스토리부터 만든다.
+- 새 컴포넌트는 Storybook 스토리를 먼저 만든다. 기존 앱의 스토리 구성을 참고한다.
 
 ### 4.3 정보 구조: 두 개의 흐름에서 하나의 모임으로
 
@@ -112,6 +112,33 @@
 
 확정된 날 아침에 모락이가 모임 홈 상단에 "오늘 2시 홍대입구역이에요. 합정에서 출발하면 1시 40분에 나오면 돼요"를 띄운다. 푸시 알림은 PWA가 이미 들어가 있으니 웹 푸시로 시작하되, 동의한 사람에게만 보낸다. 푸시 서버 구축이 부담이면 1차에서는 화면 안내만 하고 푸시는 뒤로 미룬다.
 
+### 4.8 기술 선택: 새 스택으로 다시 짓는다
+
+호스트가 기존 스택에 묶이지 않아도 된다고 했고, 저장소의 루트 `frontend/`와 `backend/`는 애초에 새 구현을 위해 비워 둔 자리다. 기존 코드를 고쳐 가는 대신 **루트에 TypeScript 풀스택 앱 하나(`app/`)를 새로 만든다.** 기존 `reference/`는 참고용으로 남긴다.
+
+왜 바꾸는가.
+- 지금 서비스는 링크 공유가 유입의 전부인데, SPA라 모임별 링크 미리보기(카카오톡 썸네일에 "현호님의 모임, 11월 1일")를 만들 수 없다. 서버 렌더링이 필요하다.
+- 10월 커밋을 보면 이미 Render 무료 티어와 Neon으로 옮기면서 Spring 서버의 절전을 막으려 외부 모니터까지 붙였다. 서버리스에 맞는 런타임이면 이 문제가 사라진다.
+- 에이전트의 스트리밍 응답, 도구 호출 반복, JSON 스키마 출력은 TypeScript 쪽 라이브러리가 가장 짧은 코드로 된다. 프론트와 백엔드가 한 언어면 타입도 한 번만 정의한다.
+- 1~2명이 만드는 사이드 프로젝트라 배포 단위가 하나여야 유지가 된다.
+
+선택한 스택.
+
+| 영역 | 선택 | 이유 |
+|---|---|---|
+| 앱 | Next.js (App Router, TypeScript) | 서버 렌더링으로 링크 미리보기, Route Handler로 API, 서버리스 배포 |
+| 스타일 | Tailwind CSS 4, Pretendard | 기존 디자인 토큰을 그대로 옮긴다 |
+| 데이터 | PostgreSQL + PostGIS (Neon), Drizzle ORM | 역 공간 데이터와 기존 데이터를 그대로 쓴다. Drizzle은 SQL이 보이고 마이그레이션이 가볍다 |
+| AI | Vercel AI SDK + OpenAI 호환 프로바이더로 NVIDIA API 연결 | `streamText`, 도구 호출 반복, `generateObject`(JSON 스키마)를 바로 쓴다 |
+| 상태와 데이터 요청 | TanStack Query | 기존과 같다. 폴링으로 투표 현황을 갱신한다 |
+| PWA | Serwist | 홈 화면 추가와 웹 푸시 준비 |
+| 지도 | Naver Maps(표시), Kakao Local(검색), Google Routes(이동시간), ODsay(대중교통) | 기존 외부 연동 유지 |
+| 테스트 | Vitest, Playwright | 단위와 화면 흐름 |
+| 배포 | Vercel + Neon | 무료 티어로 시작, 콜드 스타트 문제 없음 |
+| 모니터링 | Vercel Analytics와 로그, 지표는 앱 안의 관리자 페이지 | Grafana 스택은 서버가 없으니 뺀다 |
+
+데이터 이전: 기존 Neon(또는 EC2 Postgres)의 `station` 테이블은 그대로 가져오고, 모임 데이터는 리뉴얼 배포 시점에 새 스키마로 한 번 옮긴다. 기존 링크(`/meetings/{id}/...`)는 새 앱에서 같은 경로로 열리게 해서 이미 공유된 링크가 깨지지 않게 한다.
+
 ## 5. AI 에이전트 설계
 
 ### 5.1 원칙
@@ -136,12 +163,12 @@
 
 AI는 **NVIDIA API**(build.nvidia.com의 NIM 엔드포인트, `https://integrate.api.nvidia.com/v1`)를 쓴다. 호스트의 결정이다.
 
-- NVIDIA API는 OpenAI 호환 형식(`/v1/chat/completions`)이라 전용 SDK가 필요 없다. 백엔드가 Spring Boot이므로 **Spring AI의 OpenAI 모듈**을 쓰고 `base-url`만 NVIDIA 주소로 바꾼다. 기존 `global/client/` 아래에 `nvidia` 패키지를 두고, 모델명과 키는 `.env`의 `NVIDIA_API_KEY`, `NVIDIA_MODEL`로 받는다.
+- NVIDIA API는 OpenAI 호환 형식(`/v1/chat/completions`)이라 전용 SDK가 필요 없다. Vercel AI SDK의 OpenAI 호환 프로바이더(`@ai-sdk/openai-compatible`)에 `baseURL`만 NVIDIA 주소로 넣는다. 호출은 모두 Next.js 서버(Route Handler와 Server Action)에서 하고, 키와 모델명은 환경 변수 `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST`로 받는다.
 - 모델은 하나로 고정하지 않고 **평가 세트(5.5)로 2~3개를 비교해 고른다.** 후보는 도구 호출을 지원하는 Nemotron 계열과 Llama 3.x 70B급 instruct 모델이다. 한국어 문장 이해가 핵심이라 한국어 평가 점수를 가장 먼저 본다. 정확한 모델 ID는 build.nvidia.com 카탈로그에서 확인해 설정값으로 넣는다.
 - 용도별로 모델을 다르게 둘 수 있게 설정을 나눈다. 시간 파싱처럼 가벼운 일과 제안 만들기처럼 무거운 일을 같은 모델로 시작하되, 비용이나 속도 문제가 보이면 파싱만 작은 모델로 바꾼다.
 - 시간 파싱은 JSON 스키마 응답(`response_format`의 JSON 스키마, 모델이 지원하지 않으면 NVIDIA의 `guided_json` 확장)으로 받고 **서버에서 반드시 다시 검증한다.** 투표판 범위를 벗어난 시간은 버리고 사용자에게 알린다. 모델이 스키마를 어기면 한 번 재시도하고, 그래도 안 되면 시간표 직접 입력으로 안내한다.
-- 제안 만들기는 OpenAI 호환 `tools`(함수 호출)로 5.4의 도구를 노출한다. 도구 호출 반복은 백엔드가 직접 돌리며, 한 요청당 도구 호출을 8회로 제한한다.
-- 응답은 스트리밍으로 받아 프론트에 SSE로 흘려보낸다. 모락이가 "생각 중" 표정에서 말풍선이 차오르게 한다.
+- 제안 만들기는 AI SDK의 도구 호출(`tools`)로 5.4의 도구를 노출하고, 반복 횟수는 8회로 제한한다.
+- 응답은 `streamText`로 받아 그대로 클라이언트에 흘려보낸다. 모락이가 "생각 중" 표정에서 말풍선이 차오르게 한다.
 - 시스템 프롬프트(모락이 말투, 규칙, 도구 설명)는 고정 문자열로 두고 모임 데이터는 그 뒤에 붙인다. NVIDIA API에는 프롬프트 캐싱 과금 혜택이 없으니 시스템 프롬프트 자체를 짧게 유지한다.
 - 비용과 호출 제한: 모임 하나당 AI 호출 횟수에 상한을 두고(초기값 40회), 넘으면 모락이가 "오늘은 여기까지만 도와줄 수 있어요"라고 말하고 수동 기능은 그대로 쓰게 한다. NVIDIA API의 분당 호출 제한과 요금은 계정 등급에 따라 다르므로 0단계에서 실제 계정으로 확인하고 상한값을 조정한다.
 - 나중에 비용이나 지연 문제가 커지면 같은 모델을 NIM 컨테이너로 자체 호스팅하는 길이 열려 있다. API 형식이 같아서 코드 변경 없이 `base-url`만 바꾸면 된다.
@@ -166,21 +193,28 @@ AI는 **NVIDIA API**(build.nvidia.com의 NIM 엔드포인트, `https://integrate
 - 제안: 과거 모임 데이터 20건으로 제안을 만들고, 호스트 본인이 "이거면 받아들였을까"를 채점한다.
 - 모델 선정: 위 두 세트를 NVIDIA 카탈로그의 후보 모델 2~3개에 같이 돌려 정확도, 한국어 문장의 자연스러움, 응답 시간, 도구 호출 성공률을 표로 비교한다. 이 표를 보고 호스트가 모델을 고른다.
 
-## 6. 데이터와 백엔드 변경
+## 6. 데이터 설계
 
-- `meeting`에 `status` 추가: `DRAFT`, `SCHEDULING`, `LOCATING`, `CONFIRMED`. 기존 `schedule_poll.status`와 `location_poll.status`는 유지하고, `meeting.status`는 둘을 합친 진행 단계로 쓴다.
-- `meeting`에 `confirmed_at`, `scope`(`SCHEDULE`, `LOCATION`, `BOTH`) 추가.
-- 새 테이블 `agent_suggestion`: 모임 ID, 종류, 제안 내용(JSON), 상태(`PROPOSED`, `ACCEPTED`, `REJECTED`), 생성 시각, 처리 시각. 제안 수락률은 여기서 나온다.
-- 새 테이블 `agent_call_log`: 모임 ID, 용도, 입력 토큰, 출력 토큰, 캐시 적중 토큰, 소요 시간, 성공 여부. 비용 상한과 모니터링에 쓴다.
-- 새 테이블 `meeting_event`: 모임 ID, 이벤트 종류(생성, 참여, 투표 완료, 공유, 제안 열람, 확정 등), 시각. 2장의 지표는 이 테이블로 계산한다.
-- 모두 Flyway 마이그레이션으로 추가한다. 기존 엔티티 변경은 PR 규칙대로 마이그레이션 파일을 함께 올린다.
-- API는 기존 경로를 유지하고 `/api/agent/*`를 추가한다. 프론트가 단계적으로 옮겨 갈 수 있게 기존 투표 API는 그대로 둔다.
+새 스키마는 Drizzle로 정의하고 마이그레이션 파일을 저장소에 둔다. 기존 테이블 이름과 구조는 참고만 하고 그대로 따르지 않는다.
+
+- `meeting`: `id`(NanoId 21자, 기존 링크 호환), `host_name`, `participant_count`, `scope`(`schedule`, `location`, `both`), `status`(`scheduling`, `locating`, `confirmed`), `confirmed_at`, `created_at`.
+- `participant`: `id`, `meeting_id`, `name`, `device_key`(기존 localStorageKey 역할), `is_host`.
+- `schedule_poll`: `meeting_id`, `date_options`(date 배열), `start_minute`, `end_minute`, `confirmed_start`, `confirmed_end`.
+- `schedule_vote`: `participant_id`, `slots`(timestamp 배열, 30분 단위).
+- `location_vote`: `participant_id`, `label`(동 단위), `lat`, `lng`.
+- `confirmed_location`: `meeting_id`, `station_id`, `name`, `lat`, `lng`.
+- `station`: 기존 테이블을 그대로 가져온다. `geom`(PostGIS Point, 4326).
+- `agent_suggestion`: `meeting_id`, `kind`, `payload`(jsonb), `status`(`proposed`, `accepted`, `rejected`), `created_at`, `resolved_at`. 제안 수락률은 여기서 나온다.
+- `agent_call_log`: `meeting_id`, `purpose`, `model`, `input_tokens`, `output_tokens`, `latency_ms`, `ok`, `created_at`. 비용 상한과 모니터링에 쓴다.
+- `meeting_event`: `meeting_id`, `type`(`created`, `joined`, `vote_done`, `shared`, `suggestion_viewed`, `confirmed` 등), `created_at`. 2장의 지표는 이 테이블로 계산한다.
+
+API는 Next.js Route Handler로 `/api/*` 아래에 둔다. 기존 프론트가 쓰던 경로를 흉내 내지 않는다. 새 앱이 화면까지 함께 가지므로 호환할 클라이언트가 없다.
 
 ## 7. 단계별 진행
 
-**0단계, 1주: 재기** — 지표 여섯 개를 Grafana에 올리고 지금 수치를 기록한다. 평가 세트용 문장 50개를 모은다. 코드 변경은 이벤트 테이블과 집계 쿼리뿐이다.
+**0단계, 1~2주: 재기와 기반** — 기존 DB에 SQL을 직접 돌려 지표 여섯 개의 현재 값을 기록한다(코드 변경 없음). 평가 세트용 문장 50개를 모은다. 새 앱의 뼈대를 세운다: 프로젝트 생성, 스키마와 마이그레이션, 역 데이터 이전, 모임 생성과 참여와 투표의 최소 흐름, 관리자 지표 페이지, 배포. 이 단계가 끝나면 새 앱이 기존 앱과 같은 일을 할 수 있어야 한다(AI와 새 디자인은 아직 없음).
 
-**1단계, 3~4주: 얼굴과 입구** — 모락이 표정 세트와 말풍선, 디자인 토큰 정리, 모임 홈 화면, 가능 시간 말로 입력. 여기까지만 배포해도 참여 완료율에 변화가 보여야 한다.
+**1단계, 3~4주: 얼굴과 입구** — 모락이 표정 세트와 말풍선, 디자인 토큰 정리, 모임 홈 화면, 가능 시간 말로 입력, 모임별 링크 미리보기. 여기서 기존 앱을 새 앱으로 교체 배포한다. 참여 완료율에 변화가 보여야 한다.
 
 **2단계, 3~4주: 결정** — 제안 에이전트, 제안 카드, 확정 흐름, 재촉 메시지, 요약 카드. 확정률과 제안 수락률을 본다.
 
@@ -213,7 +247,8 @@ AI는 **NVIDIA API**(build.nvidia.com의 NIM 엔드포인트, `https://integrate
 호스트가 직접 말하지 않았지만 제가 정한 선택이다. 바꾸고 싶으면 이 항목부터 보면 된다.
 
 - 캐릭터 이름 "모락이"와 성격 설정
-- AI 호출을 백엔드에서 Spring AI OpenAI 모듈로 하는 것 (NVIDIA API를 쓰는 것 자체는 호스트의 결정)
+- 기존 코드를 고치지 않고 Next.js 풀스택으로 새로 짓는 것과 그 스택 구성(4.8). 호스트는 "기존 스택을 안 써도 된다"고만 했고 무엇으로 할지는 제가 골랐다
+- AI 호출을 Vercel AI SDK로 하는 것 (NVIDIA API를 쓰는 것 자체는 호스트의 결정)
 - 모델을 하나로 못 박지 않고 평가 뒤에 고르는 것
 - 재촉을 서비스가 직접 보내지 않고 호스트가 복사해 보내는 방식
 - 제안을 최대 2개로 제한하는 것
