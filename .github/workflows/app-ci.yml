@@ -1,0 +1,48 @@
+name: app-ci
+
+on:
+  push:
+    paths: ["app/**", ".github/workflows/app-ci.yml"]
+  pull_request:
+    paths: ["app/**", ".github/workflows/app-ci.yml"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_USER: moyeolak
+          POSTGRES_PASSWORD: moyeolak
+          POSTGRES_DB: moyeorak_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h localhost -U moyeolak -d moyeorak_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgres://moyeolak:moyeolak@localhost:5432/moyeorak_test
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: PostGIS 확장과 마이그레이션
+        run: |
+          psql "$DATABASE_URL_TEST" -c "CREATE EXTENSION IF NOT EXISTS postgis"
+          pnpm db:migrate
+      - run: pnpm check
+      - run: pnpm test
+      - run: pnpm build

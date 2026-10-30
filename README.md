@@ -113,6 +113,7 @@ flowchart LR
 
 ```text
 moyeorak
+├── app/                   새 앱 (Next.js, 리뉴얼 0단계)
 ├── frontend/              새로 만들 프론트엔드 작업 공간
 ├── backend/               새로 만들 백엔드 작업 공간
 ├── reference/
@@ -130,6 +131,18 @@ moyeorak
 ```bash
 git clone --recurse-submodules https://github.com/hyunolike/moyeorak.git
 ```
+
+### 새 앱 (app/)
+
+리뉴얼 0단계로 만든 Next.js 앱입니다. 화면과 API를 한 프로젝트에 두었고, 설계는 [리뉴얼 설계 문서](./docs/superpowers/specs/2026-10-30-moyeorak-renewal-design.md)에 있습니다. Node 24, pnpm 10, PostGIS 컨테이너가 필요합니다.
+
+```bash
+cd app
+pnpm install
+pnpm dev
+```
+
+DB 준비, 환경 변수, 테스트, 배포 체크리스트는 [app/README.md](./app/README.md)에 정리했습니다.
 
 ### Backend
 
