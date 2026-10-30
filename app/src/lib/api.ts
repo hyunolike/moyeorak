@@ -68,18 +68,39 @@ export function useMeeting(id: string, initialData?: Meeting) {
 }
 
 /**
- * 이 브라우저의 참여자 id. 모임을 만들거나 참여할 때 저장한 값을 읽고,
- * 모임의 참여자 목록에 있을 때만 인정한다. localStorage를 읽으므로
- * 서버 렌더에서는 pending으로 남는다.
+ * 이 브라우저(device_key)의 참여자 id. localStorage 맵은 캐시일 뿐이고,
+ * 맵에 없거나 목록에 없는 id면 `GET /me`로 서버에 device_key를 물어본다.
+ * localStorage를 읽으므로 서버 렌더에서는 pending으로 남는다.
  */
 export function useMe(meeting: Meeting) {
+  const client = useQueryClient();
   const query = useQuery({
     queryKey: keys.me(meeting.id),
-    queryFn: () => getStoredParticipantId(meeting.id),
+    queryFn: async (): Promise<number | null> => {
+      const stored = getStoredParticipantId(meeting.id);
+      if (stored !== null && meeting.participants.some((p) => p.id === stored))
+        return stored;
+      try {
+        const found = await apiFetch<{ participantId: number }>(
+          `/api/meetings/${meeting.id}/me`,
+          { headers: { "X-Device-Key": getDeviceKey() } },
+        );
+        storeParticipantId(meeting.id, found.participantId);
+        if (!meeting.participants.some((p) => p.id === found.participantId)) {
+          await client.invalidateQueries({
+            queryKey: keys.meeting(meeting.id),
+          });
+        }
+        return found.participantId;
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return null;
+        throw error;
+      }
+    },
     staleTime: Number.POSITIVE_INFINITY,
   });
   const me = meeting.participants.find((p) => p.id === query.data) ?? null;
-  return { isPending: query.isPending, me };
+  return { isPending: query.isPending, isError: query.isError, me };
 }
 
 export function useCreateMeeting() {

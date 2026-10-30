@@ -16,6 +16,7 @@ import {
 import { useTimetableDragSelection } from "@/components/timetable/use-timetable-drag-selection";
 import { TimetableSlot } from "@/components/timetable-slot";
 import { cn } from "@/lib/cn";
+import { seoulParts, slotInstant } from "@/lib/seoul-time";
 
 export interface TimetableProps {
   dates: Date[];
@@ -80,13 +81,13 @@ export function Timetable({
   const pendingScrollLeftRef = useRef(0);
   const disabledTapStartRef = useRef<PointerPosition | null>(null);
 
-  const getDayName = (date: Date) => {
-    return new Intl.DateTimeFormat("ko-KR", { weekday: "short" }).format(date);
-  };
+  // 날짜 머리글은 브라우저 시간대가 아니라 서울 기준으로 적는다.
+  const getDayName = (date: Date) => seoulParts(date).weekday;
 
   const getFormattedDate = (date: Date) => {
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
+    const { month, day } = seoulParts(date);
+    const mm = String(month).padStart(2, "0");
+    const dd = String(day).padStart(2, "0");
     return `${mm}.${dd}`;
   };
 
@@ -356,9 +357,9 @@ export function Timetable({
                 </div>
 
                 {dates.map((date, dateIdx) => {
-                  const slotDate = new Date(date);
-                  slotDate.setHours(currentHour, currentMinutes, 0, 0);
-                  const timeKey = slotDate.getTime().toString();
+                  const timeKey = slotInstant(date, slotMinutes)
+                    .getTime()
+                    .toString();
 
                   const isSelected = selectedSlots.has(timeKey);
                   const userCount = occupancy[timeKey] || 0;

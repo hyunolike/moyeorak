@@ -1,18 +1,9 @@
-import { Suspense } from "react";
 import { loadMeeting } from "@/app/meetings/[id]/load-meeting";
 import { LocationVotesScreen } from "@/components/location/location-votes-screen";
-import { PageLoading } from "@/components/page-loading";
 
-async function Content({ params }: { params: Promise<{ id: string }> }) {
-  return <LocationVotesScreen initialMeeting={await loadMeeting(params)} />;
-}
-
-export default function LocationVotesPage({
+/** 모임 존재 확인은 스트리밍 전에 끝나야 없는 모임이 404 상태로 응답된다. */
+export default async function LocationVotesPage({
   params,
 }: PageProps<"/meetings/[id]/location/votes">) {
-  return (
-    <Suspense fallback={<PageLoading />}>
-      <Content params={params} />
-    </Suspense>
-  );
+  return <LocationVotesScreen initialMeeting={await loadMeeting(params)} />;
 }
