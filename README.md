@@ -10,15 +10,9 @@
 [![](https://img.shields.io/badge/-Backend-16161A?style=flat&logo=github&logoColor=white)](https://github.com/dnd-side-project/dnd-14th-8-backend)
 [![](https://img.shields.io/badge/-Frontend-16161A?style=flat&logo=github&logoColor=white)](https://github.com/dnd-side-project/dnd-14th-8-frontend)
 
-<br/>
-
-<a href="docs/assets/moyeorak-launch.mp4">
-  <img src="docs/assets/moyeorak-launch-thumbnail.jpg" width="100%" alt="모여락 소개 영상 (23초)" />
-</a>
-
-<sub>▶ 이미지를 누르면 23초짜리 소개 영상이 열립니다</sub>
-
 </div>
+
+https://github.com/user-attachments/assets/20fe12d7-7468-4f3e-8d01-ffe997f986dc
 
 <br/>
 
