@@ -28,34 +28,42 @@
 
 ## 로컬 실행
 
-1. DB 컨테이너를 띄웁니다. 기존 백엔드의 PostGIS 컨테이너를 그대로 씁니다.
+아래 명령은 별도 표시가 없으면 `app/` 디렉터리에서 실행합니다.
+
+1. 의존성을 설치하고 환경 변수 파일을 만듭니다.
 
    ```bash
-   cd ../reference/backend
-   docker-compose up -d postgres    # 컨테이너 이름 moyeolak-postgres, 사용자와 비밀번호 moyeolak
+   pnpm install
+   cp .env.example .env.local
    ```
 
-2. 테스트 DB를 만듭니다. 호스트에 psql이 없어도 컨테이너 안에서 실행할 수 있습니다.
+2. DB 컨테이너를 띄웁니다. 기존 백엔드의 PostGIS 컨테이너를 그대로 씁니다.
+
+   ```bash
+   (cd ../reference/backend && docker-compose up -d postgres)    # 컨테이너 이름 moyeolak-postgres, 사용자와 비밀번호 moyeolak
+   ```
+
+3. 테스트 DB를 만듭니다. 호스트에 psql이 없어도 컨테이너 안에서 실행할 수 있습니다.
 
    ```bash
    docker exec moyeolak-postgres psql -U moyeolak -d postgres -c "CREATE DATABASE moyeorak_test"
    docker exec moyeolak-postgres psql -U moyeolak -d moyeorak_test -c "CREATE EXTENSION IF NOT EXISTS postgis"
    ```
 
-   개발용 DB도 같은 방식으로 만든 뒤 `.env.local`의 `DATABASE_URL`에 넣습니다.
+   개발용 DB(예: `moyeorak_dev`)도 같은 방식으로 만든 뒤 `.env.local`의 `DATABASE_URL`에 넣습니다.
 
-3. 마이그레이션을 적용합니다. 지하철역 시드까지 함께 들어갑니다.
+4. 마이그레이션을 적용합니다. 지하철역 시드까지 함께 들어갑니다.
 
    ```bash
    DATABASE_URL_TEST=postgres://moyeolak:moyeolak@localhost:5432/moyeorak_test pnpm db:migrate
+   DATABASE_URL=postgres://moyeolak:moyeolak@localhost:5432/moyeorak_dev pnpm db:migrate
    ```
 
-   개발용 DB에는 `DATABASE_URL`을 넘겨 실행합니다. `drizzle.config.ts`는 `DATABASE_URL_TEST`가 있으면 그것을, 없으면 `DATABASE_URL`을 씁니다.
+   `drizzle.config.ts`는 `DATABASE_URL_TEST`가 있으면 그것을, 없으면 `DATABASE_URL`을 씁니다. 그래서 두 번째 명령은 셸에 `DATABASE_URL_TEST`가 설정되어 있지 않을 때 개발용 DB에 적용됩니다.
 
-4. 앱을 실행합니다.
+5. 앱을 실행합니다.
 
    ```bash
-   pnpm install
    pnpm dev    # http://localhost:3000
    ```
 
