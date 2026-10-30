@@ -1,5 +1,5 @@
 import { ZodError } from "zod";
-import { toResponse } from "@/server/http";
+import { readJson, toResponse } from "@/server/http";
 import {
   MeetingFullError,
   MeetingNotFoundError,
@@ -37,5 +37,17 @@ test("알 수 없는 오류는 500 INTERNAL", async () => {
   });
   expect(res.status).toBe(500);
   expect((await res.json()).error.code).toBe("INTERNAL");
+  spy.mockRestore();
+});
+
+test("깨진 JSON이나 빈 본문은 400 INVALID_REQUEST", async () => {
+  const spy = vi.spyOn(console, "error");
+  for (const body of ["{", ""]) {
+    const req = new Request("http://x/api", { method: "POST", body });
+    const res = await toResponse(async () => readJson(req));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error.code).toBe("INVALID_REQUEST");
+  }
+  expect(spy).not.toHaveBeenCalled();
   spy.mockRestore();
 });

@@ -31,6 +31,21 @@ function errorResponse(
   );
 }
 
+/** 본문이 비었거나 JSON이 아니면 zod 실패와 같은 경로(400)로 보낸다. */
+export async function readJson(req: Request): Promise<unknown> {
+  try {
+    return await req.json();
+  } catch {
+    throw new ZodError([
+      {
+        code: "custom",
+        message: "요청 본문이 올바른 JSON이 아니에요",
+        path: [],
+      },
+    ]);
+  }
+}
+
 export async function toResponse(
   fn: () => Promise<unknown>,
   opts: { status?: number } = {},
