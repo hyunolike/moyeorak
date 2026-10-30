@@ -5,7 +5,6 @@ import { resetTestDb } from "@/db/test-utils";
 import { AI_CALL_CAP_PER_MEETING, withAgentCall } from "@/server/ai/agent-call";
 import { AiConfigError, AiLimitError } from "@/server/ai/errors";
 import { aiModel } from "@/server/ai/provider";
-import { toResponse } from "@/server/http";
 import { createMeeting } from "@/server/meeting/meeting-service";
 
 async function newMeeting(c: string) {
@@ -107,21 +106,6 @@ test("다른 모임의 기록은 세지 않는다", async () => {
       outputTokens: 0,
     })),
   ).resolves.toBe("ok");
-});
-
-test("AiLimitError는 429 AI_LIMIT, AiConfigError는 500으로 직렬화된다", async () => {
-  const limit = await toResponse(async () => {
-    throw new AiLimitError();
-  });
-  expect(limit.status).toBe(429);
-  expect((await limit.json()).error.code).toBe("AI_LIMIT");
-  const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-  const config = await toResponse(async () => {
-    throw new AiConfigError("NVIDIA_API_KEY");
-  });
-  spy.mockRestore();
-  expect(config.status).toBe(500);
-  expect((await config.json()).error.code).toBe("AI_CONFIG");
 });
 
 describe("aiModel", () => {

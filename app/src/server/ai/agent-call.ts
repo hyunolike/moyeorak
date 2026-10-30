@@ -1,8 +1,7 @@
 import { count, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { agentCallLogs } from "@/db/schema";
-import { AiConfigError, AiLimitError } from "@/server/ai/errors";
-import { registerError } from "@/server/http";
+import { AiLimitError } from "@/server/ai/errors";
 
 const DEFAULT_CAP = 40;
 
@@ -13,9 +12,6 @@ export function aiCallCapPerMeeting(): number {
 }
 
 export const AI_CALL_CAP_PER_MEETING = aiCallCapPerMeeting();
-
-registerError(AiLimitError, 429);
-registerError(AiConfigError, 500);
 
 /**
  * AI 호출을 감싸 agent_call_logs에 한 줄 남기고 모임당 상한을 지킨다.

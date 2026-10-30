@@ -1,6 +1,7 @@
 import { unstable_rethrow } from "next/navigation";
 import { ZodError } from "zod";
 import { UnauthorizedError } from "@/server/admin-auth";
+import { AiConfigError, AiLimitError } from "@/server/ai/errors";
 import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
   MeetingFullError,
@@ -34,6 +35,8 @@ const errorStatus = new Map<ErrorClass, number>([
   [ExternalApiError, 502],
   [RateLimitedError, 429],
   [UnauthorizedError, 401],
+  [AiLimitError, 429],
+  [AiConfigError, 500],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {
