@@ -3,7 +3,12 @@ import {
   MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
-import { InvalidSlotsError } from "@/server/schedule/errors";
+import {
+  AlreadyConfirmedError,
+  InvalidSlotsError,
+  ParticipantNotFoundError,
+  ScheduleNotFoundError,
+} from "@/server/schedule/errors";
 
 type ErrorClass = new (
   ...args: never[]
@@ -20,6 +25,9 @@ const errorStatus = new Map<ErrorClass, number>([
   [MeetingNotFoundError, 404],
   [MeetingFullError, 409],
   [InvalidSlotsError, 400],
+  [ParticipantNotFoundError, 404],
+  [ScheduleNotFoundError, 404],
+  [AlreadyConfirmedError, 409],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {

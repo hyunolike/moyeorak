@@ -8,7 +8,12 @@ import {
   getMeeting,
   joinMeeting,
 } from "@/server/meeting/meeting-service";
-import { InvalidSlotsError } from "@/server/schedule/errors";
+import {
+  AlreadyConfirmedError,
+  InvalidSlotsError,
+  ParticipantNotFoundError,
+  ScheduleNotFoundError,
+} from "@/server/schedule/errors";
 import {
   confirmSchedule,
   getScheduleSummary,
@@ -118,4 +123,51 @@ test("votes 라우트는 범위 밖 슬롯에 400과 invalid 배열을 돌려준
       invalid: ["2019-12-31T20:00:00.000Z"],
     },
   });
+});
+
+test("saveScheduleVote는 다른 모임 참여자 id로는 저장하지 못한다", async () => {
+  const a = await setup("both");
+  const b = await setup("both");
+  await saveScheduleVote(b.meetingId, b.participantId, [b.at("14:00")]);
+  await expect(
+    saveScheduleVote(a.meetingId, b.participantId, [a.at("16:00")]),
+  ).rejects.toBeInstanceOf(ParticipantNotFoundError);
+  const summary = await getScheduleSummary(b.meetingId);
+  expect(summary.votes[0].slots).toEqual([b.at("14:00")]);
+});
+
+test("confirmSchedule은 일정 투표가 없는 모임이면 ScheduleNotFoundError", async () => {
+  const m = await setup("location");
+  await db
+    .delete(schedulePolls)
+    .where(eq(schedulePolls.meetingId, m.meetingId));
+  await expect(
+    confirmSchedule(m.meetingId, m.at("14:00"), m.at("15:00")),
+  ).rejects.toBeInstanceOf(ScheduleNotFoundError);
+  expect((await getMeeting(m.meetingId))?.status).toBe("scheduling");
+});
+
+test("confirmSchedule은 투표판 밖이거나 역전된 범위에 InvalidSlotsError", async () => {
+  const m = await setup("schedule");
+  const off = new Date("2020-01-01T14:00:00+09:00");
+  await expect(
+    confirmSchedule(m.meetingId, off, new Date(off.getTime() + 3600000)),
+  ).rejects.toBeInstanceOf(InvalidSlotsError);
+  await expect(
+    confirmSchedule(m.meetingId, m.at("16:00"), m.at("14:00")),
+  ).rejects.toBeInstanceOf(InvalidSlotsError);
+  await expect(
+    confirmSchedule(m.meetingId, m.at("14:00"), m.at("14:45")),
+  ).rejects.toBeInstanceOf(InvalidSlotsError);
+  expect((await getMeeting(m.meetingId))?.status).toBe("scheduling");
+});
+
+test("confirmSchedule은 두 번째 확정을 AlreadyConfirmedError로 막는다", async () => {
+  const m = await setup("schedule");
+  await confirmSchedule(m.meetingId, m.at("14:00"), m.at("15:00"));
+  const first = (await getMeeting(m.meetingId))?.confirmedAt;
+  await expect(
+    confirmSchedule(m.meetingId, m.at("16:00"), m.at("17:00")),
+  ).rejects.toBeInstanceOf(AlreadyConfirmedError);
+  expect((await getMeeting(m.meetingId))?.confirmedAt).toEqual(first);
 });
