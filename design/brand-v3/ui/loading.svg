@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="120" viewBox="0 0 144 120" role="img" aria-labelledby="title">
+<title id="title">마주가 생각하는 중</title>
+<g font-family="Pretendard, 'Apple SD Gothic Neo', sans-serif">
+<style>
+@keyframes mazu-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes mazu-dot { 0%, 70%, 100% { opacity: .25; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-3px); } }
+.bob { animation: mazu-bob 1.6s ease-in-out infinite; }
+.dot { animation: mazu-dot 1.6s ease-in-out infinite; }
+.dot-2 { animation-delay: .2s; } .dot-3 { animation-delay: .4s; }
+@media (prefers-reduced-motion: reduce) { .bob, .dot { animation: none; } .dot { opacity: .6; } }
+</style>
+<g class="bob"><g transform="translate(44 12) scale(0.23333333333333334)"><clipPath id="av-thinking-44-12"><rect width="240" height="240" rx="48"/></clipPath><g clip-path="url(#av-thinking-44-12)"><rect x="0" y="0" width="240" height="240" rx="0" fill="#F45B3F"></rect><g transform="translate(-2 -5) rotate(-5 120 120)"><rect x="27" y="65" width="186" height="112" rx="56" fill="#FFF1DA"></rect><g transform="translate(27 65) scale(1.524590164 1.777777778)"><ellipse cx="21" cy="38" rx="7" ry="4" fill="#FFBBA8"></ellipse><ellipse cx="98" cy="38" rx="7" ry="4" fill="#FFBBA8"></ellipse><ellipse cx="37" cy="19" rx="8" ry="10" fill="#202923"></ellipse><ellipse cx="34" cy="15" rx="3" ry="3.5" fill="#FFFFFF"></ellipse><ellipse cx="78" cy="16" rx="8" ry="10" fill="#202923"></ellipse><ellipse cx="75" cy="12" rx="3" ry="3.5" fill="#FFFFFF"></ellipse><ellipse cx="61" cy="45" rx="5.5" ry="6" fill="#202923"></ellipse></g></g><path d="M203 209 Q192 180 154 175" fill="none" stroke="#FFF1DA" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"></path></g></g></g>
+<circle class="dot dot-1" cx="60" cy="88" r="4" fill="#176B5B"/>
+<circle class="dot dot-2" cx="72" cy="88" r="4" fill="#176B5B"/>
+<circle class="dot dot-3" cx="84" cy="88" r="4" fill="#176B5B"/>
+<text x="72" y="112" font-size="12" font-weight="500" fill="#625D54" text-anchor="middle">마주가 생각하는 중</text>
+</g>
+</svg>

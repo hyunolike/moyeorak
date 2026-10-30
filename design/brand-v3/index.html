@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모여락 브랜드 v3</title>
+<link rel="icon" href="app-icon/favicon.svg">
+<link rel="stylesheet" href="tokens.css">
+<style>
+@font-face { font-family: Pretendard; src: local("Pretendard"), local("Pretendard-Regular"); font-weight: 400; }
+@font-face { font-family: Pretendard; src: local("Pretendard SemiBold"), local("Pretendard-SemiBold"); font-weight: 600; }
+@font-face { font-family: Pretendard; src: local("Pretendard Bold"), local("Pretendard-Bold"); font-weight: 700; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Pretendard, "Apple SD Gothic Neo", sans-serif; background: #FAF9F6; color: #202923; line-height: 1.5; }
+header { padding: 64px 24px 32px; max-width: 1200px; margin: 0 auto; }
+header h1 { font-size: 40px; margin: 24px 0 8px; }
+header p { color: #625D54; margin: 0; }
+section { max-width: 1200px; margin: 0 auto; padding: 40px 24px; border-top: 1px solid #E4E0D8; }
+section h2 { font-size: 24px; margin: 0 0 20px; }
+section h3 { font-size: 16px; margin: 24px 0 8px; }
+h3 code, .sw code, .role code { font: 12px/1 ui-monospace, Menlo, monospace; color: #625D54; }
+.grid { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+figure { margin: 0; text-align: center; }
+figure img { display: block; max-width: 100%; }
+figcaption { font-size: 12px; color: #625D54; margin-top: 6px; }
+.paper { background: #FFFFFF; border: 1px solid #E4E0D8; border-radius: 16px; padding: 20px; }
+.logo-grid figure { background: #FFFFFF; border: 1px solid #E4E0D8; border-radius: 16px; padding: 24px; }
+.logo-grid .on-ink { background: #202923; }
+.logo-grid .on-ink figcaption { color: #E4E0D8; }
+.ramp { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+.sw span { display: block; height: 48px; border-radius: 8px; border: 1px solid rgb(32 41 35 / .08); }
+.sw b { display: block; font-size: 11px; font-weight: 600; margin-top: 4px; }
+.sw code { display: block; }
+.roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.role span { display: block; height: 36px; border-radius: 8px; border: 1px solid rgb(128 128 128 / .25); }
+.role b { display: block; font-size: 12px; margin-top: 4px; }
+.m3d img { width: 128px; height: 128px; }
+.av64 img { width: 64px; height: 64px; border-radius: 14px; }
+.av32 img { width: 32px; height: 32px; border-radius: 7px; }
+.prop img { width: 160px; height: 160px; }
+.scene img { width: 360px; }
+.mock img { width: 260px; border-radius: 24px; border: 1px solid #E4E0D8; }
+.wide img { width: 100%; border: 1px solid #E4E0D8; border-radius: 12px; }
+.ui img { height: auto; }
+.icon img { border-radius: 22%; }
+.dark { background: #24221F; color: #FAF9F6; border-top: 0; }
+.dark .wrap { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+.dark h2 { margin: 0 0 20px; font-size: 24px; }
+.dark h3 code, .dark .role code, .dark figcaption, .dark p { color: #CCC6BC; }
+.dark .paper { background: #312E2A; border-color: #4B4741; }
+.dark .mock img { border-color: #4B4741; }
+.dark .btn { display: inline-block; padding: 14px 24px; border-radius: 16px; background: #7DD4B5; color: #202923; font-weight: 650; }
+.dark .bubble { display: inline-block; margin-left: 16px; padding: 12px 16px; border-radius: 16px; background: #312E2A; border: 1.5px solid #F3CF58; }
+.dark .bubble b { display: inline-block; font-size: 11px; background: #F3CF58; color: #44371A; border-radius: 999px; padding: 2px 10px; margin-right: 8px; }
+.dark .err { color: #FFBBA8; margin-left: 16px; }
+.light-demo { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.btn-l { display: inline-block; padding: 14px 24px; border-radius: 16px; background: #176B5B; color: #FFFFFF; font-weight: 650; }
+@media (max-width: 720px) { .ramp { grid-template-columns: repeat(5, minmax(0, 1fr)); } .scene img, .mock img { width: 100%; } }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo/lockup-horizontal.svg" alt="모여락" width="252" height="84">
+  <h1>모여락 브랜드 v3</h1>
+  <p>합류점 — 흩어진 시간과 출발지가 한곳에서 만나는 순간. 마스코트 마주, 홍시 #F45B3F · 숲 #176B5B · 신호 #F3CF58 · 잉크 #202923.</p>
+</header>
+
+<section id="logo">
+  <h2>로고</h2>
+  <div class="grid logo-grid">
+    <figure class=""><img src="logo/symbol.svg" alt="symbol" loading="lazy"><figcaption>symbol</figcaption></figure>
+    <figure class=""><img src="logo/wordmark-ko.svg" alt="wordmark-ko" loading="lazy"><figcaption>wordmark-ko</figcaption></figure>
+    <figure class=""><img src="logo/wordmark-en.svg" alt="wordmark-en" loading="lazy"><figcaption>wordmark-en</figcaption></figure>
+    <figure class=""><img src="logo/lockup-horizontal.svg" alt="lockup-horizontal" loading="lazy"><figcaption>lockup-horizontal</figcaption></figure>
+    <figure class=""><img src="logo/lockup-vertical.svg" alt="lockup-vertical" loading="lazy"><figcaption>lockup-vertical</figcaption></figure>
+    <figure class=""><img src="logo/symbol-mono-black.svg" alt="symbol-mono-black" loading="lazy"><figcaption>symbol-mono-black</figcaption></figure>
+    <figure class="on-ink"><img src="logo/symbol-mono-white.svg" alt="symbol-mono-white" loading="lazy"><figcaption>symbol-mono-white</figcaption></figure>
+    <figure class=""><img src="logo/lockup-horizontal-mono-black.svg" alt="lockup-horizontal-mono-black" loading="lazy"><figcaption>lockup-horizontal-mono-black</figcaption></figure>
+    <figure class="on-ink"><img src="logo/lockup-horizontal-mono-white.svg" alt="lockup-horizontal-mono-white" loading="lazy"><figcaption>lockup-horizontal-mono-white</figcaption></figure>
+  </div>
+</section>
+
+<section id="color">
+  <h2>색 램프</h2>
+  <h3>홍시 <code>--color-hongsi-*</code></h3><div class="ramp"><div class="sw"><span style="background:#FFF1EC"></span><b>hongsi-50</b><code>#FFF1EC</code></div><div class="sw"><span style="background:#FFDED3"></span><b>hongsi-100</b><code>#FFDED3</code></div><div class="sw"><span style="background:#FFBBA8"></span><b>hongsi-200</b><code>#FFBBA8</code></div><div class="sw"><span style="background:#FF967E"></span><b>hongsi-300</b><code>#FF967E</code></div><div class="sw"><span style="background:#FA785B"></span><b>hongsi-400</b><code>#FA785B</code></div><div class="sw"><span style="background:#F45B3F"></span><b>hongsi-500</b><code>#F45B3F</code></div><div class="sw"><span style="background:#D94329"></span><b>hongsi-600</b><code>#D94329</code></div><div class="sw"><span style="background:#AD3422"></span><b>hongsi-700</b><code>#AD3422</code></div><div class="sw"><span style="background:#812C20"></span><b>hongsi-800</b><code>#812C20</code></div><div class="sw"><span style="background:#54231C"></span><b>hongsi-900</b><code>#54231C</code></div></div><h3>숲 <code>--color-forest-*</code></h3><div class="ramp"><div class="sw"><span style="background:#EAF6F0"></span><b>forest-50</b><code>#EAF6F0</code></div><div class="sw"><span style="background:#D2EDDF"></span><b>forest-100</b><code>#D2EDDF</code></div><div class="sw"><span style="background:#A8D9C3"></span><b>forest-200</b><code>#A8D9C3</code></div><div class="sw"><span style="background:#7DD4B5"></span><b>forest-300</b><code>#7DD4B5</code></div><div class="sw"><span style="background:#399B7E"></span><b>forest-400</b><code>#399B7E</code></div><div class="sw"><span style="background:#176B5B"></span><b>forest-500</b><code>#176B5B</code></div><div class="sw"><span style="background:#125749"></span><b>forest-600</b><code>#125749</code></div><div class="sw"><span style="background:#10483D"></span><b>forest-700</b><code>#10483D</code></div><div class="sw"><span style="background:#103A32"></span><b>forest-800</b><code>#103A32</code></div><div class="sw"><span style="background:#102C27"></span><b>forest-900</b><code>#102C27</code></div></div><h3>신호 <code>--color-signal-*</code></h3><div class="ramp"><div class="sw"><span style="background:#FFFBEA"></span><b>signal-50</b><code>#FFFBEA</code></div><div class="sw"><span style="background:#FFF4CA"></span><b>signal-100</b><code>#FFF4CA</code></div><div class="sw"><span style="background:#FBE99C"></span><b>signal-200</b><code>#FBE99C</code></div><div class="sw"><span style="background:#F8DD73"></span><b>signal-300</b><code>#F8DD73</code></div><div class="sw"><span style="background:#F5D65F"></span><b>signal-400</b><code>#F5D65F</code></div><div class="sw"><span style="background:#F3CF58"></span><b>signal-500</b><code>#F3CF58</code></div><div class="sw"><span style="background:#C6A22C"></span><b>signal-600</b><code>#C6A22C</code></div><div class="sw"><span style="background:#917419"></span><b>signal-700</b><code>#917419</code></div><div class="sw"><span style="background:#68531B"></span><b>signal-800</b><code>#68531B</code></div><div class="sw"><span style="background:#44371A"></span><b>signal-900</b><code>#44371A</code></div></div><h3>중성 <code>--color-neutral-*</code></h3><div class="ramp"><div class="sw"><span style="background:#FAF9F6"></span><b>neutral-50</b><code>#FAF9F6</code></div><div class="sw"><span style="background:#F2F0EB"></span><b>neutral-100</b><code>#F2F0EB</code></div><div class="sw"><span style="background:#E4E0D8"></span><b>neutral-200</b><code>#E4E0D8</code></div><div class="sw"><span style="background:#CCC6BC"></span><b>neutral-300</b><code>#CCC6BC</code></div><div class="sw"><span style="background:#A49C90"></span><b>neutral-400</b><code>#A49C90</code></div><div class="sw"><span style="background:#7B7469"></span><b>neutral-500</b><code>#7B7469</code></div><div class="sw"><span style="background:#625D54"></span><b>neutral-600</b><code>#625D54</code></div><div class="sw"><span style="background:#4B4741"></span><b>neutral-700</b><code>#4B4741</code></div><div class="sw"><span style="background:#312E2A"></span><b>neutral-800</b><code>#312E2A</code></div><div class="sw"><span style="background:#24221F"></span><b>neutral-900</b><code>#24221F</code></div></div>
+  <h3>라이트 역할</h3>
+  <div class="roles"><div class="role"><span style="background:#FAF9F6"></span><b>화면</b><code>#FAF9F6</code></div><div class="role"><span style="background:#FFFFFF"></span><b>종이</b><code>#FFFFFF</code></div><div class="role"><span style="background:#202923"></span><b>본문</b><code>#202923</code></div><div class="role"><span style="background:#625D54"></span><b>보조 글자</b><code>#625D54</code></div><div class="role"><span style="background:#E4E0D8"></span><b>구분선</b><code>#E4E0D8</code></div><div class="role"><span style="background:#176B5B"></span><b>행동</b><code>#176B5B</code></div><div class="role"><span style="background:#FFFFFF"></span><b>행동 위 글자</b><code>#FFFFFF</code></div><div class="role"><span style="background:#EAF6F0"></span><b>선택 면</b><code>#EAF6F0</code></div><div class="role"><span style="background:#FFFBEA"></span><b>비서 면</b><code>#FFFBEA</code></div><div class="role"><span style="background:#AD3422"></span><b>오류</b><code>#AD3422</code></div></div>
+  <h3>라이트 샘플</h3>
+  <div class="light-demo paper"><span class="btn-l">모임 만들기</span><img src="ui/speech-bubble.svg" alt="마주의 한마디" width="360" height="132"><img src="ui/suggestion-badge.svg" alt="마주가 제안해요" width="146" height="32"></div>
+</section>
+
+<section id="mazu-3d">
+  <h2>마주 3D</h2>
+  <div class="grid"><figure class="m3d"><img src="character/3d/default-256.png" alt="default · 반가워요" loading="lazy"><figcaption>default · 반가워요</figcaption></figure><figure class="m3d"><img src="character/3d/thinking-256.png" alt="thinking · 생각 중이에요" loading="lazy"><figcaption>thinking · 생각 중이에요</figcaption></figure><figure class="m3d"><img src="character/3d/waiting-256.png" alt="waiting · 기다리고 있어요" loading="lazy"><figcaption>waiting · 기다리고 있어요</figcaption></figure><figure class="m3d"><img src="character/3d/happy-256.png" alt="happy · 기뻐요" loading="lazy"><figcaption>happy · 기뻐요</figcaption></figure><figure class="m3d"><img src="character/3d/sorry-256.png" alt="sorry · 미안해요" loading="lazy"><figcaption>sorry · 미안해요</figcaption></figure><figure class="m3d"><img src="character/3d/guide-256.png" alt="guide · 이쪽이에요" loading="lazy"><figcaption>guide · 이쪽이에요</figcaption></figure><figure class="m3d"><img src="character/3d/celebrate-256.png" alt="celebrate · 함께 해냈어요" loading="lazy"><figcaption>celebrate · 함께 해냈어요</figcaption></figure><figure class="m3d"><img src="character/3d/sleepy-256.png" alt="sleepy · 쉬고 있어요" loading="lazy"><figcaption>sleepy · 쉬고 있어요</figcaption></figure></div>
+  <h3>정면 · 측면 · 턴테이블</h3>
+  <div class="grid"><figure class="m3d"><img src="character/3d/default-front.png" alt="정면" loading="lazy"><figcaption>정면</figcaption></figure><figure class="m3d"><img src="character/3d/default-side.png" alt="측면" loading="lazy"><figcaption>측면</figcaption></figure><figure class="m3d"><img src="character/3d/turntable/000.png" alt="000°" loading="lazy"><figcaption>000°</figcaption></figure><figure class="m3d"><img src="character/3d/turntable/090.png" alt="090°" loading="lazy"><figcaption>090°</figcaption></figure><figure class="m3d"><img src="character/3d/turntable/180.png" alt="180°" loading="lazy"><figcaption>180°</figcaption></figure><figure class="m3d"><img src="character/3d/turntable/270.png" alt="270°" loading="lazy"><figcaption>270°</figcaption></figure></div>
+</section>
+
+<section id="mazu-2d">
+  <h2>마주 2D 아바타</h2>
+  <h3>64px</h3>
+  <div class="grid"><figure class="av64"><img src="character/2d/avatar/default.svg" alt="default" loading="lazy"><figcaption>default</figcaption></figure><figure class="av64"><img src="character/2d/avatar/thinking.svg" alt="thinking" loading="lazy"><figcaption>thinking</figcaption></figure><figure class="av64"><img src="character/2d/avatar/waiting.svg" alt="waiting" loading="lazy"><figcaption>waiting</figcaption></figure><figure class="av64"><img src="character/2d/avatar/happy.svg" alt="happy" loading="lazy"><figcaption>happy</figcaption></figure><figure class="av64"><img src="character/2d/avatar/sorry.svg" alt="sorry" loading="lazy"><figcaption>sorry</figcaption></figure><figure class="av64"><img src="character/2d/avatar/guide.svg" alt="guide" loading="lazy"><figcaption>guide</figcaption></figure><figure class="av64"><img src="character/2d/avatar/celebrate.svg" alt="celebrate" loading="lazy"><figcaption>celebrate</figcaption></figure><figure class="av64"><img src="character/2d/avatar/sleepy.svg" alt="sleepy" loading="lazy"><figcaption>sleepy</figcaption></figure></div>
+  <h3>32px</h3>
+  <div class="grid"><figure class="av32"><img src="character/2d/avatar/default.svg" alt="default" loading="lazy"><figcaption>default</figcaption></figure><figure class="av32"><img src="character/2d/avatar/thinking.svg" alt="thinking" loading="lazy"><figcaption>thinking</figcaption></figure><figure class="av32"><img src="character/2d/avatar/waiting.svg" alt="waiting" loading="lazy"><figcaption>waiting</figcaption></figure><figure class="av32"><img src="character/2d/avatar/happy.svg" alt="happy" loading="lazy"><figcaption>happy</figcaption></figure><figure class="av32"><img src="character/2d/avatar/sorry.svg" alt="sorry" loading="lazy"><figcaption>sorry</figcaption></figure><figure class="av32"><img src="character/2d/avatar/guide.svg" alt="guide" loading="lazy"><figcaption>guide</figcaption></figure><figure class="av32"><img src="character/2d/avatar/celebrate.svg" alt="celebrate" loading="lazy"><figcaption>celebrate</figcaption></figure><figure class="av32"><img src="character/2d/avatar/sleepy.svg" alt="sleepy" loading="lazy"><figcaption>sleepy</figcaption></figure></div>
+  <h3>전신 표정 시트</h3>
+  <figure class="wide"><img src="character/2d/expression-sheet.png" alt="2D 표정 시트"></figure>
+</section>
+
+<section id="props">
+  <h2>소품</h2>
+  <div class="grid"><figure class="prop"><img src="props/3d/station-sign.png" alt="역 표지판" loading="lazy"><figcaption>역 표지판</figcaption></figure><figure class="prop"><img src="props/3d/map-pin.png" alt="지도 핀" loading="lazy"><figcaption>지도 핀</figcaption></figure><figure class="prop"><img src="props/3d/clock-tile.png" alt="시계 타일" loading="lazy"><figcaption>시계 타일</figcaption></figure><figure class="prop"><img src="props/3d/calendar-tile.png" alt="달력 타일" loading="lazy"><figcaption>달력 타일</figcaption></figure><figure class="prop"><img src="props/3d/chat-bubble.png" alt="말풍선" loading="lazy"><figcaption>말풍선</figcaption></figure><figure class="prop"><img src="props/3d/three-dots-converging.png" alt="모이는 세 점" loading="lazy"><figcaption>모이는 세 점</figcaption></figure></div>
+</section>
+
+<section id="scenes">
+  <h2>장면</h2>
+  <div class="grid"><figure class="scene"><img src="scenes/3d/landing-hero.png" alt="랜딩 히어로" loading="lazy"><figcaption>랜딩 히어로</figcaption></figure><figure class="scene"><img src="scenes/3d/empty-state.png" alt="빈 상태" loading="lazy"><figcaption>빈 상태</figcaption></figure><figure class="scene"><img src="scenes/3d/error-state.png" alt="오류 상태" loading="lazy"><figcaption>오류 상태</figcaption></figure></div>
+</section>
+
+<section id="components">
+  <h2>컴포넌트</h2>
+  <p><a href="components/components.md">components.md</a> — 49개 상태, 라이트와 다크.</p>
+  <figure class="wide"><img src="components/components.svg" alt="컴포넌트 상태 시트"></figure>
+  <h3>UI 에셋</h3>
+  <div class="grid ui"><figure class=""><img src="ui/speech-bubble.svg" alt="speech-bubble" loading="lazy"><figcaption>speech-bubble</figcaption></figure><figure class=""><img src="ui/suggestion-badge.svg" alt="suggestion-badge" loading="lazy"><figcaption>suggestion-badge</figcaption></figure><figure class=""><img src="ui/empty-state.svg" alt="empty-state" loading="lazy"><figcaption>empty-state</figcaption></figure><figure class=""><img src="ui/error-state.svg" alt="error-state" loading="lazy"><figcaption>error-state</figcaption></figure><figure class=""><img src="ui/loading.svg" alt="loading" loading="lazy"><figcaption>loading</figcaption></figure></div>
+</section>
+
+<section id="mockups">
+  <h2>목업</h2>
+  <div class="grid"><figure class="mock"><img src="mockups/01-landing.png" alt="랜딩" loading="lazy"><figcaption>랜딩</figcaption></figure><figure class="mock"><img src="mockups/02-meeting-home.png" alt="모임 홈" loading="lazy"><figcaption>모임 홈</figcaption></figure><figure class="mock"><img src="mockups/02-meeting-home-dark.png" alt="모임 홈 (다크)" loading="lazy"><figcaption>모임 홈 (다크)</figcaption></figure><figure class="mock"><img src="mockups/03-time-input.png" alt="시간 입력" loading="lazy"><figcaption>시간 입력</figcaption></figure><figure class="mock"><img src="mockups/04-suggestion.png" alt="마주의 제안" loading="lazy"><figcaption>마주의 제안</figcaption></figure><figure class="mock"><img src="mockups/05-confirmed.png" alt="약속 확정" loading="lazy"><figcaption>약속 확정</figcaption></figure></div>
+</section>
+
+<section id="app-icon">
+  <h2>앱 아이콘</h2>
+  <div class="grid">
+    <figure class="icon"><img width="180" height="180" src="app-icon/icon-1024.png" alt="icon-1024 (3D)" loading="lazy"><figcaption>icon-1024 (3D)</figcaption></figure>
+    <figure class="icon"><img width="180" height="180" src="app-icon/maskable-512.png" alt="maskable-512" loading="lazy"><figcaption>maskable-512</figcaption></figure>
+    <figure class="icon"><img width="180" height="180" src="app-icon/icon.svg" alt="icon.svg (2D)" loading="lazy"><figcaption>icon.svg (2D)</figcaption></figure>
+    <figure class="icon"><img src="app-icon/apple-touch-180.png" alt="apple-touch-180" loading="lazy"><figcaption>apple-touch-180</figcaption></figure>
+    <figure class="icon"><img src="app-icon/icon-192.png" alt="icon-192" loading="lazy"><figcaption>icon-192</figcaption></figure>
+    <figure class=""><img src="app-icon/favicon-32.png" alt="favicon-32" loading="lazy"><figcaption>favicon-32</figcaption></figure>
+    <figure class=""><img src="app-icon/favicon-16.png" alt="favicon-16" loading="lazy"><figcaption>favicon-16</figcaption></figure>
+  </div>
+</section>
+
+<section id="og">
+  <h2>OG</h2>
+  <div class="grid"><figure class="wide" style="max-width:600px"><img src="og/og-default.png" alt="og-default 1200×630" loading="lazy"><figcaption>og-default 1200×630</figcaption></figure><figure class="wide" style="max-width:600px"><img src="og/og-template.svg" alt="og-template.svg" loading="lazy"><figcaption>og-template.svg</figcaption></figure></div>
+</section>
+
+<section class="dark" data-theme="dark">
+  <div class="wrap">
+    <h2>다크</h2>
+    <p>저녁의 종이. 캐릭터와 원색은 그대로 두고 UI 의미 토큰만 바꾼다.</p>
+    <div class="roles"><div class="role"><span style="background:#24221F"></span><b>화면</b><code>#24221F</code></div><div class="role"><span style="background:#312E2A"></span><b>종이</b><code>#312E2A</code></div><div class="role"><span style="background:#FAF9F6"></span><b>본문</b><code>#FAF9F6</code></div><div class="role"><span style="background:#CCC6BC"></span><b>보조 글자</b><code>#CCC6BC</code></div><div class="role"><span style="background:#4B4741"></span><b>구분선</b><code>#4B4741</code></div><div class="role"><span style="background:#7DD4B5"></span><b>행동</b><code>#7DD4B5</code></div><div class="role"><span style="background:#202923"></span><b>행동 위 글자</b><code>#202923</code></div><div class="role"><span style="background:#103A32"></span><b>선택 면</b><code>#103A32</code></div><div class="role"><span style="background:#44371A"></span><b>비서 면</b><code>#44371A</code></div><div class="role"><span style="background:#FFBBA8"></span><b>오류</b><code>#FFBBA8</code></div></div>
+    <h3>샘플</h3>
+    <div class="paper"><span class="btn">모임 만들기</span><span class="bubble"><b>마주의 한마디</b>3명이 응답했어요. 서연님 기다리는 중</span><span class="err">장소를 불러오지 못했어요.</span></div>
+    <h3>모임 홈 (다크)</h3>
+    <div class="grid"><figure class="mock"><img src="mockups/02-meeting-home-dark.png" alt="모임 홈 (다크)" loading="lazy"><figcaption>모임 홈 (다크)</figcaption></figure><figure class=""><img src="logo/lockup-horizontal-mono-white.svg" alt="lockup-horizontal-mono-white" loading="lazy"><figcaption>lockup-horizontal-mono-white</figcaption></figure></div>
+  </div>
+</section>
+</body>
+</html>

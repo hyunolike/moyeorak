@@ -1,0 +1,1 @@
+{"name":"moyeorak-brand-v3-tools","private":true,"type":"module","scripts":{"render":"node render.mjs","build":"node build.mjs","qa":"node qa.mjs"},"dependencies":{"playwright":"^1.58.2","sharp":"0.34.5","three":"^0.180.0"}}

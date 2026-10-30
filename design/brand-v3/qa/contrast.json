@@ -1,0 +1,131 @@
+{
+  "standard": "WCAG 2.x relative luminance, AA normal text 4.5:1",
+  "pairs": [
+    {
+      "theme": "light",
+      "pair": "text/bg",
+      "foreground": "#202923",
+      "background": "#FAF9F6",
+      "ratio": 14.22,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "pair": "text/paper",
+      "foreground": "#202923",
+      "background": "#FFFFFF",
+      "ratio": 14.97,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "pair": "muted/paper",
+      "foreground": "#625D54",
+      "background": "#FFFFFF",
+      "ratio": 6.54,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "pair": "on-action/action",
+      "foreground": "#FFFFFF",
+      "background": "#176B5B",
+      "ratio": 6.38,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "pair": "ink/signal-500",
+      "foreground": "#202923",
+      "background": "#F3CF58",
+      "ratio": 9.89,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "pair": "ink/signal-50 (assistant)",
+      "foreground": "#202923",
+      "background": "#FFFBEA",
+      "ratio": 14.43,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "pair": "error/paper",
+      "foreground": "#AD3422",
+      "background": "#FFFFFF",
+      "ratio": 6.38,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "light",
+      "pair": "action/paper (text action)",
+      "foreground": "#176B5B",
+      "background": "#FFFFFF",
+      "ratio": 6.38,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "pair": "text/bg",
+      "foreground": "#FAF9F6",
+      "background": "#24221F",
+      "ratio": 15.07,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "pair": "text/paper",
+      "foreground": "#FAF9F6",
+      "background": "#312E2A",
+      "ratio": 12.83,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "pair": "muted/paper",
+      "foreground": "#CCC6BC",
+      "background": "#312E2A",
+      "ratio": 7.96,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "pair": "on-action/action",
+      "foreground": "#202923",
+      "background": "#7DD4B5",
+      "ratio": 8.52,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "pair": "text/assistant",
+      "foreground": "#FAF9F6",
+      "background": "#44371A",
+      "ratio": 11.04,
+      "minimum": 4.5,
+      "pass": true
+    },
+    {
+      "theme": "dark",
+      "pair": "error/paper",
+      "foreground": "#FFBBA8",
+      "background": "#312E2A",
+      "ratio": 8.31,
+      "minimum": 4.5,
+      "pass": true
+    }
+  ]
+}
