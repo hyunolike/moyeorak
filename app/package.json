@@ -16,7 +16,9 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "3.0.82",
     "@tanstack/react-query": "^5.105.0",
+    "ai": "7.0.159",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.4",
     "nanoid": "^6.0.2",
