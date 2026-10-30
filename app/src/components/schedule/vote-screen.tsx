@@ -35,7 +35,6 @@ function VoteForm({
   const handleSubmit = () => {
     save.mutate(
       {
-        participantId,
         slots: selected.map((date) => date.toISOString()),
       },
       { onSuccess: () => router.push(schedulePath) },

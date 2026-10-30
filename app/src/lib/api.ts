@@ -46,6 +46,12 @@ export async function apiFetch<T>(path: string, init?: RequestInit) {
   return body.data as T;
 }
 
+/** 참여자를 확인하는 요청에 이 기기의 키를 헤더로 붙인다. */
+const withDeviceKey = (init: RequestInit): RequestInit => ({
+  ...init,
+  headers: { ...init.headers, "X-Device-Key": getDeviceKey() },
+});
+
 const json = (method: string, body: unknown): RequestInit => ({
   method,
   body: JSON.stringify(body),
@@ -150,8 +156,11 @@ export function useScheduleSummary(meetingId: string) {
 export function useSaveVote(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { participantId: number; slots: string[] }) =>
-      apiFetch(`/api/meetings/${meetingId}/schedule/votes`, json("PUT", input)),
+    mutationFn: (input: { slots: string[] }) =>
+      apiFetch(
+        `/api/meetings/${meetingId}/schedule/votes`,
+        withDeviceKey(json("PUT", input)),
+      ),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: keys.summary(meetingId) }),
   });
@@ -178,13 +187,16 @@ export function useDepartures(meetingId: string) {
 export function useSaveDeparture(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { participantId: number; voteId?: number } & Place) => {
+    mutationFn: (input: { voteId?: number } & Place) => {
       const { voteId, ...body } = input;
       return voteId === undefined
-        ? apiFetch(`/api/meetings/${meetingId}/departures`, json("POST", body))
+        ? apiFetch(
+            `/api/meetings/${meetingId}/departures`,
+            withDeviceKey(json("POST", body)),
+          )
         : apiFetch(
             `/api/meetings/${meetingId}/departures/${voteId}`,
-            json("PUT", body),
+            withDeviceKey(json("PUT", body)),
           );
     },
     // 출발지가 바뀌면 중간지점도 다시 계산해야 하므로 staleTime을 무시하고 무효화한다.
@@ -200,9 +212,10 @@ export function useDeleteDeparture(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (voteId: number) =>
-      apiFetch(`/api/meetings/${meetingId}/departures/${voteId}`, {
-        method: "DELETE",
-      }),
+      apiFetch(
+        `/api/meetings/${meetingId}/departures/${voteId}`,
+        withDeviceKey({ method: "DELETE" }),
+      ),
     // 출발지가 바뀌면 중간지점도 다시 계산해야 하므로 staleTime을 무시하고 무효화한다.
     onSuccess: () =>
       Promise.all([

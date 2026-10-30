@@ -154,7 +154,7 @@ test("findParticipantByDeviceKey는 같은 모임의 같은 기기 참여자만 
   expect((await getMeeting(meetingId))?.participants).toHaveLength(2);
 });
 
-test("me 라우트는 X-Device-Key로 참여자를 돌려주고, 없으면 404, 키가 틀리면 400", async () => {
+test("me 라우트는 X-Device-Key로 참여자를 돌려주고, 없으면 404, 키가 틀리면 401", async () => {
   const { GET } = await import("@/app/api/meetings/[id]/me/route");
   const { meetingId, participantId } = await createMeeting({
     hostName: "현호",
@@ -177,6 +177,6 @@ test("me 라우트는 X-Device-Key로 참여자를 돌려주고, 없으면 404, 
   expect(missing.status).toBe(404);
   expect((await missing.json()).error.code).toBe("PARTICIPANT_NOT_FOUND");
 
-  expect((await call({ "X-Device-Key": "short" })).status).toBe(400);
-  expect((await call({})).status).toBe(400);
+  expect((await call({ "X-Device-Key": "short" })).status).toBe(401);
+  expect((await call({})).status).toBe(401);
 });

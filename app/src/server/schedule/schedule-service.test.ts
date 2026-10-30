@@ -127,14 +127,12 @@ test("joinMeeting으로 들어온 참여자의 투표도 요약에 이름과 함
 
 test("votes 라우트는 범위 밖 슬롯에 400과 invalid 배열을 돌려준다", async () => {
   const { PUT } = await import("@/app/api/meetings/[id]/schedule/votes/route");
-  const { meetingId, participantId } = await setup("both");
+  const { meetingId } = await setup("both");
   const res = await PUT(
     new Request("http://test/votes", {
       method: "PUT",
-      body: JSON.stringify({
-        participantId,
-        slots: ["2020-01-01T05:00:00+09:00"],
-      }),
+      headers: { "X-Device-Key": key("a") },
+      body: JSON.stringify({ slots: ["2020-01-01T05:00:00+09:00"] }),
     }),
     { params: Promise.resolve({ id: meetingId }) },
   );
@@ -211,7 +209,7 @@ test("confirmSchedule은 scope와 상관없이 schedule_polls.confirmed_at을 �
 
 test("votes 라우트는 투표판 안의 30분 칸 300개를 받는다", async () => {
   const { PUT } = await import("@/app/api/meetings/[id]/schedule/votes/route");
-  const { meetingId, participantId } = await setup("both");
+  const { meetingId } = await setup("both");
   const meeting = await getMeeting(meetingId);
   const poll = meeting?.schedulePoll;
   if (!poll) throw new Error("투표판 없음");
@@ -227,7 +225,8 @@ test("votes 라우트는 투표판 안의 30분 칸 300개를 받는다", async 
   const res = await PUT(
     new Request("http://test/votes", {
       method: "PUT",
-      body: JSON.stringify({ participantId, slots: slots.slice(0, 300) }),
+      headers: { "X-Device-Key": key("a") },
+      body: JSON.stringify({ slots: slots.slice(0, 300) }),
     }),
     { params: Promise.resolve({ id: meetingId }) },
   );
@@ -235,4 +234,12 @@ test("votes 라우트는 투표판 안의 30분 칸 300개를 받는다", async 
   expect(await res.json()).toEqual({ data: { saved: 300 } });
   const summary = await getScheduleSummary(meetingId);
   expect(summary.votes[0]?.slots).toHaveLength(300);
+});
+
+test("확정된 모임에는 투표를 저장하지 않는다", async () => {
+  const { meetingId, participantId, at } = await setup("schedule");
+  await confirmSchedule(meetingId, at("14:00"), at("16:00"));
+  await expect(
+    saveScheduleVote(meetingId, participantId, [at("14:00")]),
+  ).rejects.toBeInstanceOf(AlreadyConfirmedError);
 });

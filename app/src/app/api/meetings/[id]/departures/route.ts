@@ -4,6 +4,7 @@ import {
   listDepartures,
   upsertDeparture,
 } from "@/server/location/location-service";
+import { requireParticipant } from "@/server/meeting/require-participant";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -15,9 +16,8 @@ export async function POST(req: Request, { params }: Ctx) {
   return toResponse(
     async () => {
       const { id } = await params;
-      const { participantId, ...place } = departureBody.parse(
-        await readJson(req),
-      );
+      const { participantId } = await requireParticipant(req, id);
+      const place = departureBody.parse(await readJson(req));
       return upsertDeparture(id, participantId, place);
     },
     { status: 201 },

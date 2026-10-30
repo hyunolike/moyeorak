@@ -46,7 +46,7 @@ function DepartureManager({
               disabled={save.isPending}
               onPick={(place) =>
                 save.mutate(
-                  { participantId: me.id, voteId: mine?.voteId, ...place },
+                  { voteId: mine?.voteId, ...place },
                   { onSuccess: () => setEditing(false) },
                 )
               }

@@ -165,6 +165,50 @@ test("출발지 2개를 넣으면 중간지점 결과에 역 이름이 나온다
   await expect(page.getByTestId("per-participant")).toHaveCount(2);
 });
 
+test("확정된 모임에 투표를 보내면 409이고, 헤더가 없으면 401", async ({
+  page,
+}) => {
+  await createMeeting(page, "일정 조율하기", "현호");
+  await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
+  const id = meetingIdFrom(page);
+  await voteThreeSlots(page);
+
+  const summary = await page.request.get(
+    `/api/meetings/${id}/schedule/summary`,
+  );
+  const { data } = (await summary.json()) as {
+    data: { poll: { dateOptions: string[] } };
+  };
+  const day = data.poll.dateOptions[1];
+  const slot = `${day}T09:00:00+09:00`;
+  const deviceKey = await page.evaluate(() =>
+    window.localStorage.getItem("device_key"),
+  );
+  expect(deviceKey).not.toBeNull();
+  const headers = { "X-Device-Key": deviceKey as string };
+
+  const anonymous = await page.request.put(
+    `/api/meetings/${id}/schedule/votes`,
+    {
+      data: { slots: [slot] },
+    },
+  );
+  expect(anonymous.status()).toBe(401);
+
+  const confirmed = await page.request.post(
+    `/api/meetings/${id}/schedule/confirm`,
+    { data: { start: slot, end: `${day}T10:00:00+09:00` } },
+  );
+  expect(confirmed.status()).toBe(200);
+
+  const late = await page.request.put(`/api/meetings/${id}/schedule/votes`, {
+    headers,
+    data: { slots: [slot] },
+  });
+  expect(late.status()).toBe(409);
+  expect((await late.json()).error.code).toBe("ALREADY_CONFIRMED");
+});
+
 test.describe("서울 밖 브라우저", () => {
   test.use({ timezoneId: "America/New_York" });
 

@@ -2,8 +2,8 @@ import { timingSafeEqual } from "node:crypto";
 
 export class UnauthorizedError extends Error {
   readonly code = "UNAUTHORIZED";
-  constructor() {
-    super("관리자 권한이 필요해요");
+  constructor(message = "관리자 권한이 필요해요") {
+    super(message);
     this.name = "UnauthorizedError";
   }
 }

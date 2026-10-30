@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { readJson, toResponse } from "@/server/http";
+import { requireParticipant } from "@/server/meeting/require-participant";
 import { saveScheduleVote } from "@/server/schedule/schedule-service";
 
 /**
@@ -10,7 +11,6 @@ import { saveScheduleVote } from "@/server/schedule/schedule-service";
 const MAX_VOTE_SLOTS = 14 * 48;
 
 const body = z.object({
-  participantId: z.number().int().positive(),
   slots: z
     .array(z.string().datetime({ offset: true }))
     .min(1)
@@ -23,7 +23,8 @@ export async function PUT(
 ) {
   return toResponse(async () => {
     const { id } = await params;
-    const { participantId, slots } = body.parse(await readJson(req));
+    const { participantId } = await requireParticipant(req, id);
+    const { slots } = body.parse(await readJson(req));
     await saveScheduleVote(
       id,
       participantId,
