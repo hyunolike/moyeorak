@@ -12,7 +12,8 @@
       "!**/next-env.d.ts",
       "!**/playwright-report",
       "!**/test-results",
-      "!**/drizzle/meta"
+      "!**/drizzle/meta",
+      "!src/styles/tokens.css"
     ]
   },
   "assist": {

@@ -2,8 +2,8 @@
 @import "../styles/tokens.css";
 
 body {
-  background: var(--color-k-5);
-  color: var(--color-k-900);
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 @utility scrollbar-hide {
