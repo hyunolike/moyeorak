@@ -91,7 +91,10 @@ export function useMeetingProgress(id: string, initialData?: MeetingProgress) {
  * 맵에 없거나 목록에 없는 id면 `GET /me`로 서버에 device_key를 물어본다.
  * localStorage를 읽으므로 서버 렌더에서는 pending으로 남는다.
  */
-export function useMe(meeting: Meeting) {
+export function useMe<P extends { id: number }>(meeting: {
+  id: string;
+  participants: P[];
+}) {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: keys.me(meeting.id),

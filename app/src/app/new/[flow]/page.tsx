@@ -4,7 +4,7 @@ import {
   NewMeetingForm,
 } from "@/components/meeting/new-meeting-form";
 
-const FLOWS: Flow[] = ["schedule", "location"];
+const FLOWS: Flow[] = ["both", "schedule", "location"];
 
 export default async function NewMeetingPage({
   params,

@@ -158,7 +158,7 @@ test("saveScheduleVote는 다른 모임 참여자 id로는 저장하지 못한�
 });
 
 test("confirmSchedule은 일정 투표가 없는 모임이면 ScheduleNotFoundError", async () => {
-  const m = await setup("location");
+  const m = await setup("both");
   await db
     .delete(schedulePolls)
     .where(eq(schedulePolls.meetingId, m.meetingId));

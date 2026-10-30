@@ -38,6 +38,16 @@ test("createMeeting은 호스트를 첫 참여자로 넣고 14일짜리 투표�
   });
 });
 
+test("장소만 정하는 모임은 locating 상태로 시작한다", async () => {
+  const { meetingId } = await createMeeting({
+    hostName: "현호",
+    participantCount: 2,
+    scope: "location",
+    deviceKey: key("a"),
+  });
+  expect((await getMeeting(meetingId))?.status).toBe("locating");
+});
+
 test("createMeeting이 만든 투표판은 오늘 날짜로 시작한다", async () => {
   const { meetingId } = await createMeeting({
     hostName: "현호",
