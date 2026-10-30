@@ -56,16 +56,25 @@ export async function computeMetrics(range: Range): Promise<Metrics> {
          WHERE m.participant_count > 0 AND ${where}
       ) v`);
 
-  // 확정까지 걸린 시간: 모임당 첫 confirmed 이벤트 - 모임 생성.
+  // 확정까지 걸린 시간: 일정 확정 시각과 첫 confirmed 이벤트 중 이른 것 - 모임 생성.
+  // scope=both는 일정만 확정하면 confirmed 이벤트가 없으므로 schedule_polls.confirmed_at도 본다.
+  // LEAST는 NULL을 건너뛰고, 둘 다 없으면 NULL이라 그 모임은 빠진다.
   const median = await one<{ hours: number | null }>(sql`
     SELECT percentile_cont(0.5) WITHIN GROUP (
-             ORDER BY EXTRACT(EPOCH FROM (e.at - m.created_at)) / 3600
+             ORDER BY EXTRACT(EPOCH FROM (c.at - c.created_at)) / 3600
            )::float8 AS hours
-      FROM meetings m
-      JOIN (SELECT meeting_id, min(created_at) AS at
-              FROM meeting_events WHERE type = 'confirmed'
-             GROUP BY meeting_id) e ON e.meeting_id = m.id
-     WHERE ${where}`);
+      FROM (
+        SELECT m.created_at,
+               LEAST(
+                 sp.confirmed_at,
+                 (SELECT min(e.created_at) FROM meeting_events e
+                   WHERE e.meeting_id = m.id AND e.type = 'confirmed')
+               ) AS at
+          FROM meetings m
+          LEFT JOIN schedule_polls sp ON sp.meeting_id = m.id
+         WHERE ${where}
+      ) c
+     WHERE c.at IS NOT NULL`);
 
   // 재사용률: 호스트 deviceKey의 첫 모임이 범위 안일 때, 30일 안에 두 번째를 만든 비율.
   const reuse = await one<{ hosts: number; reused: number }>(sql`

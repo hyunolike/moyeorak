@@ -57,6 +57,8 @@ export const schedulePolls = pgTable(
     endMinute: integer("end_minute").notNull(),
     confirmedStart: timestamptz("confirmed_start"),
     confirmedEnd: timestamptz("confirmed_end"),
+    /** 일정을 확정한 시각. scope와 상관없이 confirmSchedule이 남긴다. */
+    confirmedAt: timestamptz("confirmed_at"),
   },
   (t) => [uniqueIndex("schedule_polls_meeting_uq").on(t.meetingId)],
 );
@@ -161,5 +163,13 @@ export const meetingEvents = pgTable("meeting_events", {
       | "confirmed"
     >()
     .notNull(),
+  createdAt: timestamptz("created_at").notNull().defaultNow(),
+});
+
+/** 외부 API(Google Routes, Kakao) 응답 캐시. 키 접두어로 일일 호출 수도 센다. */
+export const externalCache = pgTable("external_cache", {
+  key: varchar("key", { length: 200 }).primaryKey(),
+  payload: jsonb("payload").notNull(),
+  expiresAt: timestamptz("expires_at").notNull(),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
 });

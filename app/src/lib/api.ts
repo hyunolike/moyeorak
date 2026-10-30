@@ -187,8 +187,12 @@ export function useSaveDeparture(meetingId: string) {
             json("PUT", body),
           );
     },
+    // 출발지가 바뀌면 중간지점도 다시 계산해야 하므로 staleTime을 무시하고 무효화한다.
     onSuccess: () =>
-      client.invalidateQueries({ queryKey: keys.departures(meetingId) }),
+      Promise.all([
+        client.invalidateQueries({ queryKey: keys.departures(meetingId) }),
+        client.invalidateQueries({ queryKey: keys.midpoint(meetingId) }),
+      ]),
   });
 }
 
@@ -199,8 +203,12 @@ export function useDeleteDeparture(meetingId: string) {
       apiFetch(`/api/meetings/${meetingId}/departures/${voteId}`, {
         method: "DELETE",
       }),
+    // 출발지가 바뀌면 중간지점도 다시 계산해야 하므로 staleTime을 무시하고 무효화한다.
     onSuccess: () =>
-      client.invalidateQueries({ queryKey: keys.departures(meetingId) }),
+      Promise.all([
+        client.invalidateQueries({ queryKey: keys.departures(meetingId) }),
+        client.invalidateQueries({ queryKey: keys.midpoint(meetingId) }),
+      ]),
   });
 }
 
@@ -217,6 +225,8 @@ export function useMidpoint(meetingId: string) {
   return useQuery({
     queryKey: keys.midpoint(meetingId),
     queryFn: () => apiFetch<Midpoint>(`/api/meetings/${meetingId}/midpoint`),
+    // 서버도 1시간 캐시하지만, 화면에 다시 들어올 때마다 요청하지 않게 1분은 그대로 쓴다.
+    staleTime: 60_000,
   });
 }
 

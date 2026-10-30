@@ -194,3 +194,45 @@ test("confirmSchedule은 두 번째 확정을 AlreadyConfirmedError로 막는다
   ).rejects.toBeInstanceOf(AlreadyConfirmedError);
   expect((await getMeeting(m.meetingId))?.confirmedAt).toEqual(first);
 });
+
+test("confirmSchedule은 scope와 상관없이 schedule_polls.confirmed_at을 남긴다", async () => {
+  for (const scope of ["both", "schedule"] as const) {
+    const m = await setup(scope);
+    const before = Date.now();
+    await confirmSchedule(m.meetingId, m.at("14:00"), m.at("16:00"));
+    const [poll] = await db
+      .select()
+      .from(schedulePolls)
+      .where(eq(schedulePolls.meetingId, m.meetingId));
+    expect(poll.confirmedAt).toBeInstanceOf(Date);
+    expect(poll.confirmedAt?.getTime()).toBeGreaterThanOrEqual(before - 1000);
+  }
+});
+
+test("votes 라우트는 투표판 안의 30분 칸 300개를 받는다", async () => {
+  const { PUT } = await import("@/app/api/meetings/[id]/schedule/votes/route");
+  const { meetingId, participantId } = await setup("both");
+  const meeting = await getMeeting(meetingId);
+  const poll = meeting?.schedulePoll;
+  if (!poll) throw new Error("투표판 없음");
+  const slots: string[] = [];
+  for (const day of poll.dateOptions) {
+    for (let min = poll.startMinute; min < poll.endMinute; min += 30) {
+      const hh = String(Math.floor(min / 60)).padStart(2, "0");
+      const mm = String(min % 60).padStart(2, "0");
+      slots.push(`${day}T${hh}:${mm}:00+09:00`);
+    }
+  }
+  expect(slots.length).toBeGreaterThanOrEqual(300);
+  const res = await PUT(
+    new Request("http://test/votes", {
+      method: "PUT",
+      body: JSON.stringify({ participantId, slots: slots.slice(0, 300) }),
+    }),
+    { params: Promise.resolve({ id: meetingId }) },
+  );
+  expect(res.status).toBe(200);
+  expect(await res.json()).toEqual({ data: { saved: 300 } });
+  const summary = await getScheduleSummary(meetingId);
+  expect(summary.votes[0]?.slots).toHaveLength(300);
+});
