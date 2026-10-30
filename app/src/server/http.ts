@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { ExternalApiError } from "@/server/clients/errors";
 import {
   MeetingFullError,
   MeetingNotFoundError,
@@ -28,6 +29,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],
+  [ExternalApiError, 502],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {
