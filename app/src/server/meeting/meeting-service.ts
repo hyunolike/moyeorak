@@ -159,3 +159,30 @@ export async function joinMeeting(
     return { participantId: row.id, created: true };
   });
 }
+
+export type DeviceParticipant = {
+  participantId: number;
+  name: string;
+  isHost: boolean;
+};
+
+/** 이 기기(deviceKey)로 참여한 사람을 찾는다. 읽기만 하고 아무것도 만들지 않는다. */
+export async function findParticipantByDeviceKey(
+  meetingId: string,
+  deviceKey: string,
+): Promise<DeviceParticipant | null> {
+  const [row] = await db
+    .select({
+      participantId: participants.id,
+      name: participants.name,
+      isHost: participants.isHost,
+    })
+    .from(participants)
+    .where(
+      and(
+        eq(participants.meetingId, meetingId),
+        eq(participants.deviceKey, deviceKey),
+      ),
+    );
+  return row ?? null;
+}

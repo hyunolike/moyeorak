@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { slotInstant } from "@/lib/seoul-time";
 
 export type DragPos = { dateIdx: number; slotIdx: number };
 
@@ -60,15 +61,8 @@ export function useTimetableDragSelection({
 
   const getSlotDate = useCallback(
     (dateIdx: number, slotIdx: number) => {
-      const baseDate = dates[dateIdx];
-      const startMinutes = startTime * 60;
-      const slotMinutes = startMinutes + slotIdx * 30;
-      const hour = Math.floor(slotMinutes / 60);
-      const minutes = slotMinutes % 60;
-
-      const slotDate = new Date(baseDate);
-      slotDate.setHours(hour, minutes, 0, 0);
-      return slotDate;
+      // dates는 서울 자정이다. 브라우저 현지 setHours 대신 분을 더해 서울 슬롯을 만든다.
+      return slotInstant(dates[dateIdx], startTime * 60 + slotIdx * 30);
     },
     [dates, startTime],
   );

@@ -5,6 +5,7 @@ import { resetTestDb } from "@/db/test-utils";
 import { MeetingFullError } from "@/server/meeting/errors";
 import {
   createMeeting,
+  findParticipantByDeviceKey,
   getMeeting,
   joinMeeting,
 } from "@/server/meeting/meeting-service";
@@ -116,4 +117,66 @@ test("joinMeeting은 동시에 들어와도 정원을 넘기지 않는다", asyn
 
 test("getMeeting은 없는 ID에 null", async () => {
   expect(await getMeeting("z".repeat(21))).toBeNull();
+});
+
+test("findParticipantByDeviceKey는 같은 모임의 같은 기기 참여자만 찾고 아무것도 만들지 않는다", async () => {
+  const { meetingId, participantId } = await createMeeting({
+    hostName: "현호",
+    participantCount: 3,
+    scope: "both",
+    deviceKey: key("a"),
+  });
+  const other = await createMeeting({
+    hostName: "민지",
+    participantCount: 3,
+    scope: "both",
+    deviceKey: key("b"),
+  });
+  const guest = await joinMeeting(meetingId, {
+    name: "수아",
+    deviceKey: key("c"),
+  });
+
+  expect(await findParticipantByDeviceKey(meetingId, key("a"))).toEqual({
+    participantId,
+    name: "현호",
+    isHost: true,
+  });
+  expect(await findParticipantByDeviceKey(meetingId, key("c"))).toEqual({
+    participantId: guest.participantId,
+    name: "수아",
+    isHost: false,
+  });
+  expect(await findParticipantByDeviceKey(meetingId, key("b"))).toBeNull();
+  expect(
+    await findParticipantByDeviceKey(other.meetingId, key("a")),
+  ).toBeNull();
+  expect((await getMeeting(meetingId))?.participants).toHaveLength(2);
+});
+
+test("me 라우트는 X-Device-Key로 참여자를 돌려주고, 없으면 404, 키가 틀리면 400", async () => {
+  const { GET } = await import("@/app/api/meetings/[id]/me/route");
+  const { meetingId, participantId } = await createMeeting({
+    hostName: "현호",
+    participantCount: 2,
+    scope: "both",
+    deviceKey: key("a"),
+  });
+  const call = (headers: Record<string, string>) =>
+    GET(new Request("http://test/me", { headers }), {
+      params: Promise.resolve({ id: meetingId }),
+    });
+
+  const found = await call({ "X-Device-Key": key("a") });
+  expect(found.status).toBe(200);
+  expect(await found.json()).toEqual({
+    data: { participantId, name: "현호", isHost: true },
+  });
+
+  const missing = await call({ "X-Device-Key": key("z") });
+  expect(missing.status).toBe(404);
+  expect((await missing.json()).error.code).toBe("PARTICIPANT_NOT_FOUND");
+
+  expect((await call({ "X-Device-Key": "short" })).status).toBe(400);
+  expect((await call({})).status).toBe(400);
 });

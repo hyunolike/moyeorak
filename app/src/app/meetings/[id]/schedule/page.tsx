@@ -1,18 +1,9 @@
-import { Suspense } from "react";
 import { loadMeeting } from "@/app/meetings/[id]/load-meeting";
-import { PageLoading } from "@/components/page-loading";
 import { ScheduleScreen } from "@/components/schedule/schedule-screen";
 
-async function Content({ params }: { params: Promise<{ id: string }> }) {
-  return <ScheduleScreen initialMeeting={await loadMeeting(params)} />;
-}
-
-export default function SchedulePage({
+/** 모임 존재 확인은 스트리밍 전에 끝나야 없는 모임이 404 상태로 응답된다. */
+export default async function SchedulePage({
   params,
 }: PageProps<"/meetings/[id]/schedule">) {
-  return (
-    <Suspense fallback={<PageLoading />}>
-      <Content params={params} />
-    </Suspense>
-  );
+  return <ScheduleScreen initialMeeting={await loadMeeting(params)} />;
 }
