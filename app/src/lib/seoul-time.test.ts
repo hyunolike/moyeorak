@@ -1,4 +1,9 @@
-import { seoulMidnight, seoulParts, slotInstant } from "@/lib/seoul-time";
+import {
+  seoulDayStart,
+  seoulMidnight,
+  seoulParts,
+  slotInstant,
+} from "@/lib/seoul-time";
 
 test("서울 날짜와 분을 브라우저 시간대와 무관한 순간으로 바꾼다", () => {
   const day = seoulMidnight("2026-11-08");
@@ -25,4 +30,15 @@ test("seoulParts는 서울 시각 기준 날짜와 시각, 요일을 돌려준�
     hour: 0,
     minute: 30,
   });
+});
+
+test("seoulDayStart는 서울 날짜의 자정을 돌려준다", () => {
+  // 서울 11/8 00:30 -> 서울 11/8 00:00
+  expect(
+    seoulDayStart(new Date("2026-11-07T15:30:00.000Z")).toISOString(),
+  ).toBe("2026-11-07T15:00:00.000Z");
+  // 서울 11/7 23:59 -> 서울 11/7 00:00
+  expect(
+    seoulDayStart(new Date("2026-11-07T14:59:00.000Z")).toISOString(),
+  ).toBe("2026-11-06T15:00:00.000Z");
 });

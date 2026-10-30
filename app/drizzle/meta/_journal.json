@@ -15,6 +15,13 @@
       "when": 1793344975390,
       "tag": "0001_seed_stations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793349175702,
+      "tag": "0002_cache_and_confirmed_at",
+      "breakpoints": true
     }
   ]
 }

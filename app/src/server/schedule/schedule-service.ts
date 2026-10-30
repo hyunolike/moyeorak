@@ -145,9 +145,14 @@ export async function confirmSchedule(
     const checked = validateSlots(range, poll);
     if (!checked.ok) throw new InvalidSlotsError(checked.invalid);
 
+    // scope=both는 여기서 모임이 confirmed가 되지 않으므로, 확정 시각은 투표판에 남긴다.
     await tx
       .update(schedulePolls)
-      .set({ confirmedStart: start, confirmedEnd: end })
+      .set({
+        confirmedStart: start,
+        confirmedEnd: end,
+        confirmedAt: new Date(),
+      })
       .where(eq(schedulePolls.meetingId, meetingId));
 
     if (meeting.scope === "both") {

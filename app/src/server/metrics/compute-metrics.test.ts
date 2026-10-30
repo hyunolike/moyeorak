@@ -1,4 +1,7 @@
 // @vitest-environment node
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/db/client";
+import { meetings } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import { recordEvent } from "@/server/events/record-event";
 import { createMeeting, joinMeeting } from "@/server/meeting/meeting-service";
@@ -98,4 +101,36 @@ test("computeMetrics: 구간 밖 모임은 세지 않는다", async () => {
     to: new Date(1000),
   });
   expect(m.meetings).toBe(0);
+});
+
+/** 모임 생성 시각을 hours시간 앞으로 옮긴다. */
+async function backdate(meetingId: string, hours: number) {
+  await db
+    .update(meetings)
+    .set({ createdAt: sql`created_at - make_interval(hours => ${hours})` })
+    .where(eq(meetings.id, meetingId));
+}
+
+test("computeMetrics: scope=both는 일정 확정만으로 medianHoursToConfirm이 잡힌다", async () => {
+  const { meetingId } = await make(3, "a", "both");
+  await backdate(meetingId, 1);
+  const day = (await getScheduleSummary(meetingId)).poll.dateOptions[1];
+  await confirmSchedule(
+    meetingId,
+    new Date(`${day}T14:00:00+09:00`),
+    new Date(`${day}T16:00:00+09:00`),
+  );
+  const m = await computeMetrics(range());
+  expect(m.medianHoursToConfirm).toBeGreaterThan(0.99);
+  expect(m.medianHoursToConfirm).toBeLessThan(1.01);
+  expect(m.confirmationRate).toBe(1);
+});
+
+test("computeMetrics: confirmed 이벤트만 있어도 medianHoursToConfirm이 잡힌다", async () => {
+  const { meetingId } = await make(3, "a", "location");
+  await backdate(meetingId, 2);
+  await recordEvent(meetingId, "confirmed");
+  const m = await computeMetrics(range());
+  expect(m.medianHoursToConfirm).toBeGreaterThan(1.99);
+  expect(m.medianHoursToConfirm).toBeLessThan(2.01);
 });

@@ -1,7 +1,7 @@
 import { unstable_rethrow } from "next/navigation";
 import { ZodError } from "zod";
 import { UnauthorizedError } from "@/server/admin-auth";
-import { ExternalApiError } from "@/server/clients/errors";
+import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
   MeetingFullError,
   MeetingNotFoundError,
@@ -32,6 +32,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],
   [ExternalApiError, 502],
+  [RateLimitedError, 429],
   [UnauthorizedError, 401],
 ]);
 
@@ -63,6 +64,24 @@ export async function readJson(req: Request): Promise<unknown> {
   }
 }
 
+/**
+ * 5xx로 끝나는 오류만 남긴다. 4xx는 사용자 입력 문제라 조용히 둔다.
+ * cause와 외부 응답의 상태, 본문 앞부분을 함께 찍어 원인을 따라갈 수 있게 한다.
+ */
+function logServerError(e: unknown) {
+  if (!(e instanceof Error)) {
+    console.error(e);
+    return;
+  }
+  const fields: Record<string, unknown> = {};
+  if (e.cause !== undefined) fields.cause = e.cause;
+  if (e instanceof ExternalApiError) {
+    if (e.status !== undefined) fields.status = e.status;
+    if (e.bodySnippet !== undefined) fields.bodySnippet = e.bodySnippet;
+  }
+  console.error(e, fields);
+}
+
 export async function toResponse(
   fn: () => Promise<unknown>,
   opts: { status?: number } = {},
@@ -82,10 +101,11 @@ export async function toResponse(
     }
     for (const [cls, status] of errorStatus) {
       if (e instanceof cls) {
+        if (status >= 500) logServerError(e);
         return errorResponse(status, e.code ?? "ERROR", e.message, e.details);
       }
     }
-    console.error(e);
+    logServerError(e);
     return errorResponse(500, "INTERNAL", "서버에 문제가 생겼어요");
   }
 }

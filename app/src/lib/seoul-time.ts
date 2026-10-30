@@ -13,6 +13,13 @@ export function seoulMidnight(dateOption: string): Date {
   return new Date(Date.UTC(y, m - 1, d) - SEOUL_OFFSET_MS);
 }
 
+/** date가 속한 서울 날짜의 자정 순간 */
+export function seoulDayStart(date: Date): Date {
+  const day = 24 * 60 * MINUTE_MS;
+  const shifted = date.getTime() + SEOUL_OFFSET_MS;
+  return new Date(Math.floor(shifted / day) * day - SEOUL_OFFSET_MS);
+}
+
 /** 서울 자정(day)에서 minuteOfDay분 지난 순간 */
 export function slotInstant(day: Date, minuteOfDay: number): Date {
   return new Date(day.getTime() + minuteOfDay * MINUTE_MS);

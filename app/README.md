@@ -23,6 +23,7 @@
 | `KAKAO_API_KEY`               | Kakao Local 장소 검색                                                       |
 | `ODSAY_API_KEY`               | ODsay 대중교통 경로 (다음 단계에서 사용)                                    |
 | `NEXT_PUBLIC_NAVER_CLIENT_ID` | 네이버 지도 클라이언트 ID                                                   |
+| `MIDPOINT_DAILY_CAP`          | 모임 하나가 하루에 새로 계산할 수 있는 중간지점 추천 수. 비우면 30          |
 
 외부 API 키가 없으면 `MOCK_EXTERNAL=1`을 붙여 실행합니다. Google Routes와 Kakao 클라이언트가 가짜 데이터를 돌려줘서 키 없이도 전체 흐름을 볼 수 있습니다.
 
@@ -130,7 +131,7 @@ e2e는 개발 서버를 `MOCK_EXTERNAL=1`로 직접 띄우기 때문에 외부 A
 
 ```text
 app
-├── drizzle/           마이그레이션 SQL (0000_init, 0001_seed_stations)
+├── drizzle/           마이그레이션 SQL (0000_init, 0001_seed_stations, 0002_cache_and_confirmed_at)
 ├── e2e/               Playwright 시나리오
 ├── scripts/           역 시드 변환 스크립트
 ├── public/
@@ -160,4 +161,5 @@ Vercel과 Neon을 쓰는 배포입니다. 호스트 계정이 있어야 해서 �
 - `drizzle/0000_init.sql`은 `geometry(Point, 4326)` 컬럼을 손으로 고쳐 두었습니다. `pnpm db:generate`로 다시 만들면 이 수정이 사라지니 0000 마이그레이션은 재생성하지 않습니다.
 - `next.config.ts`에서 `cacheComponents`를 껐습니다. 켜면 없는 모임 링크도 스트리밍이 시작된 뒤에야 오류가 나서 200 상태로 응답합니다. 끄면 진짜 404가 나갑니다.
 - 모임 시간은 모두 서울 시각 기준입니다. 서버가 서울 시각으로 슬롯을 검증하므로 브라우저 시간대가 달라도 같은 슬롯을 가리킵니다.
+- 외부 API 응답은 `external_cache` 테이블에 둡니다. 중간지점 추천은 출발지와 10분 단위 출발 시각이 같으면 1시간, 장소 검색은 같은 검색어면 24시간 동안 다시 부르지 않습니다. 모임 하나가 서울 기준 하루에 새로 계산하는 추천은 30번(`MIDPOINT_DAILY_CAP`)까지이고, 넘으면 아직 유효한 최근 결과를 돌려주거나 그것도 없으면 429를 냅니다. `MOCK_EXTERNAL=1`이면 장소 검색은 캐시를 거치지 않습니다.
 - 예전 주소 `/meetings/{id}/location`은 `/meetings/{id}/location/votes`로 리다이렉트됩니다.
