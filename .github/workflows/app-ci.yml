@@ -19,7 +19,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U moyeolak -d moyeorak_test"
+          --health-cmd "pg_isready -h localhost -U moyeolak -d moyeorak_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -42,8 +42,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: PostGIS 확장과 마이그레이션
         run: |
-          docker exec "$(docker ps -q --filter ancestor=postgis/postgis:15-3.3)" \
-            psql -U moyeolak -d moyeorak_test -c "CREATE EXTENSION IF NOT EXISTS postgis"
+          psql "$DATABASE_URL_TEST" -c "CREATE EXTENSION IF NOT EXISTS postgis"
           pnpm db:migrate
       - run: pnpm check
       - run: pnpm test
