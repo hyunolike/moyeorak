@@ -194,6 +194,21 @@ test("meId가 null이면 guide이고 참여하기를 권한다", () => {
   );
 });
 
+test("확정된 모임을 처음 연 사람에게도 확정 안내가 먼저다", () => {
+  const p = progress({
+    status: "confirmed",
+    confirmedStart: "2026-11-09T10:00:00.000Z",
+    confirmedPlace: "강남역",
+  });
+  const s = homeState(p, null);
+  expect(s.expression).toBe("celebrate");
+  expect(s.message).toBe(confirmedSentence(p));
+  expect(s.action).toEqual({
+    label: "약속 확인하기",
+    href: "/meetings/m1/schedule",
+  });
+});
+
 describe("confirmedSentence", () => {
   const at = (iso: string, place: string | null = null) =>
     confirmedSentence(
