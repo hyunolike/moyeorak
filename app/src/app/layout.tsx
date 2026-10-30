@@ -22,7 +22,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className="h-full antialiased">
+    // 다크 모드는 화면을 새로 디자인하는 2단계 전까지 끈다.
+    <html lang="ko" data-theme="light" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
       </body>

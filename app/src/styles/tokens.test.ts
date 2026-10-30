@@ -15,3 +15,8 @@ test("0단계 이름이 새 역할 토큰을 가리킨다", () => {
   expect(css).toMatch(/--color-k-900:\s*var\(--color-text\)/);
   expect(css).not.toContain("#4181ff");
 });
+
+test("layout 이 html 을 밝은 테마로 고정한다", () => {
+  const layout = readFileSync(resolve(__dirname, "../app/layout.tsx"), "utf8");
+  expect(layout).toMatch(/<html[^>]*data-theme="light"/);
+});
