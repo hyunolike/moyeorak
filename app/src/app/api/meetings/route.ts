@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { toResponse } from "@/server/http";
+import { readJson, toResponse } from "@/server/http";
 import { createMeeting } from "@/server/meeting/meeting-service";
 
 const body = z.object({
@@ -10,7 +10,10 @@ const body = z.object({
 });
 
 export async function POST(req: Request) {
-  return toResponse(async () => createMeeting(body.parse(await req.json())), {
-    status: 201,
-  });
+  return toResponse(
+    async () => createMeeting(body.parse(await readJson(req))),
+    {
+      status: 201,
+    },
+  );
 }

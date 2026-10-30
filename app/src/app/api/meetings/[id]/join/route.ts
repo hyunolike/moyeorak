@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { toResponse } from "@/server/http";
+import { readJson, toResponse } from "@/server/http";
 import { joinMeeting } from "@/server/meeting/meeting-service";
 
 const body = z.object({
@@ -13,6 +13,6 @@ export async function POST(
 ) {
   return toResponse(async () => {
     const { id } = await params;
-    return joinMeeting(id, body.parse(await req.json()));
+    return joinMeeting(id, body.parse(await readJson(req)));
   });
 }
