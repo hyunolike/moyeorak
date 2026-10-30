@@ -1,4 +1,4 @@
-import { ExternalApiError } from "@/server/clients/errors";
+import { ExternalApiError, fetchJson } from "@/server/clients/errors";
 
 export type Place = { label: string; lat: number; lng: number };
 
@@ -15,15 +15,11 @@ export async function searchPlaces(keyword: string): Promise<Place[]> {
   if (!apiKey) throw new ExternalApiError();
 
   const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(keyword)}&size=10`;
-  const res = await fetch(url, {
+  const body = (await fetchJson(url, {
     headers: { Authorization: `KakaoAK ${apiKey}` },
-  });
-  if (!res.ok) throw new ExternalApiError();
-
-  const body = (await res.json()) as {
-    documents?: { place_name: string; x: string; y: string }[];
-  };
-  return (body.documents ?? []).map((d) => ({
+  })) as { documents?: { place_name: string; x: string; y: string }[] } | null;
+  if (!body || !Array.isArray(body.documents)) throw new ExternalApiError();
+  return body.documents.map((d) => ({
     label: d.place_name,
     lat: Number(d.y),
     lng: Number(d.x),
