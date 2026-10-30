@@ -131,3 +131,78 @@ test("MOCK_EXTERNAL=1이면 fetch 없이 거리 기반 분을 돌려준다", asy
   expect(m1[0]?.[0]).toBeGreaterThan(0);
   expect(m1[0]?.[1]).toBe(0);
 });
+
+test("originIndex가 생략된 원소는 청크 첫 행으로 채운다", async () => {
+  const origins = Array.from({ length: 12 }, (_, i) => pt(i));
+  const dests = Array.from({ length: 10 }, (_, i) => pt(20 + i));
+  const fetchMock = vi.fn().mockImplementation(async (_u, init) => {
+    const body = JSON.parse((init as RequestInit).body as string);
+    const els = [];
+    for (let o = 0; o < body.origins.length; o++) {
+      for (let d = 0; d < body.destinations.length; d++) {
+        const el: Record<string, number | string> = {
+          destinationIndex: d,
+          duration: "60s",
+        };
+        if (o !== 0) el.originIndex = o;
+        if (d === 0) delete el.destinationIndex;
+        els.push(el);
+      }
+    }
+    // 두 번째 청크(출발지 10, 11) 첫 행의 1번 열에 구분용 값을 둔다.
+    if (body.origins.length === 2) {
+      const target = els.find(
+        (e) => e.originIndex === undefined && e.destinationIndex === 1,
+      );
+      if (target) target.duration = "300s";
+    }
+    return okResponse(els);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  const m = await computeTransitMatrix(origins, dests, departAt);
+  expect(m[10]?.[1]).toBe(5);
+  expect(m[0]?.[1]).toBe(1);
+});
+
+test("알아볼 수 없는 원소가 있으면 ExternalApiError", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue(okResponse([{ originIndex: 0, destinationIndex: 0 }])),
+  );
+  await expect(
+    computeTransitMatrix([pt(0)], [pt(1)], departAt),
+  ).rejects.toBeInstanceOf(ExternalApiError);
+});
+
+test("응답 원소가 모자라면 ExternalApiError", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue(
+        okResponse([{ originIndex: 0, destinationIndex: 0, duration: "60s" }]),
+      ),
+  );
+  await expect(
+    computeTransitMatrix([pt(0)], [pt(1), pt(2)], departAt),
+  ).rejects.toBeInstanceOf(ExternalApiError);
+});
+
+test("200이어도 JSON이 깨졌으면 ExternalApiError", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response("not json", { status: 200 })),
+  );
+  await expect(
+    computeTransitMatrix([pt(0)], [pt(1)], departAt),
+  ).rejects.toBeInstanceOf(ExternalApiError);
+});
+
+test("fetch가 거부되면 ExternalApiError", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("network")));
+  await expect(
+    computeTransitMatrix([pt(0)], [pt(1)], departAt),
+  ).rejects.toBeInstanceOf(ExternalApiError);
+});

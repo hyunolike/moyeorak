@@ -1,4 +1,4 @@
-import { ExternalApiError } from "@/server/clients/errors";
+import { ExternalApiError, fetchJson } from "@/server/clients/errors";
 import { haversineMeters, type LatLng } from "@/server/clients/geo";
 
 const URL =
@@ -30,7 +30,7 @@ async function requestChunk(
   departAt: Date,
   apiKey: string,
 ): Promise<Element[]> {
-  const res = await fetch(URL, {
+  const body = await fetchJson(URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,9 +44,12 @@ async function requestChunk(
       departureTime: departAt.toISOString(),
     }),
   });
-  if (!res.ok) throw new ExternalApiError();
-  const body: unknown = await res.json();
-  if (!Array.isArray(body)) throw new ExternalApiError();
+  // 빠진 칸이 "경로 없음"으로 읽히면 안 되므로 개수가 정확해야 한다.
+  if (
+    !Array.isArray(body) ||
+    body.length !== origins.length * destinations.length
+  )
+    throw new ExternalApiError();
   return body as Element[];
 }
 
@@ -84,9 +87,14 @@ export async function computeTransitMatrix(
       // 응답에서 originIndex 0은 JSON 직렬화 때 생략될 수 있다.
       const row = matrix[start + (el.originIndex ?? 0)];
       const col = el.destinationIndex ?? 0;
-      if (!row || col >= row.length) continue;
-      row[col] =
-        el.condition === "ROUTE_NOT_FOUND" ? null : toMinutes(el.duration);
+      if (!row || col >= row.length) throw new ExternalApiError();
+      if (el.condition === "ROUTE_NOT_FOUND") {
+        row[col] = null;
+        continue;
+      }
+      const minutes = toMinutes(el.duration);
+      if (minutes === null) throw new ExternalApiError();
+      row[col] = minutes;
     }
   }
   return matrix;

@@ -52,3 +52,21 @@ test("MOCK_EXTERNAL=1이면 고정된 3곳을 돌려준다", async () => {
   expect(places).toHaveLength(3);
   expect(fetchMock).not.toHaveBeenCalled();
 });
+
+test("searchPlaces는 JSON이 깨졌거나 documents가 배열이 아니면 ExternalApiError", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response("not json", { status: 200 })),
+  );
+  await expect(searchPlaces("x")).rejects.toBeInstanceOf(ExternalApiError);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response("{}", { status: 200 })),
+  );
+  await expect(searchPlaces("x")).rejects.toBeInstanceOf(ExternalApiError);
+});
+
+test("searchPlaces는 fetch가 거부되면 ExternalApiError", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("network")));
+  await expect(searchPlaces("x")).rejects.toBeInstanceOf(ExternalApiError);
+});
