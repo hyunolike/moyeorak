@@ -14,12 +14,15 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.105.0",
+    "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.4",
     "nanoid": "^6.0.2",
     "next": "16.4.3",
     "postgres": "^4.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
