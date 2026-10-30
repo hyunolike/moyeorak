@@ -9,6 +9,22 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_USER: moyeolak
+          POSTGRES_PASSWORD: moyeolak
+          POSTGRES_DB: moyeorak_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U moyeolak -d moyeorak_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgres://moyeolak:moyeolak@localhost:5432/moyeorak_test
     defaults:
       run:
         working-directory: app
@@ -24,6 +40,11 @@ jobs:
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - name: PostGIS 확장과 마이그레이션
+        run: |
+          docker exec "$(docker ps -q --filter ancestor=postgis/postgis:15-3.3)" \
+            psql -U moyeolak -d moyeorak_test -c "CREATE EXTENSION IF NOT EXISTS postgis"
+          pnpm db:migrate
       - run: pnpm check
       - run: pnpm test
       - run: pnpm build
