@@ -3,8 +3,14 @@ import {
   MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
+import { InvalidSlotsError } from "@/server/schedule/errors";
 
-type ErrorClass = new (...args: never[]) => Error & { code?: string };
+type ErrorClass = new (
+  ...args: never[]
+) => Error & {
+  code?: string;
+  details?: Record<string, unknown>;
+};
 
 /**
  * 도메인 오류 클래스 -> HTTP 상태. 다른 Task는 registerError로 항목을 더한다.
@@ -13,6 +19,7 @@ type ErrorClass = new (...args: never[]) => Error & { code?: string };
 const errorStatus = new Map<ErrorClass, number>([
   [MeetingNotFoundError, 404],
   [MeetingFullError, 409],
+  [InvalidSlotsError, 400],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {
@@ -23,12 +30,9 @@ function errorResponse(
   status: number,
   code: string,
   message: string,
-  issues?: unknown,
+  extra?: Record<string, unknown>,
 ) {
-  return Response.json(
-    { error: { code, message, ...(issues ? { issues } : {}) } },
-    { status },
-  );
+  return Response.json({ error: { code, message, ...extra } }, { status });
 }
 
 /** 본문이 비었거나 JSON이 아니면 zod 실패와 같은 경로(400)로 보낸다. */
@@ -59,12 +63,12 @@ export async function toResponse(
         400,
         "INVALID_REQUEST",
         "요청 내용이 올바르지 않아요",
-        e.issues,
+        { issues: e.issues },
       );
     }
     for (const [cls, status] of errorStatus) {
       if (e instanceof cls) {
-        return errorResponse(status, e.code ?? "ERROR", e.message);
+        return errorResponse(status, e.code ?? "ERROR", e.message, e.details);
       }
     }
     console.error(e);
