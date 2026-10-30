@@ -190,7 +190,7 @@ test("meId가 null이면 guide이고 참여하기를 권한다", () => {
     href: "/meetings/m1/schedule",
   });
   expect(homeState(progress({ status: "locating" }), null).action?.href).toBe(
-    "/meetings/m1/location/stations",
+    "/meetings/m1/location/votes",
   );
 });
 

@@ -70,25 +70,14 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
 
   const votedNow = (x: Participant) =>
     p.status === "locating" ? x.votedLocation : x.votedSchedule;
-  const stageHref = (suffix: "votes" | "result") =>
-    p.status === "locating"
-      ? `/meetings/${id}/location/${suffix === "votes" ? "votes" : "stations"}`
-      : `/meetings/${id}/schedule${suffix === "votes" ? "/votes" : ""}`;
-
-  if (meId === null) {
-    return {
-      ...base,
-      expression: "guide",
-      message: `${p.hostName}님이 약속을 잡고 있어요. 이름을 남기고 함께 정해요.`,
-      action: {
-        label: "참여하기",
-        href:
-          current === "location"
-            ? `/meetings/${id}/location/stations`
-            : `/meetings/${id}/schedule`,
-      },
-    };
-  }
+  const votesHref =
+    current === "location"
+      ? `/meetings/${id}/location/votes`
+      : `/meetings/${id}/schedule/votes`;
+  const resultHref =
+    current === "location"
+      ? `/meetings/${id}/location/stations`
+      : `/meetings/${id}/schedule`;
 
   if (p.status === "confirmed") {
     return {
@@ -99,14 +88,26 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
     };
   }
 
+  if (meId === null) {
+    return {
+      ...base,
+      expression: "guide",
+      message: `${p.hostName}님이 약속을 잡고 있어요. 이름을 남기고 함께 정해요.`,
+      action: {
+        label: "참여하기",
+        href: current === "location" ? votesHref : resultHref,
+      },
+    };
+  }
+
   const n = p.participants.filter(votedNow).length;
   const m = p.participantCount;
   const me = p.participants.find((x) => x.id === meId);
   const meResponded = me ? votedNow(me) : false;
   const respondAction: Action =
     p.status === "locating"
-      ? { label: "출발지 남기기", href: stageHref("votes") }
-      : { label: "가능한 시간 남기기", href: stageHref("votes") };
+      ? { label: "출발지 남기기", href: votesHref }
+      : { label: "가능한 시간 남기기", href: votesHref };
   const myAction: Action = meResponded
     ? { label: "친구에게 링크 보내기", href: "#share" }
     : respondAction;
@@ -116,7 +117,7 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
       ...base,
       expression: "happy",
       message: "모두 응답했어요. 결과를 확인해 볼까요?",
-      action: { label: "결과 보기", href: stageHref("result") },
+      action: { label: "결과 보기", href: resultHref },
     };
   }
   if (n === 0) {

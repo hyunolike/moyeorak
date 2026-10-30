@@ -27,8 +27,6 @@ export type MeetingProgress = {
   confirmedPlace: string | null;
 };
 
-// 서브쿼리 안에서 drizzle이 바깥 컬럼의 테이블 이름을 빼 버려 id가 투표 행의 id로 풀리므로
-// 바깥 참여자 id는 `participants.id`로 직접 쓴다.
 /** 홈 화면용 진행 현황. 참여자 목록 쿼리 한 번에 투표 여부를 EXISTS로 붙인다. */
 export async function getMeetingProgress(
   meetingId: string,
@@ -39,6 +37,8 @@ export async function getMeetingProgress(
     .where(eq(meetings.id, meetingId));
   if (!meeting) return null;
 
+  // 서브쿼리 안에서 drizzle이 바깥 컬럼의 테이블 이름을 빼 버려 id가 투표 행의 id로 풀리므로
+  // 바깥 참여자 id는 `participants.id`로 직접 쓴다.
   const [people, [poll], [place]] = await Promise.all([
     db
       .select({
