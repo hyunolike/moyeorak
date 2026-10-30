@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   Departure,
   Meeting,
+  MeetingProgress,
   Midpoint,
   Place,
   ScheduleSummary,
@@ -59,6 +60,7 @@ const json = (method: string, body: unknown): RequestInit => ({
 
 export const keys = {
   meeting: (id: string) => ["meeting", id] as const,
+  progress: (id: string) => ["progress", id] as const,
   me: (id: string) => ["me", id] as const,
   summary: (id: string) => ["summary", id] as const,
   departures: (id: string) => ["departures", id] as const,
@@ -70,6 +72,17 @@ export function useMeeting(id: string, initialData?: Meeting) {
     queryKey: keys.meeting(id),
     queryFn: () => apiFetch<Meeting>(`/api/meetings/${id}`),
     initialData,
+  });
+}
+
+/** 15초마다 새로 읽고, 창이 숨겨지면 멈춘다. */
+export function useMeetingProgress(id: string, initialData?: MeetingProgress) {
+  return useQuery({
+    queryKey: keys.progress(id),
+    queryFn: () => apiFetch<MeetingProgress>(`/api/meetings/${id}/progress`),
+    initialData,
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
   });
 }
 
