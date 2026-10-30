@@ -1,0 +1,211 @@
+{
+  "checked": 41,
+  "failures": 0,
+  "sizes": {
+    "app-icon/icon-1024.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "app-icon/icon-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "app-icon/icon-192.png": {
+      "expected": "192x192",
+      "actual": "192x192",
+      "pass": true
+    },
+    "app-icon/apple-touch-180.png": {
+      "expected": "180x180",
+      "actual": "180x180",
+      "pass": true
+    },
+    "app-icon/maskable-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "app-icon/favicon-32.png": {
+      "expected": "32x32",
+      "actual": "32x32",
+      "pass": true
+    },
+    "app-icon/favicon-16.png": {
+      "expected": "16x16",
+      "actual": "16x16",
+      "pass": true
+    },
+    "og/og-default.png": {
+      "expected": "1200x630",
+      "actual": "1200x630",
+      "pass": true
+    },
+    "mockups/01-landing.png": {
+      "expected": "780x1688",
+      "actual": "780x1688",
+      "pass": true
+    },
+    "mockups/02-meeting-home.png": {
+      "expected": "780x1688",
+      "actual": "780x1688",
+      "pass": true
+    },
+    "mockups/02-meeting-home-dark.png": {
+      "expected": "780x1688",
+      "actual": "780x1688",
+      "pass": true
+    },
+    "mockups/03-time-input.png": {
+      "expected": "780x1688",
+      "actual": "780x1688",
+      "pass": true
+    },
+    "mockups/04-suggestion.png": {
+      "expected": "780x1688",
+      "actual": "780x1688",
+      "pass": true
+    },
+    "mockups/05-confirmed.png": {
+      "expected": "780x1688",
+      "actual": "780x1688",
+      "pass": true
+    },
+    "character/3d/default.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/default-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/default-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "character/3d/thinking.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/thinking-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/thinking-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "character/3d/waiting.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/waiting-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/waiting-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "character/3d/happy.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/happy-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/happy-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "character/3d/sorry.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/sorry-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/sorry-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "character/3d/guide.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/guide-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/guide-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "character/3d/celebrate.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/celebrate-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/celebrate-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "character/3d/sleepy.png": {
+      "expected": "1024x1024",
+      "actual": "1024x1024",
+      "pass": true
+    },
+    "character/3d/sleepy-512.png": {
+      "expected": "512x512",
+      "actual": "512x512",
+      "pass": true
+    },
+    "character/3d/sleepy-256.png": {
+      "expected": "256x256",
+      "actual": "256x256",
+      "pass": true
+    },
+    "scenes/3d/landing-hero.png": {
+      "expected": "1200x900",
+      "actual": "1200x900",
+      "pass": true
+    },
+    "scenes/3d/empty-state.png": {
+      "expected": "1200x900",
+      "actual": "1200x900",
+      "pass": true
+    },
+    "scenes/3d/error-state.png": {
+      "expected": "1200x900",
+      "actual": "1200x900",
+      "pass": true
+    }
+  }
+}

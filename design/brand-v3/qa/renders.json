@@ -1,0 +1,947 @@
+{
+  "app-icon/apple-touch-180.png": {
+    "width": 180,
+    "height": 180,
+    "hasAlpha": true,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "app-icon/favicon-16.png": {
+    "width": 16,
+    "height": 16,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 152.3
+  },
+  "app-icon/favicon-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 152.9
+  },
+  "app-icon/icon-1024.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "app-icon/icon-192.png": {
+    "width": 192,
+    "height": 192,
+    "hasAlpha": true,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "app-icon/icon-2d.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 244.4
+  },
+  "app-icon/icon-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "app-icon/icon-render.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 144.6
+  },
+  "app-icon/maskable-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "brand-board.png": {
+    "width": 2000,
+    "height": 1860,
+    "hasAlpha": true,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/celebrate-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/celebrate.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/default-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/default.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/guide-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/guide.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/happy-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/happy.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/sleepy-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/sleepy.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/sorry-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/sorry.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/thinking-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/thinking.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/waiting-32.png": {
+    "width": 32,
+    "height": 32,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/avatar/waiting.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/construction.png": {
+    "width": 960,
+    "height": 520,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/expression-sheet.png": {
+    "width": 1440,
+    "height": 640,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "character/2d/expressions/celebrate.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 105.1
+  },
+  "character/2d/expressions/default.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 96.3
+  },
+  "character/2d/expressions/guide.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 96.8
+  },
+  "character/2d/expressions/happy.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 98
+  },
+  "character/2d/expressions/sleepy.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 89.3
+  },
+  "character/2d/expressions/sorry.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 89
+  },
+  "character/2d/expressions/thinking.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 91.7
+  },
+  "character/2d/expressions/waiting.png": {
+    "width": 240,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 89.5
+  },
+  "character/3d/celebrate-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.8
+  },
+  "character/3d/celebrate-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.8
+  },
+  "character/3d/celebrate.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.8
+  },
+  "character/3d/default-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.1
+  },
+  "character/3d/default-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.1
+  },
+  "character/3d/default-front.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 77.9
+  },
+  "character/3d/default-side.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 32.1
+  },
+  "character/3d/default.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.1
+  },
+  "character/3d/guide-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.8
+  },
+  "character/3d/guide-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.8
+  },
+  "character/3d/guide.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.8
+  },
+  "character/3d/happy-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.6
+  },
+  "character/3d/happy-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.6
+  },
+  "character/3d/happy.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.6
+  },
+  "character/3d/sleepy-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.1
+  },
+  "character/3d/sleepy-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.1
+  },
+  "character/3d/sleepy.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.1
+  },
+  "character/3d/sorry-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 81.3
+  },
+  "character/3d/sorry-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 81.3
+  },
+  "character/3d/sorry.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 81.3
+  },
+  "character/3d/thinking-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.2
+  },
+  "character/3d/thinking-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.2
+  },
+  "character/3d/thinking.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.2
+  },
+  "character/3d/turntable/000.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 83.9
+  },
+  "character/3d/turntable/030.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 81.6
+  },
+  "character/3d/turntable/060.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 65.8
+  },
+  "character/3d/turntable/090.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 39.9
+  },
+  "character/3d/turntable/120.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 64.6
+  },
+  "character/3d/turntable/150.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 80.5
+  },
+  "character/3d/turntable/180.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.8
+  },
+  "character/3d/turntable/210.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 80.5
+  },
+  "character/3d/turntable/240.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 64.4
+  },
+  "character/3d/turntable/270.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 39.9
+  },
+  "character/3d/turntable/300.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 66.1
+  },
+  "character/3d/turntable/330.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 81.6
+  },
+  "character/3d/waiting-256.png": {
+    "width": 256,
+    "height": 256,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.3
+  },
+  "character/3d/waiting-512.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.3
+  },
+  "character/3d/waiting.png": {
+    "width": 1024,
+    "height": 1024,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 82.3
+  },
+  "logo/construction.png": {
+    "width": 720,
+    "height": 420,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "logo/lockup-horizontal-mono-black.png": {
+    "width": 336,
+    "height": 112,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 64.3
+  },
+  "logo/lockup-horizontal-mono-white.png": {
+    "width": 336,
+    "height": 112,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 64.3
+  },
+  "logo/lockup-horizontal.png": {
+    "width": 336,
+    "height": 112,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 72.2
+  },
+  "logo/lockup-vertical.png": {
+    "width": 241,
+    "height": 260,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 65.8
+  },
+  "logo/symbol-mono-black.png": {
+    "width": 160,
+    "height": 160,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 120.7
+  },
+  "logo/symbol-mono-white.png": {
+    "width": 160,
+    "height": 160,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 120.7
+  },
+  "logo/symbol.png": {
+    "width": 160,
+    "height": 160,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 153
+  },
+  "logo/wordmark-en.png": {
+    "width": 330,
+    "height": 85,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 56.7
+  },
+  "logo/wordmark-ko.png": {
+    "width": 233,
+    "height": 101,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 68.6
+  },
+  "mockups/01-landing.png": {
+    "width": 780,
+    "height": 1688,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "mockups/02-meeting-home-dark.png": {
+    "width": 780,
+    "height": 1688,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "mockups/02-meeting-home.png": {
+    "width": 780,
+    "height": 1688,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "mockups/03-time-input.png": {
+    "width": 780,
+    "height": 1688,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "mockups/04-suggestion.png": {
+    "width": 780,
+    "height": 1688,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "mockups/05-confirmed.png": {
+    "width": 780,
+    "height": 1688,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "og/og-default.png": {
+    "width": 1200,
+    "height": 630,
+    "hasAlpha": false,
+    "opaque": true,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 255
+  },
+  "props/3d/calendar-tile.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 81.2
+  },
+  "props/3d/chat-bubble.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 73.1
+  },
+  "props/3d/clock-tile.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 75.1
+  },
+  "props/3d/map-pin.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 57.6
+  },
+  "props/3d/station-sign.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 55.5
+  },
+  "props/3d/three-dots-converging.png": {
+    "width": 512,
+    "height": 512,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 42.3
+  },
+  "scenes/3d/empty-state.png": {
+    "width": 1200,
+    "height": 900,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 53.1
+  },
+  "scenes/3d/error-state.png": {
+    "width": 1200,
+    "height": 900,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 39.3
+  },
+  "scenes/3d/landing-hero.png": {
+    "width": 1200,
+    "height": 900,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 48
+  },
+  "ui/empty-state.png": {
+    "width": 720,
+    "height": 600,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 57
+  },
+  "ui/error-state.png": {
+    "width": 720,
+    "height": 600,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 48.1
+  },
+  "ui/loading.png": {
+    "width": 288,
+    "height": 240,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 50.5
+  },
+  "ui/speech-bubble.png": {
+    "width": 720,
+    "height": 264,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 225.7
+  },
+  "ui/suggestion-badge.png": {
+    "width": 292,
+    "height": 64,
+    "hasAlpha": true,
+    "opaque": false,
+    "visible": true,
+    "alphaMax": 255,
+    "alphaMean": 242.9
+  }
+}

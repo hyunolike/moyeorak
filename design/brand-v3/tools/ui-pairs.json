@@ -1,0 +1,223 @@
+{
+  "source": "tools/build-ui.mjs",
+  "standard": "WCAG 2.x relative luminance; normal text AA 4.5:1",
+  "pairs": [
+    {
+      "theme": "light",
+      "foreground": "#202923",
+      "background": "#FAF9F6",
+      "usage": "main text on bg",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#625D54",
+      "background": "#FAF9F6",
+      "usage": "supporting text on bg",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#202923",
+      "background": "#FFFFFF",
+      "usage": "main text on paper",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#625D54",
+      "background": "#FFFFFF",
+      "usage": "supporting text on paper",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#202923",
+      "background": "#EAF6F0",
+      "usage": "main text on selected",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#625D54",
+      "background": "#EAF6F0",
+      "usage": "supporting text on selected",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#176B5B",
+      "background": "#FAF9F6",
+      "usage": "action text on bg",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#176B5B",
+      "background": "#FFFFFF",
+      "usage": "action text on paper",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#176B5B",
+      "background": "#EAF6F0",
+      "usage": "action text on selected",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#FFFFFF",
+      "background": "#176B5B",
+      "usage": "primary button",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#FFFFFF",
+      "background": "#125749",
+      "usage": "primary hover",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#FFFFFF",
+      "background": "#10483D",
+      "usage": "primary pressed",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#625D54",
+      "background": "#E4E0D8",
+      "usage": "disabled controls (included for readability; WCAG exception)",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#44371A",
+      "background": "#F3CF58",
+      "usage": "assistant badge / best slot",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#44371A",
+      "background": "#FFFBEA",
+      "usage": "landing quote mark",
+      "minimum": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "#AD3422",
+      "background": "#FFFFFF",
+      "usage": "input and speech error",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#FAF9F6",
+      "background": "#24221F",
+      "usage": "main text on bg",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#CCC6BC",
+      "background": "#24221F",
+      "usage": "supporting text on bg",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#FAF9F6",
+      "background": "#312E2A",
+      "usage": "main text on paper",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#CCC6BC",
+      "background": "#312E2A",
+      "usage": "supporting text on paper",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#FAF9F6",
+      "background": "#103A32",
+      "usage": "main text on selected",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#CCC6BC",
+      "background": "#103A32",
+      "usage": "supporting text on selected",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#7DD4B5",
+      "background": "#24221F",
+      "usage": "action text on bg",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#7DD4B5",
+      "background": "#312E2A",
+      "usage": "action text on paper",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#7DD4B5",
+      "background": "#103A32",
+      "usage": "action text on selected",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#202923",
+      "background": "#7DD4B5",
+      "usage": "primary button",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#202923",
+      "background": "#A8D9C3",
+      "usage": "primary hover",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#202923",
+      "background": "#D2EDDF",
+      "usage": "primary pressed",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#CCC6BC",
+      "background": "#4B4741",
+      "usage": "disabled controls (included for readability; WCAG exception)",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#44371A",
+      "background": "#F3CF58",
+      "usage": "assistant badge / best slot",
+      "minimum": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "#FFBBA8",
+      "background": "#312E2A",
+      "usage": "input and speech error",
+      "minimum": 4.5
+    }
+  ]
+}

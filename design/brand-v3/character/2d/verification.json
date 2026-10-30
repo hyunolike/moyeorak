@@ -1,0 +1,454 @@
+{
+  "svgXML": "pass: 29 SVGs across character/2d and logo",
+  "localSvgReferences": "pass",
+  "wordmarkGeometry": "pass: ko/en files byte-identical to v2",
+  "smallAvatars": "8 outputs at 32×32 with full opaque square background; all mouth shapes visually inspected",
+  "visualInspection": "expression-sheet.png and horizontal lockup inspected; no clipped full-figure silhouettes, all 8 mouths visible at 32px",
+  "humanNaiveRecognition": "pending: independent human feedback has not been received",
+  "tokens": "JSON parsed; all DTCG token aliases resolved; CSS supports root/nested data-theme and OS dark fallback",
+  "renders": [
+    {
+      "path": "avatar/celebrate-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/celebrate.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/default-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/default.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/guide-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/guide.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/happy-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/happy.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/sleepy-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/sleepy.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/sorry-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/sorry.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/thinking-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/thinking.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/waiting-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "avatar/waiting.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        240,
+        240
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "construction.png",
+      "size": [
+        960,
+        520
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        960,
+        520
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "expression-sheet.png",
+      "size": [
+        1440,
+        640
+      ],
+      "alphaBounds": [
+        0,
+        0,
+        1440,
+        640
+      ],
+      "alphaRange": [
+        255,
+        255
+      ]
+    },
+    {
+      "path": "expressions/celebrate.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        25,
+        19,
+        224,
+        205
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "path": "expressions/default.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        26,
+        43,
+        213,
+        210
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "path": "expressions/guide.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        26,
+        41,
+        220,
+        211
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "path": "expressions/happy.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        14,
+        40,
+        216,
+        210
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "path": "expressions/sleepy.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        44,
+        37,
+        202,
+        210
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "path": "expressions/sorry.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        48,
+        40,
+        197,
+        211
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "path": "expressions/thinking.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        34,
+        40,
+        193,
+        213
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    },
+    {
+      "path": "expressions/waiting.png",
+      "size": [
+        240,
+        240
+      ],
+      "alphaBounds": [
+        45,
+        43,
+        195,
+        210
+      ],
+      "alphaRange": [
+        0,
+        255
+      ]
+    }
+  ],
+  "refinement": "Thinking small round o; waiting shallow closed smile; sleepy taller oval yawn. Celebrate raised arms and joy eyes only, with no confetti/stars/sparks. Thinking/guide/waiting extras removed; lower-right character cut reduced to 13px."
+}

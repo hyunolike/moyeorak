@@ -1,0 +1,171 @@
+{
+  "method": "WCAG relative luminance, sRGB",
+  "text": [
+    {
+      "role": "본문",
+      "foreground": "#202923",
+      "background": "#F6F7F2",
+      "ratio": 13.9038,
+      "AA_normal_text": true
+    },
+    {
+      "role": "카드 본문",
+      "foreground": "#202923",
+      "background": "#FFFFFF",
+      "ratio": 14.9694,
+      "AA_normal_text": true
+    },
+    {
+      "role": "보조 본문",
+      "foreground": "#57665E",
+      "background": "#F6F7F2",
+      "ratio": 5.6252,
+      "AA_normal_text": true
+    },
+    {
+      "role": "카드 보조 본문",
+      "foreground": "#57665E",
+      "background": "#FFFFFF",
+      "ratio": 6.0564,
+      "AA_normal_text": true
+    },
+    {
+      "role": "홍시 위 글자",
+      "foreground": "#202923",
+      "background": "#F45B3F",
+      "ratio": 4.5727,
+      "AA_normal_text": true
+    },
+    {
+      "role": "주요 버튼",
+      "foreground": "#F6F7F2",
+      "background": "#176B5B",
+      "ratio": 5.9275,
+      "AA_normal_text": true
+    },
+    {
+      "role": "텍스트 행동",
+      "foreground": "#176B5B",
+      "background": "#F6F7F2",
+      "ratio": 5.9275,
+      "AA_normal_text": true
+    },
+    {
+      "role": "비서 발화",
+      "foreground": "#202923",
+      "background": "#F3CF58",
+      "ratio": 9.8919,
+      "AA_normal_text": true
+    },
+    {
+      "role": "성공",
+      "foreground": "#176B4C",
+      "background": "#FFFFFF",
+      "ratio": 6.4737,
+      "AA_normal_text": true
+    },
+    {
+      "role": "주의",
+      "foreground": "#815800",
+      "background": "#FFFFFF",
+      "ratio": 6.3076,
+      "AA_normal_text": true
+    },
+    {
+      "role": "오류",
+      "foreground": "#B33932",
+      "background": "#FFFFFF",
+      "ratio": 5.9187,
+      "AA_normal_text": true
+    },
+    {
+      "role": "성공 / 화면",
+      "foreground": "#176B4C",
+      "background": "#F6F7F2",
+      "ratio": 6.0129,
+      "AA_normal_text": true
+    },
+    {
+      "role": "주의 / 화면",
+      "foreground": "#815800",
+      "background": "#F6F7F2",
+      "ratio": 5.8586,
+      "AA_normal_text": true
+    },
+    {
+      "role": "오류 / 화면",
+      "foreground": "#B33932",
+      "background": "#F6F7F2",
+      "ratio": 5.4974,
+      "AA_normal_text": true
+    },
+    {
+      "role": "다크 본문",
+      "foreground": "#F6F7F2",
+      "background": "#17251F",
+      "ratio": 14.7671,
+      "AA_normal_text": true
+    },
+    {
+      "role": "다크 카드 본문",
+      "foreground": "#F6F7F2",
+      "background": "#24392F",
+      "ratio": 11.4647,
+      "AA_normal_text": true
+    },
+    {
+      "role": "다크 보조 본문",
+      "foreground": "#B9C8BF",
+      "background": "#24392F",
+      "ratio": 7.0986,
+      "AA_normal_text": true
+    },
+    {
+      "role": "다크 버튼",
+      "foreground": "#17251F",
+      "background": "#7DD4B5",
+      "ratio": 9.0523,
+      "AA_normal_text": true
+    },
+    {
+      "role": "다크 성공",
+      "foreground": "#7DD4B5",
+      "background": "#24392F",
+      "ratio": 7.0279,
+      "AA_normal_text": true
+    },
+    {
+      "role": "다크 주의",
+      "foreground": "#F3CF58",
+      "background": "#24392F",
+      "ratio": 8.1566,
+      "AA_normal_text": true
+    },
+    {
+      "role": "다크 오류",
+      "foreground": "#FFA79B",
+      "background": "#24392F",
+      "ratio": 6.6142,
+      "AA_normal_text": true
+    }
+  ],
+  "outlines": [
+    {
+      "foreground": "#718077",
+      "background": "#FFFFFF",
+      "ratio": 4.1533,
+      "AA_nontext": true
+    },
+    {
+      "foreground": "#7E9689",
+      "background": "#24392F",
+      "ratio": 3.8858,
+      "AA_nontext": true
+    }
+  ],
+  "prohibited": {
+    "foreground": "#FFFFFF",
+    "background": "#F45B3F",
+    "ratio": 3.2737
+  }
+}

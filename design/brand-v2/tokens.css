@@ -1,0 +1,70 @@
+/* 모여락 Brand v2 / 합류점 — role-specific, solid colors only. */
+:root {
+  color-scheme: light;
+  --brand-primary: #F45B3F;
+  --brand-secondary: #176B5B;
+  --brand-accent: #F3CF58;
+  --brand-ink: #202923;
+  --brand-surface-light: #F6F7F2;
+  --brand-surface-dark: #17251F;
+  --brand-on-dark: #F6F7F2;
+  --brand-muted-dark: #B9C8BF;
+  --brand-paper: #FFFFFF;
+  --brand-muted: #57665E;
+  --brand-line: #D6DED6;
+  --brand-success: #176B4C;
+  --brand-warning: #815800;
+  --brand-error: #B33932;
+
+  --color-brand: var(--brand-primary);
+  --color-background: var(--brand-surface-light);
+  --color-surface: var(--brand-paper);
+  --color-text: var(--brand-ink);
+  --color-text-muted: var(--brand-muted);
+  --color-action: var(--brand-secondary);
+  --color-on-action: #F6F7F2;
+  --color-assistant: var(--brand-accent);
+  --color-on-assistant: var(--brand-ink);
+  --color-success: var(--brand-success);
+  --color-warning: var(--brand-warning);
+  --color-error: var(--brand-error);
+  --color-outline: #718077;
+  --color-divider: var(--brand-line);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-background: var(--brand-surface-dark);
+  --color-surface: #24392F;
+  --color-text: #F6F7F2;
+  --color-text-muted: #B9C8BF;
+  --color-action: #7DD4B5;
+  --color-on-action: #17251F;
+  --color-assistant: #F3CF58;
+  --color-on-assistant: #202923;
+  --color-success: #7DD4B5;
+  --color-warning: #F3CF58;
+  --color-error: #FFA79B;
+  --color-outline: #7E9689;
+  --color-divider: #456052;
+}
+
+/* Application opt-in: a data-theme value takes priority over OS preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --color-background: var(--brand-surface-dark);
+    --color-surface: #24392F;
+    --color-text: #F6F7F2;
+    --color-text-muted: #B9C8BF;
+    --color-action: #7DD4B5;
+    --color-on-action: #17251F;
+    --color-assistant: #F3CF58;
+    --color-on-assistant: #202923;
+    --color-success: #7DD4B5;
+    --color-warning: #F3CF58;
+    --color-error: #FFA79B;
+    --color-outline: #7E9689;
+    --color-divider: #456052;
+  }
+}
