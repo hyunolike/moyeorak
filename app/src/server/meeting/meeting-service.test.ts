@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { db } from "@/db/client";
+import { meetingEvents } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import { MeetingFullError } from "@/server/meeting/errors";
 import {
@@ -48,6 +50,18 @@ test("createMeeting이 만든 투표판은 오늘 날짜로 시작한다", async
   const meeting = await getMeeting(meetingId);
   expect(meeting?.schedulePoll?.dateOptions[0]).toBe(today);
   expect(meeting?.schedulePoll?.dateOptions[13]).not.toBe(today);
+});
+
+test("createMeeting과 joinMeeting은 이벤트를 남긴다", async () => {
+  const { meetingId } = await createMeeting({
+    hostName: "현호",
+    participantCount: 4,
+    scope: "both",
+    deviceKey: key("a"),
+  });
+  await joinMeeting(meetingId, { name: "민수", deviceKey: key("b") });
+  const rows = await db.select().from(meetingEvents);
+  expect(rows.map((r) => r.type).sort()).toEqual(["created", "joined"]);
 });
 
 test("joinMeeting은 같은 deviceKey면 기존 참여자를 돌려준다", async () => {

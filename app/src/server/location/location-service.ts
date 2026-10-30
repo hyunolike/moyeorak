@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { locationVotes, meetings, participants } from "@/db/schema";
+import { recordEvent } from "@/server/events/record-event";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import { ParticipantNotFoundError } from "@/server/schedule/errors";
 
@@ -44,7 +45,7 @@ export async function upsertDeparture(
         set: { label: input.label, lat: input.lat, lng: input.lng },
       })
       .returning({ voteId: locationVotes.id });
-    // TODO(Task 8): recordEvent(meetingId, "departure_done", tx)
+    await recordEvent(meetingId, "departure_done", tx);
     return { voteId: (row as { voteId: number }).voteId };
   });
 }
