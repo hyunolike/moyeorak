@@ -1,0 +1,197 @@
+:root {
+  /* Primary */
+  --color-p-main: #4181ff;
+  --color-p50: #e5eeff;
+  --color-p100: #c2d7ff;
+  --color-p200: #abc8fc;
+  --color-p300: #82acff;
+  --color-p400: #5b93ff;
+  --color-p450: #276cf4;
+  --color-p500: #1f5bd2;
+  --color-p600: #0f3e9a;
+  --color-p700: #163065;
+  --color-p800: #0f2756;
+  --color-p900: #07152f;
+
+  /* Sub */
+  --color-sb-main: #0ab8b8;
+
+  /* Gray Scale */
+  --color-k5: #fefefe;
+  --color-k10: #fafafc;
+  --color-k50: #f0f0f2;
+  --color-k100: #e7e7e9;
+  --color-k200: #ceced1;
+  --color-k300: #bdbdc1;
+  --color-k400: #a3a3a8;
+  --color-k500: #898990;
+  --color-k600: #6f6f77;
+  --color-k700: #55555c;
+  --color-k750: #46464d;
+  --color-k800: #3b3b42;
+  --color-k900: #16161a;
+
+  /* Action */
+  --color-red: #f3062a;
+  --color-green: #03d46f;
+}
+
+@theme inline {
+  /* Primary */
+  --color-primary-main: var(--color-p-main);
+  --color-p-50: var(--color-p50);
+  --color-p-100: var(--color-p100);
+  --color-p-200: var(--color-p200);
+  --color-p-300: var(--color-p300);
+  --color-p-400: var(--color-p400);
+  --color-p-450: var(--color-p450);
+  --color-p-500: var(--color-p500);
+  --color-p-600: var(--color-p600);
+  --color-p-700: var(--color-p700);
+  --color-p-800: var(--color-p800);
+  --color-p-900: var(--color-p900);
+
+  /* Sub */
+  --color-sub-main: var(--color-sb-main);
+
+  /* Gray Scale */
+  --color-k-5: var(--color-k5);
+  --color-k-10: var(--color-k10);
+  --color-k-50: var(--color-k50);
+  --color-k-100: var(--color-k100);
+  --color-k-200: var(--color-k200);
+  --color-k-300: var(--color-k300);
+  --color-k-400: var(--color-k400);
+  --color-k-500: var(--color-k500);
+  --color-k-600: var(--color-k600);
+  --color-k-700: var(--color-k700);
+  --color-k-750: var(--color-k750);
+  --color-k-800: var(--color-k800);
+  --color-k-900: var(--color-k900);
+
+  /* Action */
+  --color-action-red: var(--color-red);
+  --color-action-green: var(--color-green);
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/Pretendard-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  /* head1-sb-28 */
+  --text-h1: 1.75rem;
+  --text-h1--line-height: 1.35;
+  --text-h1--letter-spacing: -0.005em;
+  --text-h1--font-weight: 600;
+
+  /* head2-sb-24 */
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 1.35;
+  --text-h2--letter-spacing: -0.005em;
+  --text-h2--font-weight: 600;
+
+  /* head3-b-22 */
+  --text-h3: 1.375rem;
+  --text-h3--line-height: 1.35;
+  --text-h3--letter-spacing: -0.005em;
+  --text-h3--font-weight: 700;
+
+  /* title1-sb-20 */
+  --text-t1: 1.25rem;
+  --text-t1--line-height: 1.35;
+  --text-t1--letter-spacing: -0.005em;
+  --text-t1--font-weight: 600;
+
+  /* title2-sb-16 */
+  --text-t2: 1rem;
+  --text-t2--line-height: 1.35;
+  --text-t2--letter-spacing: -0.005em;
+  --text-t2--font-weight: 600;
+
+  /* body1-m-16 */
+  --text-b1: 1rem;
+  --text-b1--line-height: 1.5;
+  --text-b1--letter-spacing: -0.01em;
+  --text-b1--font-weight: 500;
+
+  /* body2-r-16 */
+  --text-b2: 1rem;
+  --text-b2--line-height: 1.5;
+  --text-b2--letter-spacing: -0.01em;
+  --text-b2--font-weight: 400;
+
+  /* body3-sb-14 */
+  --text-b3: 0.875rem;
+  --text-b3--line-height: 1.5;
+  --text-b3--letter-spacing: -0.01em;
+  --text-b3--font-weight: 600;
+
+  /* body4-m-14 */
+  --text-b4: 0.875rem;
+  --text-b4--line-height: 1.5;
+  --text-b4--letter-spacing: -0.01em;
+  --text-b4--font-weight: 500;
+
+  /* body5-r-14 */
+  --text-b5: 0.875rem;
+  --text-b5--line-height: 1.5;
+  --text-b5--letter-spacing: -0.01em;
+  --text-b5--font-weight: 400;
+
+  /* caption1-sb-12 */
+  --text-c1: 0.75rem;
+  --text-c1--line-height: 1.5;
+  --text-c1--letter-spacing: -0.01em;
+  --text-c1--font-weight: 600;
+
+  /* caption2-m-12 */
+  --text-c2: 0.75rem;
+  --text-c2--line-height: 1.5;
+  --text-c2--letter-spacing: -0.01em;
+  --text-c2--font-weight: 500;
+
+  /* caption3-r-12 */
+  --text-c3: 0.75rem;
+  --text-c3--line-height: 1.5;
+  --text-c3--letter-spacing: -0.01em;
+  --text-c3--font-weight: 400;
+}
+
+@layer base {
+  body {
+    font-family:
+      "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}

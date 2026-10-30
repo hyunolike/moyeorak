@@ -1,0 +1,75 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/.direnv",
+      "!**/dist",
+      "!**/storybook-static",
+      "!**/.next",
+      "!**/node_modules",
+      "!**/next-env.d.ts",
+      "!**/playwright-report",
+      "!**/test-results"
+    ]
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": true,
+    "indentStyle": "space"
+  },
+  "linter": {
+    "domains": {
+      "react": "recommended"
+    },
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noInvalidPositionAtImportRule": "off",
+        "noUnusedImports": "error"
+      },
+      "nursery": {
+        "useTailwindSortedClasses": {
+          "fix": "safe",
+          "level": "error"
+        }
+      },
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": ["../**"],
+                "message": "Use @/ alias instead of relative parent imports."
+              }
+            ]
+          }
+        },
+        "useSelfClosingElements": "error"
+      },
+      "suspicious": {
+        "noVar": "error"
+      }
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "tailwind": {
+    "mergeFunctions": ["clsx", "cn", "tw"],
+    "variantFunctions": ["cva"]
+  }
+}
