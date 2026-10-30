@@ -36,3 +36,7 @@ coverage/
 # Local assistant/tooling state
 .claude/
 CLAUDE.local.md
+
+# Claude Code worktrees and SDD scratch
+.worktrees/
+.superpowers/
