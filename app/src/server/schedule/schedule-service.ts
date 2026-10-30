@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   meetings,
@@ -7,12 +7,20 @@ import {
   scheduleVotes,
 } from "@/db/schema";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
-import { InvalidSlotsError } from "@/server/schedule/errors";
+import {
+  AlreadyConfirmedError,
+  InvalidSlotsError,
+  ParticipantNotFoundError,
+  ScheduleNotFoundError,
+} from "@/server/schedule/errors";
 import {
   type BestSlot,
   rankSlots,
   validateSlots,
 } from "@/server/schedule/slots";
+
+const SLOT_MS = 30 * 60 * 1000;
+const MAX_CONFIRM_MS = 24 * 60 * 60 * 1000;
 
 export type ScheduleSummary = {
   poll: {
@@ -38,6 +46,17 @@ export async function saveScheduleVote(
       .from(schedulePolls)
       .where(eq(schedulePolls.meetingId, meetingId));
     if (!poll) throw new MeetingNotFoundError();
+
+    const [person] = await tx
+      .select({ id: participants.id })
+      .from(participants)
+      .where(
+        and(
+          eq(participants.id, participantId),
+          eq(participants.meetingId, meetingId),
+        ),
+      );
+    if (!person) throw new ParticipantNotFoundError();
 
     const checked = validateSlots(slots, poll);
     if (!checked.ok) throw new InvalidSlotsError(checked.invalid);
@@ -101,11 +120,29 @@ export async function confirmSchedule(
 ): Promise<{ status: "locating" | "confirmed" }> {
   return db.transaction(async (tx) => {
     const [meeting] = await tx
-      .select({ scope: meetings.scope })
+      .select({ scope: meetings.scope, status: meetings.status })
       .from(meetings)
       .where(eq(meetings.id, meetingId))
       .for("update");
     if (!meeting) throw new MeetingNotFoundError();
+    const [poll] = await tx
+      .select()
+      .from(schedulePolls)
+      .where(eq(schedulePolls.meetingId, meetingId));
+    if (!poll) throw new ScheduleNotFoundError();
+    if (meeting.status !== "scheduling") throw new AlreadyConfirmedError();
+
+    // [start, end)의 30분 슬롯이 모두 투표판 안이어야 한다.
+    const range: Date[] = [];
+    const span = end.getTime() - start.getTime();
+    if (!(span > 0) || span > MAX_CONFIRM_MS || span % SLOT_MS !== 0) {
+      throw new InvalidSlotsError([start, end]);
+    }
+    for (let t = start.getTime(); t < end.getTime(); t += SLOT_MS) {
+      range.push(new Date(t));
+    }
+    const checked = validateSlots(range, poll);
+    if (!checked.ok) throw new InvalidSlotsError(checked.invalid);
 
     await tx
       .update(schedulePolls)
