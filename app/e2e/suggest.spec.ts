@@ -149,3 +149,74 @@ for (const [status, code] of [
     await expect(page.locator("article")).toHaveCount(0);
   });
 }
+
+test("그새 응답이 바뀌어 확정이 404를 받으면 새로 제안 받기로 다시 시작한다", async ({
+  page,
+}) => {
+  const id = await createVotedMeeting(page);
+  await page.goto(`/meetings/${id}/suggest`);
+  await expect(page.locator("article")).toBeVisible();
+
+  let failOnce = true;
+  await page.route("**/api/meetings/*/suggestions/*/accept", (route) => {
+    if (!failOnce) return route.continue();
+    failOnce = false;
+    return route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: { code: "SUGGESTION_NOT_FOUND", message: "gone" },
+      }),
+    });
+  });
+  // 서버에서 열린 제안이 사라진 상황을 만든다. 거절은 막고 목록만 비운다.
+  let emptied = false;
+  await page.route("**/api/meetings/*/suggestions", (route) => {
+    if (route.request().method() === "GET" && emptied) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { kind: "schedule", items: [] } }),
+      });
+    }
+    return route.continue();
+  });
+
+  await page.getByRole("button", { name: "이걸로 확정" }).click();
+  emptied = true;
+  await page
+    .getByRole("dialog", { name: "이걸로 확정할까요?" })
+    .getByRole("button", { name: "확정하기" })
+    .click();
+
+  await expect(
+    page.getByText("응답이 바뀌었어요. 새로 제안 받아 볼까요?"),
+  ).toBeVisible();
+  emptied = false;
+  await page.getByRole("button", { name: "새로 제안 받기" }).click();
+  await expect(page.locator("article")).toBeVisible();
+});
+
+test("보여 준 카드가 없는데 비어 있으면 후보가 없다고 말한다", async ({
+  page,
+}) => {
+  const id = await createVotedMeeting(page);
+  await page.route("**/api/meetings/*/suggestions", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: { kind: "schedule", items: [] } }),
+    }),
+  );
+  await page.goto(`/meetings/${id}/suggest`);
+  await expect(
+    page.getByText(
+      "아직 함께 고를 만한 후보가 없어요. 응답이 더 모이면 다시 제안해 볼게요.",
+    ),
+  ).toBeVisible();
+  await expect(page.getByText("준비한 제안은 여기까지예요.")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "전체 보기" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "새로 제안 받기" }),
+  ).toBeVisible();
+});

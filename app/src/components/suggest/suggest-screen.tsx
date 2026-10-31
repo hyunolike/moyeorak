@@ -43,6 +43,7 @@ function errorMessage(error: unknown) {
         expression: "waiting",
         text: "두 명 이상 응답하면 제안할 수 있어요.",
         list: false,
+        retry: false,
       } as const;
     }
     if (error.status === 502 || error.status === 429) {
@@ -50,6 +51,18 @@ function errorMessage(error: unknown) {
         expression: "sorry",
         text: "지금은 이동시간을 확인하지 못했어요. 역 목록에서 직접 볼 수 있어요.",
         list: true,
+        retry: false,
+      } as const;
+    }
+    if (
+      (error.status === 404 && error.code === "SUGGESTION_NOT_FOUND") ||
+      (error.status === 409 && error.code === "SUGGESTION_CLOSED")
+    ) {
+      return {
+        expression: "sorry",
+        text: "응답이 바뀌었어요. 새로 제안 받아 볼까요?",
+        list: false,
+        retry: true,
       } as const;
     }
     if (error.status === 409) {
@@ -57,6 +70,7 @@ function errorMessage(error: unknown) {
         expression: "sorry",
         text: "이미 정해졌거나 닫힌 제안이에요. 모임 홈에서 확인해 주세요.",
         list: false,
+        retry: false,
       } as const;
     }
   }
@@ -64,6 +78,7 @@ function errorMessage(error: unknown) {
     expression: "sorry",
     text: "제안을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
     list: false,
+    retry: true,
   } as const;
 }
 
@@ -84,6 +99,8 @@ function SuggestMain({
   const reject = useRejectSuggestion(meeting.id);
   const started = useRef(false);
   const [lastKind, setLastKind] = useState<Kind | null>(null);
+  // 카드를 한 번이라도 보여 줬는지. 끝 문구와 "후보가 없어요" 문구를 가른다.
+  const [shownAny, setShownAny] = useState(false);
 
   const items = query.data?.items ?? [];
   const current = items[0];
@@ -94,8 +111,17 @@ function SuggestMain({
     (meeting.status === "locating" ? "location" : "schedule");
 
   useEffect(() => {
-    if (current) setLastKind(current.kind);
+    if (current) {
+      setLastKind(current.kind);
+      setShownAny(true);
+    }
   }, [current]);
+
+  const retryCreate = () => {
+    reject.reset();
+    accept.reset();
+    create.mutate();
+  };
 
   // 열린 제안이 없으면 한 번만 만든다. 거절로 다 쓴 뒤에는 사람이 눌러야 다시 만든다.
   useEffect(() => {
@@ -151,13 +177,22 @@ function SuggestMain({
         <MazuBubble
           expression={msg.expression}
           action={
-            msg.list ? (
-              <MainButtonLink
-                variant="white"
-                href={listHref(meeting.id, "location")}
-              >
-                전체 보기
-              </MainButtonLink>
+            msg.list || msg.retry ? (
+              <div className="flex flex-col gap-2">
+                {msg.list && (
+                  <MainButtonLink
+                    variant="white"
+                    href={listHref(meeting.id, "location")}
+                  >
+                    전체 보기
+                  </MainButtonLink>
+                )}
+                {msg.retry && (
+                  <MainButton variant="blue" onClick={retryCreate}>
+                    새로 제안 받기
+                  </MainButton>
+                )}
+              </div>
             ) : undefined
           }
         >
@@ -181,20 +216,15 @@ function SuggestMain({
     return (
       <Body>
         <MazuBubble expression="default">
-          준비한 제안은 여기까지예요. 전체 목록에서 직접 고를 수 있어요.
+          {shownAny
+            ? "준비한 제안은 여기까지예요. 전체 목록에서 직접 고를 수 있어요."
+            : "아직 함께 고를 만한 후보가 없어요. 응답이 더 모이면 다시 제안해 볼게요."}
         </MazuBubble>
         <div className="flex flex-col gap-2">
           <MainButtonLink variant="white" href={listHref(meeting.id, kind)}>
             전체 보기
           </MainButtonLink>
-          <MainButton
-            variant="blue"
-            onClick={() => {
-              reject.reset();
-              accept.reset();
-              create.mutate();
-            }}
-          >
+          <MainButton variant="blue" onClick={retryCreate}>
             새로 제안 받기
           </MainButton>
         </div>
