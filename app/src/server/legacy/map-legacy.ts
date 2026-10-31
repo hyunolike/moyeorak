@@ -9,6 +9,7 @@ import type {
   meetings,
   schedulePolls,
 } from "@/db/schema";
+import { newId } from "@/lib/nanoid";
 import { seoulMidnight } from "@/lib/seoul-time";
 import {
   type Poll,
@@ -84,8 +85,6 @@ const HOST_FALLBACK = "모임장";
 const NAME_MAX = 50;
 const LABEL_MAX = 100;
 const DEVICE_KEY_MAX = 64;
-const LEGACY_KEY_PREFIX = "legacy-";
-const LEGACY_KEY_LENGTH = 21;
 const SLOT_MS = 30 * 60 * 1000;
 
 const WALL_PATTERN =
@@ -153,10 +152,12 @@ export function mapLegacyMeeting(b: LegacyMeetingBundle): NewMeeting {
   return {
     id: meeting.meeting_id,
     hostName: (host?.name ?? HOST_FALLBACK).slice(0, NAME_MAX),
-    participantCount:
-      meeting.participant_count && meeting.participant_count >= 1
-        ? meeting.participant_count
-        : Math.max(participants.length, 2),
+    // 옛 인원 수보다 실제 참여자가 많으면 "모두 응답"이 일찍 뜨고 참여가 막히므로 큰 쪽을 쓴다.
+    participantCount: Math.max(
+      meeting.participant_count ?? 0,
+      participants.length,
+      2,
+    ),
     scope,
     status,
     confirmedAt: doneAt,
@@ -166,15 +167,13 @@ export function mapLegacyMeeting(b: LegacyMeetingBundle): NewMeeting {
 
 /**
  * 옛 프론트가 localStorage `moyeorak.session`에 둔 UUID를 그대로 기기 키로 쓴다.
- * 키가 없거나 새 컬럼(64자)에 들어가지 않으면 `legacy-` + 0으로 채운 id(21자)를 만든다.
+ * 키가 없거나 새 컬럼(64자)에 들어가지 않으면 새 21자 무작위 id를 만든다.
+ * 옛 id로 키를 만들면 누구나 짐작해 `/me`로 그 참여자를 가져갈 수 있다.
  */
 export function legacyDeviceKey(p: LegacyParticipantRow): string {
   const key = p.local_storage_key;
   if (key && key.length <= DEVICE_KEY_MAX) return key;
-  return (
-    LEGACY_KEY_PREFIX +
-    p.participant_id.padStart(LEGACY_KEY_LENGTH - LEGACY_KEY_PREFIX.length, "0")
-  );
+  return newId();
 }
 
 export function mapLegacyParticipant(p: LegacyParticipantRow) {

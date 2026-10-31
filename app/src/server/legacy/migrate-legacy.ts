@@ -23,7 +23,6 @@ import {
   type LegacyParticipantRow,
   type LegacyPollState,
   type LegacySchedulePollRow,
-  legacyDeviceKey,
   mapLegacyConfirmedLocation,
   mapLegacyLocationVote,
   mapLegacyMeeting,
@@ -68,14 +67,15 @@ export type MigrateLegacyOptions = {
 export const DROP_NO_PARTICIPANT = "참여자 없는 출발지";
 export const DROP_UNKNOWN_PARTICIPANT = "모임에 없는 참여자의 표";
 export const DROP_DUPLICATE_VOTE = "같은 참여자의 이전 표";
+export const DROP_NO_VALID_SLOTS = "옮길 칸이 하나도 남지 않은 표";
 export const DROP_INCOMPLETE_LOCATION = "이름이나 좌표가 없는 확정 장소";
 export const DROP_DUPLICATE_LOCATION = "이전 확정 장소";
 export const NOTE_DERIVED_CONFIRMATION =
   "확정 시간이 비어 있어 가장 많이 겹친 시간으로 채운 일정";
 export const NOTE_UNCONFIRMED =
   "확정 시간도 쓸 표도 없어 확정 전으로 되돌린 일정";
-export const NOTE_NO_KEY = "기기 키가 없어 legacy 키를 만든 참여자";
-export const NOTE_LONG_KEY = "기기 키가 64자를 넘어 legacy 키로 바꾼 참여자";
+export const NOTE_NO_KEY = "기기 키가 없어 새 키를 만든 참여자";
+export const NOTE_LONG_KEY = "기기 키가 64자를 넘어 새 키로 바꾼 참여자";
 
 type ScheduleVoteRow = {
   schedule_vote_id: string;
@@ -274,9 +274,14 @@ export async function migrateLegacy(
               continue;
             }
             const { slots, dropped } = mapLegacySlots(vote.voted_date, poll);
-            slotVotes.push({ legacyId, slots });
             for (const [reason, n] of Object.entries(dropped))
               addDrop(report.slots.dropped, reason, n);
+            // 빈 표를 넣으면 응답한 사람으로 세어지므로 표째 버린다.
+            if (slots.length === 0) {
+              addDrop(t.schedule_votes.dropped, DROP_NO_VALID_SLOTS);
+              continue;
+            }
+            slotVotes.push({ legacyId, slots });
           }
         }
 
@@ -318,9 +323,9 @@ export async function migrateLegacy(
             legacyId: p.participant_id,
             row: { meetingId: id, ...mapLegacyParticipant(p) },
           }));
-          for (const p of people) {
+          for (const [i, p] of people.entries()) {
             if (!p.local_storage_key) addNote(report.notes, NOTE_NO_KEY);
-            else if (legacyDeviceKey(p) !== p.local_storage_key)
+            else if (mapped[i]?.row.deviceKey !== p.local_storage_key)
               addNote(report.notes, NOTE_LONG_KEY);
           }
           const inserted = await tx

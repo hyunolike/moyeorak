@@ -91,24 +91,29 @@ describe("mapLegacyMeeting", () => {
     );
   });
 
-  it("participant_count가 1 이상이면 그대로, 아니면 max(참여자 수, 2)", () => {
+  it("participant_count와 실제 참여자 수 중 큰 쪽을 쓰고 2명 밑으로는 두지 않는다", () => {
     expect(mapLegacyMeeting(bundle()).participantCount).toBe(4);
     const zero = bundle();
     zero.meeting.participant_count = 0;
     expect(mapLegacyMeeting(zero).participantCount).toBe(2);
-    const nul = bundle({
-      participants: [
-        ...bundle().participants,
-        {
-          participant_id: "3",
-          name: "하늘",
-          is_host: false,
-          local_storage_key: null,
-        },
-      ],
-    });
+    const three = [
+      ...bundle().participants,
+      {
+        participant_id: "3",
+        name: "하늘",
+        is_host: false,
+        local_storage_key: null,
+      },
+    ];
+    const nul = bundle({ participants: three });
     nul.meeting.participant_count = null;
     expect(mapLegacyMeeting(nul).participantCount).toBe(3);
+    const under = bundle({ participants: three });
+    under.meeting.participant_count = 2;
+    expect(mapLegacyMeeting(under).participantCount).toBe(3);
+    const one = bundle({ participants: [] });
+    one.meeting.participant_count = 1;
+    expect(mapLegacyMeeting(one).participantCount).toBe(2);
   });
 
   it("scope: initial_flow가 SCHEDULE이면 schedule, 장소 표가 있으면 both", () => {
@@ -199,15 +204,27 @@ describe("legacyDeviceKey", () => {
     ).toBe(UUID);
   });
 
-  it("키가 없으면 legacy-와 0으로 채운 id로 21자를 만든다", () => {
-    const key = legacyDeviceKey({
+  it("키가 없으면 짐작할 수 없는 21자 id를 새로 만든다", () => {
+    const row = {
       participant_id: "42",
       name: "민지",
       is_host: false,
       local_storage_key: null,
+    };
+    const key = legacyDeviceKey(row);
+    expect(key).toMatch(/^[A-Za-z0-9_-]{21}$/);
+    expect(key).not.toContain("42");
+    expect(legacyDeviceKey(row)).not.toBe(key);
+  });
+
+  it("키가 64자를 넘으면 새 21자 id로 바꾼다", () => {
+    const key = legacyDeviceKey({
+      participant_id: "7",
+      name: "도윤",
+      is_host: false,
+      local_storage_key: "x".repeat(65),
     });
-    expect(key).toBe("legacy-00000000000042");
-    expect(key).toHaveLength(21);
+    expect(key).toMatch(/^[A-Za-z0-9_-]{21}$/);
   });
 });
 

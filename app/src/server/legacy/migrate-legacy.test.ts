@@ -8,11 +8,13 @@ import {
   confirmedLocations,
   locationVotes,
   meetings,
+  participants,
   schedulePolls,
   scheduleVotes,
 } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
+  DROP_NO_VALID_SLOTS,
   migrateLegacy,
   NOTE_DERIVED_CONFIRMATION,
   NOTE_NO_KEY,
@@ -36,7 +38,7 @@ const NO_VOTES_KEY = "0badf00d-1234-4abc-8def-aabbccddeeff";
 
 const SEED = `
 INSERT INTO meeting (meeting_id, participant_count, created_at, updated_at, initial_flow) VALUES
-  ('${SCHEDULED}', 3, '2026-03-01 18:30:00', '2026-03-01 18:30:00', 'SCHEDULE'),
+  ('${SCHEDULED}', 2, '2026-03-01 18:30:00', '2026-03-01 18:30:00', 'SCHEDULE'),
   ('${LOCATION_ONLY}', 0, '2026-03-04 09:00:00', '2026-03-04 09:00:00', 'LOCATION'),
   ('${NO_VOTES}', 2, '2026-03-04 10:00:00', '2026-03-04 10:00:00', 'SCHEDULE');
 
@@ -62,7 +64,8 @@ INSERT INTO location_poll (location_poll_id, meeting_id, poll_status, created_at
 
 INSERT INTO schedule_vote (participant_id, schedule_poll_id, voted_date, created_at, updated_at) VALUES
   (1, 10, '["2026-03-07T18:00:00","2026-03-07T18:30:00","2026-03-07T18:45:00"]', now(), now()),
-  (2, 10, '["2026-03-07T18:00:00"]', now(), now());
+  (2, 10, '["2026-03-07T18:00:00"]', now(), now()),
+  (3, 10, '["2026-03-09T18:00:00"]', now(), now());
 
 INSERT INTO location_vote (location_poll_id, participant_id, departure_name, departure_location,
                            departure_lat, departure_lng, created_at, updated_at) VALUES
@@ -120,7 +123,11 @@ describe("migrateLegacy", () => {
       meetings: { migrated: 3, skipped: 0, dropped: {} },
       participants: { migrated: 6, skipped: 0, dropped: {} },
       schedule_polls: { migrated: 3, skipped: 0, dropped: {} },
-      schedule_votes: { migrated: 2, skipped: 0, dropped: {} },
+      schedule_votes: {
+        migrated: 2,
+        skipped: 0,
+        dropped: { [DROP_NO_VALID_SLOTS]: 1 },
+      },
       location_votes: {
         migrated: 3,
         skipped: 0,
@@ -130,7 +137,7 @@ describe("migrateLegacy", () => {
     });
     expect(first.slots).toEqual({
       migrated: 3,
-      dropped: { "30분 단위가 아닌 칸": 1 },
+      dropped: { "30분 단위가 아닌 칸": 1, "투표판 밖의 칸": 1 },
     });
     expect(first.notes).toEqual({
       [NOTE_DERIVED_CONFIRMATION]: 1,
@@ -143,7 +150,7 @@ describe("migrateLegacy", () => {
       meetings: { migrated: 0, skipped: 3, dropped: {} },
       participants: { migrated: 0, skipped: 6, dropped: {} },
       schedule_polls: { migrated: 0, skipped: 3, dropped: {} },
-      schedule_votes: { migrated: 0, skipped: 2, dropped: {} },
+      schedule_votes: { migrated: 0, skipped: 3, dropped: {} },
       location_votes: { migrated: 0, skipped: 4, dropped: {} },
       confirmed_locations: { migrated: 0, skipped: 0, dropped: {} },
     });
@@ -243,8 +250,15 @@ describe("migrateLegacy", () => {
     expect(
       await findParticipantByDeviceKey(LOCATION_ONLY, LOC_HOST_KEY),
     ).toMatchObject({ name: "도윤", isHost: true });
+    // 키가 없던 참여자는 옛 id로 짐작할 수 없는 새 키를 받는다.
+    const [haneul] = await db
+      .select({ deviceKey: participants.deviceKey })
+      .from(participants)
+      .where(eq(participants.name, "하늘"));
+    expect(haneul.deviceKey).toMatch(/^[A-Za-z0-9_-]{21}$/);
+    expect(haneul.deviceKey.startsWith("legacy-")).toBe(false);
     expect(
-      await findParticipantByDeviceKey(SCHEDULED, "legacy-00000000000003"),
+      await findParticipantByDeviceKey(SCHEDULED, haneul.deviceKey),
     ).toMatchObject({ name: "하늘" });
   });
 });
