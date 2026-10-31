@@ -209,6 +209,19 @@ export function useConfirmSchedule(meetingId: string) {
   });
 }
 
+export function useConfirmLocation(meetingId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (stationId: number) =>
+      apiFetch(
+        `/api/meetings/${meetingId}/location/confirm`,
+        withDeviceKey(json("POST", { stationId })),
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: keys.meeting(meetingId) }),
+  });
+}
+
 export function useDepartures(meetingId: string) {
   return useQuery({
     queryKey: keys.departures(meetingId),

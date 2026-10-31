@@ -2,6 +2,10 @@ import { and, asc, eq } from "drizzle-orm";
 import { type Db, db, type Tx } from "@/db/client";
 import { agentSuggestions } from "@/db/schema";
 import {
+  SuggestionClosedError,
+  SuggestionNotFoundError,
+} from "@/server/suggest/errors";
+import {
   type Suggestion,
   type SuggestionKind,
   SuggestionPayload,
@@ -101,4 +105,27 @@ export async function getSuggestion(
       ),
     );
   return row ? toSuggestion(row) : null;
+}
+
+/**
+ * 확정이 가리킨 제안이 이 모임, 이 종류의 열린 제안인지 확인한다.
+ * 없거나 다른 모임/종류면 SuggestionNotFoundError, 이미 닫혔으면 SuggestionClosedError.
+ */
+export async function assertOpenSuggestion(
+  tx: Tx | Db,
+  meetingId: string,
+  kind: SuggestionKind,
+  id: number,
+): Promise<void> {
+  const [row] = await tx
+    .select({ kind: agentSuggestions.kind, status: agentSuggestions.status })
+    .from(agentSuggestions)
+    .where(
+      and(
+        eq(agentSuggestions.meetingId, meetingId),
+        eq(agentSuggestions.id, id),
+      ),
+    );
+  if (!row || row.kind !== kind) throw new SuggestionNotFoundError();
+  if (row.status !== "proposed") throw new SuggestionClosedError();
 }
