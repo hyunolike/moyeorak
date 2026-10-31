@@ -53,6 +53,16 @@ export function confirmedSentence(p: MeetingProgress): string {
   return `${withDirectionalParticle(subject)} 정해졌어요.`;
 }
 
+/** 지금 단계에서 응답한 사람 수. 장소 단계는 출발지, 그 밖에는 가능한 시간을 본다. */
+export function respondedCount(p: MeetingProgress): number {
+  return p.participants.filter(votedNow(p)).length;
+}
+
+function votedNow(p: MeetingProgress) {
+  return (x: Participant) =>
+    p.status === "locating" ? x.votedLocation : x.votedSchedule;
+}
+
 function waitingNames(p: MeetingProgress, voted: (x: Participant) => boolean) {
   const names = p.participants.filter((x) => !voted(x)).map((x) => x.name);
   if (names.length === 1) return `${names[0]}님`;
@@ -68,8 +78,7 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
   const base = { stages, current };
   const id = p.meetingId;
 
-  const votedNow = (x: Participant) =>
-    p.status === "locating" ? x.votedLocation : x.votedSchedule;
+  const voted = votedNow(p);
   const votesHref =
     current === "location"
       ? `/meetings/${id}/location/votes`
@@ -100,10 +109,10 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
     };
   }
 
-  const n = p.participants.filter(votedNow).length;
+  const n = respondedCount(p);
   const m = p.participantCount;
   const me = p.participants.find((x) => x.id === meId);
-  const meResponded = me ? votedNow(me) : false;
+  const meResponded = me ? voted(me) : false;
   const respondAction: Action =
     p.status === "locating"
       ? { label: "출발지 남기기", href: votesHref }
@@ -128,8 +137,8 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
       action: myAction,
     };
   }
-  const waiting = p.participants.some((x) => !votedNow(x))
-    ? waitingNames(p, votedNow)
+  const waiting = p.participants.some((x) => !voted(x))
+    ? waitingNames(p, voted)
     : `${m - n}명`;
   return {
     ...base,
