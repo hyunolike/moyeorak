@@ -1,3 +1,7 @@
+/**
+ * 모임 홈의 참여자 칩. 숲색은 주요 버튼과 선택 상태에만 쓰므로 응답 표시는 중립색이고,
+ * 기다리는 사람에게도 경고색을 쓰지 않는다.
+ */
 export function ParticipantChip({
   name,
   responded,
@@ -12,7 +16,7 @@ export function ParticipantChip({
           aria-hidden="true"
           className={
             responded
-              ? "bg-action text-on-action flex size-5 items-center justify-center rounded-full"
+              ? "text-paper flex size-5 items-center justify-center rounded-full bg-neutral-700"
               : "text-muted flex size-5 items-center justify-center rounded-full bg-neutral-200"
           }
         >

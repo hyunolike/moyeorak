@@ -90,6 +90,17 @@ test("참여자 칩은 응답 여부를 글자로 말한다", () => {
   expect(screen.getByText("응답 완료")).toBeInTheDocument();
 });
 
+test("참여자 칩의 응답 표시는 숲색이나 경고색을 쓰지 않는다", () => {
+  const { container } = render(
+    <>
+      <ParticipantChip name="서연" responded={false} />
+      <ParticipantChip name="민준" responded />
+    </>,
+  );
+  const html = container.innerHTML;
+  expect(html).not.toMatch(/bg-action|text-action|bg-error|text-error/);
+});
+
 test("진행 단계는 현재 단계를 표시한다", () => {
   render(
     <StageProgress
