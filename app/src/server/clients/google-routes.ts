@@ -1,5 +1,10 @@
-import { ExternalApiError, fetchJson } from "@/server/clients/errors";
+import {
+  ExternalApiError,
+  fetchJson,
+  RateLimitedError,
+} from "@/server/clients/errors";
 import { haversineMeters, type LatLng } from "@/server/clients/geo";
+import { reserveGoogleElements } from "@/server/clients/google-usage";
 
 const URL =
   "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
@@ -74,6 +79,10 @@ export async function computeTransitMatrix(
     destinations.map(() => null),
   );
   if (origins.length === 0 || destinations.length === 0) return matrix;
+
+  // 앱 전체 월 상한. 호출이 실패해도 돌려주지 않는다(보수적으로 센다).
+  if (!(await reserveGoogleElements(origins.length * destinations.length)))
+    throw new RateLimitedError();
 
   const chunkSize = Math.max(1, Math.floor(MAX_ELEMENTS / destinations.length));
   for (let start = 0; start < origins.length; start += chunkSize) {

@@ -229,3 +229,26 @@ test("하루 상한에 닿고 살아 있는 캐시도 없으면 midpoint 라우�
   expect((await res.json()).error.code).toBe("RATE_LIMITED");
   expect(matrix).not.toHaveBeenCalled();
 });
+
+test("월 상한에 닿으면 새로 계산하지 않고 살아 있는 캐시를 준다", async () => {
+  const id = await setup(2);
+  mockTwoStations();
+  const first = await recommendMidpoint(id, departAt);
+  matrix.mockClear();
+  matrix.mockRejectedValue(new RateLimitedError());
+  const r = await recommendMidpoint(
+    id,
+    new Date(departAt.getTime() + TEN_MINUTES),
+  );
+  expect(matrix).toHaveBeenCalledTimes(1);
+  expect(r).toEqual(first);
+});
+
+test("월 상한에 닿았고 캐시도 없으면 RateLimitedError", async () => {
+  const id = await setup(2);
+  near.mockResolvedValue([st(1), st(2)]);
+  matrix.mockRejectedValue(new RateLimitedError());
+  await expect(recommendMidpoint(id, departAt)).rejects.toBeInstanceOf(
+    RateLimitedError,
+  );
+});

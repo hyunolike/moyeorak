@@ -39,3 +39,10 @@ export function seoulParts(date: Date) {
     }).format(date),
   };
 }
+
+/** date가 속한 서울 월의 "YYYY-MM" */
+export function seoulYearMonth(date: Date): string {
+  const shifted = new Date(date.getTime() + SEOUL_OFFSET_MS);
+  const month = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  return `${shifted.getUTCFullYear()}-${month}`;
+}

@@ -1,5 +1,7 @@
-import { ExternalApiError } from "@/server/clients/errors";
+import { resetTestDb } from "@/db/test-utils";
+import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import { computeTransitMatrix } from "@/server/clients/google-routes";
+import { googleElementsUsed } from "@/server/clients/google-usage";
 
 const departAt = new Date("2026-11-01T03:00:00Z");
 const pt = (i: number) => ({ lat: 37 + i / 100, lng: 127 + i / 100 });
@@ -8,7 +10,8 @@ function okResponse(body: unknown) {
   return new Response(JSON.stringify(body), { status: 200 });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetTestDb();
   vi.stubEnv("GOOGLE_API_KEY", "test-key");
   vi.stubEnv("MOCK_EXTERNAL", "");
 });
@@ -205,4 +208,39 @@ test("fetch가 거부되면 ExternalApiError", async () => {
   await expect(
     computeTransitMatrix([pt(0)], [pt(1)], departAt),
   ).rejects.toBeInstanceOf(ExternalApiError);
+});
+
+test("월 상한을 넘기면 Google을 부르지 않고 RateLimitedError", async () => {
+  vi.stubEnv("GOOGLE_MONTHLY_ELEMENT_CAP", "3");
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  await expect(
+    computeTransitMatrix([pt(0), pt(1)], [pt(2), pt(3)], departAt),
+  ).rejects.toBeInstanceOf(RateLimitedError);
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test("호출이 성공하면 origins x destinations만큼 센다", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      okResponse([
+        { originIndex: 0, destinationIndex: 0, duration: "60s" },
+        { originIndex: 0, destinationIndex: 1, duration: "60s" },
+      ]),
+    ),
+  );
+  await computeTransitMatrix([pt(0)], [pt(1), pt(2)], departAt);
+  expect(await googleElementsUsed()).toBe(2);
+});
+
+test("출발지나 도착지가 없으면 예약하지 않는다", async () => {
+  await computeTransitMatrix([], [pt(1)], departAt);
+  expect(await googleElementsUsed()).toBe(0);
+});
+
+test("목 모드에서는 카운터가 늘지 않는다", async () => {
+  vi.stubEnv("MOCK_EXTERNAL", "1");
+  await computeTransitMatrix([pt(0), pt(1)], [pt(2)], departAt);
+  expect(await googleElementsUsed()).toBe(0);
 });
