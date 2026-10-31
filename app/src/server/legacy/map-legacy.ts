@@ -10,7 +10,12 @@ import type {
   schedulePolls,
 } from "@/db/schema";
 import { seoulMidnight } from "@/lib/seoul-time";
-import { type Poll, validateSlots } from "@/server/schedule/slots";
+import {
+  type Poll,
+  rankSlots,
+  type VoteSlots,
+  validateSlots,
+} from "@/server/schedule/slots";
 
 type NewMeeting = typeof meetings.$inferInsert;
 type NewSchedulePoll = Omit<typeof schedulePolls.$inferInsert, "meetingId">;
@@ -164,7 +169,7 @@ export function mapLegacyMeeting(b: LegacyMeetingBundle): NewMeeting {
  * 키가 없거나 새 컬럼(64자)에 들어가지 않으면 `legacy-` + 0으로 채운 id(21자)를 만든다.
  */
 export function legacyDeviceKey(p: LegacyParticipantRow): string {
-  const key = p.local_storage_key?.trim();
+  const key = p.local_storage_key;
   if (key && key.length <= DEVICE_KEY_MAX) return key;
   return (
     LEGACY_KEY_PREFIX +
@@ -208,6 +213,37 @@ export function mapLegacySchedulePoll(
     confirmedStart: instant(row.confirmed_start_time),
     confirmedEnd: instant(row.confirmed_end_time),
     confirmedAt: confirmedAt(row),
+  };
+}
+
+export type LegacyConfirmation = "kept" | "derived" | "unconfirmed";
+
+/**
+ * 옛 서비스는 일정을 확정할 때 상태만 CONFIRMED로 바꾸고 확정 시간 컬럼은 비워 두었다.
+ * 그런 poll은 옛 결과 화면이 맨 위에 보여 주던 순위(rankSlots) 1위 시간으로 채운다.
+ * 쓸 수 있는 표가 없으면 확정 전으로 되돌린다.
+ */
+export function resolveLegacyConfirmation(
+  poll: NewSchedulePoll,
+  votes: VoteSlots[],
+): { poll: NewSchedulePoll; outcome: LegacyConfirmation } {
+  if (!poll.confirmedAt || (poll.confirmedStart && poll.confirmedEnd))
+    return { poll, outcome: "kept" };
+  const [best] = rankSlots(votes, votes.length);
+  if (best) {
+    return {
+      poll: { ...poll, confirmedStart: best.start, confirmedEnd: best.end },
+      outcome: "derived",
+    };
+  }
+  return {
+    poll: {
+      ...poll,
+      confirmedStart: null,
+      confirmedEnd: null,
+      confirmedAt: null,
+    },
+    outcome: "unconfirmed",
   };
 }
 

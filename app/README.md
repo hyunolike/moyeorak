@@ -152,11 +152,15 @@ Vercel과 Neon을 쓰는 배포입니다. 호스트 계정이 있어야 해서 �
 
 - [ ] Vercel 프로젝트를 만들고 Root Directory를 `app/`으로 지정합니다. 이렇게 하면 Next.js가 자동으로 감지되어 `vercel.json`은 필요 없습니다.
 - [ ] Node.js 버전을 24로 맞춥니다.
-- [ ] 환경 변수 7개(`DATABASE_URL`, `DATABASE_URL_TEST`, `ADMIN_TOKEN`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ODSAY_API_KEY`, `NEXT_PUBLIC_NAVER_CLIENT_ID`)를 Vercel에 넣습니다. 운영에서 `MOCK_EXTERNAL`은 설정하지 않습니다.
+- [ ] 아래 [운영 환경 변수](#운영-환경-변수)를 Vercel에 넣습니다. 운영에서 `MOCK_EXTERNAL`은 설정하지 않습니다.
 - [ ] Neon 데이터베이스에서 `CREATE EXTENSION IF NOT EXISTS postgis;`를 실행합니다.
 - [ ] Neon 연결 문자열을 `DATABASE_URL`로 두고 `pnpm db:migrate`를 실행합니다.
 - [ ] 미리보기 주소에서 모임 만들기, 일정 투표, 출발지 등록, 중간지점 추천 흐름을 손으로 한 번 확인합니다.
 - [ ] `/admin/metrics?token=...`이 열리고 토큰 없이는 거부되는지 확인합니다.
+
+### 운영 환경 변수
+
+Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMIN_TOKEN`, `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST`, `SITE_URL`입니다. `DATABASE_URL_TEST`는 테스트에서만, `LEGACY_DATABASE_URL`은 이전 도구를 돌릴 때 셸에서만 쓰므로 Vercel에는 넣지 않습니다. `MIDPOINT_DAILY_CAP`과 `NVIDIA_BASE_URL`은 기본값을 바꿀 때만 넣습니다.
 
 ## 옛 서비스에서 옮겨 오기
 
@@ -174,7 +178,7 @@ Vercel과 Neon을 쓰는 배포입니다. 호스트 계정이 있어야 해서 �
    LEGACY_DATABASE_URL=<옛 DB> DATABASE_URL=<새 DB> pnpm migrate:legacy --dry-run
    ```
 
-   보고서에는 테이블마다 옮긴 수와 건너뛴 수가 나오고, 버린 행이 있으면 그 이유와 수가 함께 나옵니다. 참여자 없이 손으로 넣은 출발지는 새 스키마에 담을 자리가 없어서 버리고, 30분 단위가 아니거나 투표판 밖에 있는 일정 칸도 버립니다. 버린 수가 예상보다 많으면 여기서 멈추고 원인부터 확인합니다.
+   보고서에는 테이블마다 옮긴 수와 건너뛴 수가 나오고, 버린 행이 있으면 그 이유와 수가 함께 나옵니다. 참여자 없이 손으로 넣은 출발지는 새 스키마에 담을 자리가 없어서 버리고, 30분 단위가 아니거나 투표판 밖에 있는 일정 칸도 버립니다. 옛 서비스는 일정을 확정할 때 확정 시간을 저장하지 않았기 때문에, 확정된 일정은 옛 결과 화면이 맨 위에 보여 주던 가장 많이 겹친 시간으로 채우고 쓸 표가 하나도 없으면 확정 전 단계로 되돌립니다. 이렇게 값을 고쳐 옮긴 경우는 보고서 끝에 따로 나옵니다. 버린 수가 예상보다 많으면 여기서 멈추고 원인부터 확인합니다.
 
 3. 옛 앱 사용자에게 쓰기 중단을 공지한 뒤 실제 이전을 실행합니다. 공지 뒤에 들어온 투표는 옮겨지지 않으니 공지와 이전 사이를 짧게 잡습니다.
 
@@ -182,7 +186,7 @@ Vercel과 Neon을 쓰는 배포입니다. 호스트 계정이 있어야 해서 �
    LEGACY_DATABASE_URL=<옛 DB> DATABASE_URL=<새 DB> pnpm migrate:legacy
    ```
 
-4. Vercel 프로젝트에 운영 환경 변수 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMIN_TOKEN`, `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST`, `SITE_URL`을 넣습니다. `SITE_URL`에는 옛 앱이 쓰던 도메인을 그대로 적습니다.
+4. Vercel 프로젝트에 위의 [운영 환경 변수](#운영-환경-변수)를 넣습니다. `SITE_URL`에는 옛 앱이 쓰던 도메인을 그대로 적습니다.
 
 5. 도메인을 새 앱으로 돌립니다. 옛 앱과 같은 도메인이어야 브라우저에 남아 있는 `moyeorak.session`을 새 앱이 읽을 수 있습니다.
 

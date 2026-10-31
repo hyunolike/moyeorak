@@ -219,6 +219,17 @@ describe("confirmedSentence", () => {
       }),
     );
 
+  test("시간도 장소도 없으면 주어 없이 말한다", () => {
+    expect(
+      confirmedSentence(
+        progress({
+          status: "confirmed",
+          confirmedStart: null,
+          confirmedPlace: null,
+        }),
+      ),
+    ).toBe("약속이 정해졌어요.");
+  });
   test("장소가 없으면 쉼표 뒤를 뺀다", () => {
     expect(at("2026-11-09T10:00:00.000Z")).toBe(
       "11월 9일 월요일 오후 7시로 정해졌어요.",

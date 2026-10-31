@@ -23,12 +23,14 @@ import {
   type LegacyParticipantRow,
   type LegacyPollState,
   type LegacySchedulePollRow,
+  legacyDeviceKey,
   mapLegacyConfirmedLocation,
   mapLegacyLocationVote,
   mapLegacyMeeting,
   mapLegacyParticipant,
   mapLegacySchedulePoll,
   mapLegacySlots,
+  resolveLegacyConfirmation,
 } from "@/server/legacy/map-legacy";
 
 export type TableName =
@@ -51,13 +53,15 @@ export type Report = {
   tables: Record<TableName, TableCounts>;
   /** 일정 표 안의 칸 수. 버린 칸은 이유별로 센다. */
   slots: { migrated: number; dropped: Record<string, number> };
+  /** 버리지 않고 값을 고쳐서 옮긴 경우. 이유별 수 */
+  notes: Record<string, number>;
 };
 
 export type MigrateLegacyOptions = {
   legacyUrl: string;
   targetUrl: string;
   dryRun?: boolean;
-  /** 옛 테이블이 있는 스키마. 운영 DB는 public, 통합 테스트는 legacy */
+  /** 옛 테이블이 있는 스키마. 비우면 연결 기본값(운영은 public), 통합 테스트는 legacy */
   legacySchema?: string;
 };
 
@@ -66,6 +70,12 @@ export const DROP_UNKNOWN_PARTICIPANT = "모임에 없는 참여자의 표";
 export const DROP_DUPLICATE_VOTE = "같은 참여자의 이전 표";
 export const DROP_INCOMPLETE_LOCATION = "이름이나 좌표가 없는 확정 장소";
 export const DROP_DUPLICATE_LOCATION = "이전 확정 장소";
+export const NOTE_DERIVED_CONFIRMATION =
+  "확정 시간이 비어 있어 가장 많이 겹친 시간으로 채운 일정";
+export const NOTE_UNCONFIRMED =
+  "확정 시간도 쓸 표도 없어 확정 전으로 되돌린 일정";
+export const NOTE_NO_KEY = "기기 키가 없어 legacy 키를 만든 참여자";
+export const NOTE_LONG_KEY = "기기 키가 64자를 넘어 legacy 키로 바꾼 참여자";
 
 type ScheduleVoteRow = {
   schedule_vote_id: string;
@@ -176,12 +186,14 @@ function emptyReport(dryRun: boolean): Report {
       confirmed_locations: counts(),
     },
     slots: { migrated: 0, dropped: {} },
+    notes: {},
   };
 }
 
 function addDrop(target: Record<string, number>, reason: string, n = 1) {
   target[reason] = (target[reason] ?? 0) + n;
 }
+const addNote = addDrop;
 
 /** 참여자마다 마지막(가장 큰 id) 표만 남긴다. 앞의 표는 버린 수로 센다. */
 function latestPerParticipant<T extends { participant_id: string | null }>(
@@ -208,7 +220,10 @@ export async function migrateLegacy(
   const legacy = postgres(opts.legacyUrl, {
     max: 1,
     onnotice: () => {},
-    connection: { search_path: opts.legacySchema ?? "public" },
+    // Neon 풀링 주소는 search_path 시작 파라미터를 거부하므로 지정했을 때만 보낸다.
+    ...(opts.legacySchema
+      ? { connection: { search_path: opts.legacySchema } }
+      : {}),
   });
   const target = postgres(opts.targetUrl, { max: 1, onnotice: () => {} });
   const targetDb = drizzle(target, { schema });
@@ -246,11 +261,49 @@ export async function migrateLegacy(
           continue;
         }
 
+        // 표를 먼저 새 투표판으로 옮겨 봐야 옛 확정 poll의 시간을 정할 수 있다.
+        let poll = schedulePoll ? mapLegacySchedulePoll(schedulePoll) : null;
+        const slotVotes: { legacyId: string; slots: Date[] }[] = [];
+        if (poll) {
+          for (const [legacyId, vote] of latestPerParticipant(
+            sVotes,
+            t.schedule_votes,
+          )) {
+            if (!people.some((p) => p.participant_id === legacyId)) {
+              addDrop(t.schedule_votes.dropped, DROP_UNKNOWN_PARTICIPANT);
+              continue;
+            }
+            const { slots, dropped } = mapLegacySlots(vote.voted_date, poll);
+            slotVotes.push({ legacyId, slots });
+            for (const [reason, n] of Object.entries(dropped))
+              addDrop(report.slots.dropped, reason, n);
+          }
+        }
+
+        let scheduleState = schedulePoll;
+        if (poll && schedulePoll) {
+          const resolved = resolveLegacyConfirmation(
+            poll,
+            slotVotes.map((v) => ({
+              participantId: Number(v.legacyId),
+              name: v.legacyId,
+              slots: v.slots,
+            })),
+          );
+          poll = resolved.poll;
+          if (resolved.outcome === "derived")
+            addNote(report.notes, NOTE_DERIVED_CONFIRMATION);
+          if (resolved.outcome === "unconfirmed") {
+            addNote(report.notes, NOTE_UNCONFIRMED);
+            scheduleState = { ...schedulePoll, poll_status: "VOTING" };
+          }
+        }
+
         await tx.insert(meetings).values(
           mapLegacyMeeting({
             meeting,
             participants: people,
-            schedulePoll,
+            schedulePoll: scheduleState,
             locationPoll: data.locationPolls.get(id) ?? null,
             scheduleVoteCount: sVotes.length,
             locationVoteCount: lVotes.length,
@@ -265,6 +318,11 @@ export async function migrateLegacy(
             legacyId: p.participant_id,
             row: { meetingId: id, ...mapLegacyParticipant(p) },
           }));
+          for (const p of people) {
+            if (!p.local_storage_key) addNote(report.notes, NOTE_NO_KEY);
+            else if (legacyDeviceKey(p) !== p.local_storage_key)
+              addNote(report.notes, NOTE_LONG_KEY);
+          }
           const inserted = await tx
             .insert(participants)
             .values(mapped.map((m) => m.row))
@@ -278,26 +336,16 @@ export async function migrateLegacy(
           t.participants.migrated += inserted.length;
         }
 
-        if (schedulePoll) {
-          const poll = mapLegacySchedulePoll(schedulePoll);
+        if (poll) {
           await tx.insert(schedulePolls).values({ meetingId: id, ...poll });
           t.schedule_polls.migrated += 1;
-
-          for (const [legacyId, vote] of latestPerParticipant(
-            sVotes,
-            t.schedule_votes,
-          )) {
-            const participantId = newIds.get(legacyId);
-            if (participantId === undefined) {
-              addDrop(t.schedule_votes.dropped, DROP_UNKNOWN_PARTICIPANT);
-              continue;
-            }
-            const { slots, dropped } = mapLegacySlots(vote.voted_date, poll);
-            await tx.insert(scheduleVotes).values({ participantId, slots });
+          for (const v of slotVotes) {
+            await tx.insert(scheduleVotes).values({
+              participantId: newIds.get(v.legacyId) as number,
+              slots: v.slots,
+            });
             t.schedule_votes.migrated += 1;
-            report.slots.migrated += slots.length;
-            for (const [reason, n] of Object.entries(dropped))
-              addDrop(report.slots.dropped, reason, n);
+            report.slots.migrated += v.slots.length;
           }
         }
 

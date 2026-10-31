@@ -50,6 +50,8 @@ export function confirmedSentence(p: MeetingProgress): string {
     when = `${t.month}월 ${t.day}일 ${t.weekday}요일 ${formatTime(t.hour, t.minute)}`;
   }
   const subject = [when, place].filter(Boolean).join(", ");
+  // 옮겨 온 옛 모임처럼 확정인데 시간도 장소도 없을 때 빈 주어 문장을 만들지 않는다.
+  if (!subject) return "약속이 정해졌어요.";
   return `${withDirectionalParticle(subject)} 정해졌어요.`;
 }
 

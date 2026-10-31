@@ -23,6 +23,7 @@ function formatReport(r: Report): string {
     r.dryRun ? "[dry run] 아무것도 저장하지 않았습니다." : "이전을 마쳤습니다.",
     ...Object.entries(r.tables).map(([name, c]) => formatTable(name, c)),
     `schedule_votes 안의 칸: 옮김 ${r.slots.migrated}${formatDropped(r.slots.dropped)}`,
+    ...Object.entries(r.notes).map(([why, n]) => `고쳐서 옮김: ${why} ${n}`),
   ].join("\n");
 }
 

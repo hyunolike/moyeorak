@@ -8,6 +8,7 @@ import {
   mapLegacyMeeting,
   mapLegacySchedulePoll,
   mapLegacySlots,
+  resolveLegacyConfirmation,
 } from "@/server/legacy/map-legacy";
 
 const UUID = "3f1c2a9e-7b4d-4e2a-9c1f-0a1b2c3d4e5f";
@@ -340,5 +341,60 @@ describe("mapLegacyConfirmedLocation", () => {
         confirmed_lng: "126.9139000",
       }),
     ).toBeNull();
+  });
+});
+
+describe("resolveLegacyConfirmation", () => {
+  const confirmedPoll = mapLegacySchedulePoll({
+    poll_status: "CONFIRMED",
+    date_options: '["2026-03-07"]',
+    start_time: 540,
+    end_time: 1440,
+    confirmed_start_time: null,
+    confirmed_end_time: null,
+    updated_at: "2026-03-05 21:00:00",
+  });
+  const at = (iso: string) => new Date(iso);
+
+  it("확정 시간이 비어 있으면 순위 1위 시간으로 채운다", () => {
+    const r = resolveLegacyConfirmation(confirmedPoll, [
+      {
+        participantId: 1,
+        name: "1",
+        slots: [at("2026-03-07T09:00:00Z"), at("2026-03-07T09:30:00Z")],
+      },
+      {
+        participantId: 2,
+        name: "2",
+        slots: [at("2026-03-07T09:00:00Z"), at("2026-03-07T09:30:00Z")],
+      },
+      { participantId: 3, name: "3", slots: [at("2026-03-07T12:00:00Z")] },
+    ]);
+    expect(r.outcome).toBe("derived");
+    expect(r.poll.confirmedStart?.toISOString()).toBe(
+      "2026-03-07T09:00:00.000Z",
+    );
+    expect(r.poll.confirmedEnd?.toISOString()).toBe("2026-03-07T10:00:00.000Z");
+    expect(r.poll.confirmedAt).toEqual(confirmedPoll.confirmedAt);
+  });
+
+  it("쓸 수 있는 표가 없으면 확정 전으로 되돌린다", () => {
+    const r = resolveLegacyConfirmation(confirmedPoll, [
+      { participantId: 1, name: "1", slots: [] },
+    ]);
+    expect(r.outcome).toBe("unconfirmed");
+    expect(r.poll.confirmedAt).toBeNull();
+    expect(r.poll.confirmedStart).toBeNull();
+  });
+
+  it("확정 시간이 있거나 확정 전이면 그대로 둔다", () => {
+    const withTimes = {
+      ...confirmedPoll,
+      confirmedStart: at("2026-03-07T11:00:00Z"),
+      confirmedEnd: at("2026-03-07T12:00:00Z"),
+    };
+    expect(resolveLegacyConfirmation(withTimes, []).poll).toBe(withTimes);
+    const voting = { ...confirmedPoll, confirmedAt: null };
+    expect(resolveLegacyConfirmation(voting, []).outcome).toBe("kept");
   });
 });
