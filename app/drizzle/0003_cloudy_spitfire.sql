@@ -1,0 +1,1 @@
+ALTER TABLE "confirmed_locations" ADD COLUMN "travel" jsonb;
