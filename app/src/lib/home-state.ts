@@ -9,6 +9,8 @@ export type HomeState = {
   expression: Expression;
   message: string;
   action: { label: string; href: string } | null;
+  /** 호스트이고 확정 전이며 기다리는 사람이 있을 때만 true. */
+  canNudge: boolean;
 };
 
 type Action = NonNullable<HomeState["action"]>;
@@ -82,6 +84,30 @@ function waitingNames(p: MeetingProgress, voted: (x: Participant) => boolean) {
 type Participant = MeetingProgress["participants"][number];
 
 export function homeState(p: MeetingProgress, meId: number | null): HomeState {
+  return { ...baseState(p, meId), canNudge: canNudge(p, meId) };
+}
+
+/** 미응답이거나 아직 입장하지 않은 자리가 있는지. writeNudges와 같은 기준이다. */
+function hasWaiting(p: MeetingProgress): boolean {
+  const voted = votedNow(p);
+  return (
+    p.participants.some((x) => !voted(x)) ||
+    p.participantCount - p.participants.length > 0
+  );
+}
+
+function isHost(p: MeetingProgress, meId: number | null): boolean {
+  return meId !== null && p.participants.some((x) => x.id === meId && x.isHost);
+}
+
+function canNudge(p: MeetingProgress, meId: number | null): boolean {
+  return p.status !== "confirmed" && isHost(p, meId) && hasWaiting(p);
+}
+
+function baseState(
+  p: MeetingProgress,
+  meId: number | null,
+): Omit<HomeState, "canNudge"> {
   const stages = STAGES[p.scope];
   const current = CURRENT[p.status];
   const base = { stages, current };
@@ -102,7 +128,7 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
       ...base,
       expression: "celebrate",
       message: confirmedSentence(p),
-      action: { label: "약속 확인하기", href: `/meetings/${id}/schedule` },
+      action: { label: "약속 카드 보기", href: `/meetings/${id}/summary` },
     };
   }
 
@@ -130,6 +156,29 @@ export function homeState(p: MeetingProgress, meId: number | null): HomeState {
     ? { label: "친구에게 링크 보내기", href: "#share" }
     : respondAction;
 
+  const host = isHost(p, meId);
+  const suggestAction: Action = {
+    label: "제안 받기",
+    href: `/meetings/${id}/suggest`,
+  };
+  if (host && n >= m) {
+    return {
+      ...base,
+      expression: "happy",
+      message: "모두 응답했어요. 제안 받아볼까요?",
+      action: suggestAction,
+    };
+  }
+  if (host && n >= 2 && n * 2 > m) {
+    const names = p.participants.filter((x) => !voted(x)).map((x) => x.name);
+    const who = names.length > 0 ? joinWaitingNames(names) : `${m - n}명`;
+    return {
+      ...base,
+      expression: "guide",
+      message: `${n}명 응답했는데, 지금 결과로 제안 받아볼까요? 아니면 ${who} 기다릴까요?`,
+      action: suggestAction,
+    };
+  }
   if (n >= m) {
     return {
       ...base,

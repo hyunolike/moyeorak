@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { BottomBar } from "@/components/bottom-bar";
 import { MazuBubble } from "@/components/mazu/mazu-bubble";
 import { ParticipantChip } from "@/components/mazu/participant-chip";
 import { StageProgress } from "@/components/mazu/stage-progress";
+import { NudgeSheet } from "@/components/meeting/nudge-sheet";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { useMe, useMeetingProgress } from "@/lib/api";
@@ -22,6 +24,7 @@ export function MeetingHomeView({
   progress: MeetingProgress;
   meId: number | null | undefined;
 }) {
+  const [nudgeOpen, setNudgeOpen] = useState(false);
   const state = meId === undefined ? null : homeState(progress, meId);
   const votedNow = (p: MeetingProgress["participants"][number]) =>
     progress.status === "locating" ? p.votedLocation : p.votedSchedule;
@@ -60,7 +63,7 @@ export function MeetingHomeView({
         </section>
       </div>
       {action ? (
-        <BottomBar>
+        <BottomBar className="flex-col items-stretch">
           {action.href === "#share" ? (
             <ShareButton
               meetingId={progress.meetingId}
@@ -72,7 +75,23 @@ export function MeetingHomeView({
               {action.label}
             </Link>
           )}
+          {state?.canNudge ? (
+            <button
+              type="button"
+              onClick={() => setNudgeOpen(true)}
+              className="border-border text-text h-11 w-full cursor-pointer rounded-lg border font-semibold"
+            >
+              재촉하기
+            </button>
+          ) : null}
         </BottomBar>
+      ) : null}
+      {state?.canNudge ? (
+        <NudgeSheet
+          meetingId={progress.meetingId}
+          open={nudgeOpen}
+          onClose={() => setNudgeOpen(false)}
+        />
       ) : null}
     </MobileLayout>
   );

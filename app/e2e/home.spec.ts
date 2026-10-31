@@ -50,6 +50,31 @@ test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, brow
   );
 });
 
+test("호스트가 재촉하기를 누르면 메시지 두 개가 보인다", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/new/schedule");
+  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
+  const id = new URL(page.url()).pathname.split("/")[2];
+
+  const context = await browser.newContext();
+  const friend = await context.newPage();
+  await friend.goto(`/meetings/${id}/schedule`);
+  await friend.getByLabel("이름").fill("민지");
+  await friend.getByRole("button", { name: "모임 참여하기" }).click();
+  await context.close();
+
+  await page.reload();
+  await page.getByRole("button", { name: "재촉하기" }).click();
+  await expect(page.getByTestId("nudge-friendly")).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(page.getByTestId("nudge-short")).toBeVisible();
+});
+
 test("없는 모임 홈은 404", async ({ page }) => {
   const res = await page.goto("/meetings/does-not-exist-000000");
   expect(res?.status()).toBe(404);
