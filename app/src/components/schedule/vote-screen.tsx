@@ -83,6 +83,7 @@ function VoteForm({
           disabled={save.isPending}
           undoable={undoSlots !== null}
           onUndo={handleUndo}
+          onUndoExpired={() => setUndoSlots(null)}
         />
         <Timetable
           className="mt-1"

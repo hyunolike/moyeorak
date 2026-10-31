@@ -27,18 +27,22 @@ export function NaturalTimeInput({
   disabled,
   undoable = false,
   onUndo,
+  onUndoExpired,
 }: {
   meetingId: string;
   onParsed: (slots: Date[]) => void;
   disabled?: boolean;
   undoable?: boolean;
   onUndo?: () => void;
+  /** 칠하지 못한 결과(빈 결과나 실패)가 나와 되돌릴 대상이 사라졌을 때 */
+  onUndoExpired?: () => void;
 }) {
   const inputId = useId();
   const [text, setText] = useState("");
   const [result, setResult] = useState<{
     expression: Expression;
     message: string;
+    painted: boolean;
   } | null>(null);
   const parse = useParseAvailability(meetingId);
 
@@ -53,18 +57,31 @@ export function NaturalTimeInput({
           dropped > 0
             ? `${summary} 투표 날짜 밖의 ${dropped}칸은 뺐어요.`
             : summary;
-        if (slots.length > 0) onParsed(slots.map((slot) => new Date(slot)));
+        const painted = slots.length > 0;
+        if (painted) onParsed(slots.map((slot) => new Date(slot)));
+        else onUndoExpired?.();
         setResult({
-          expression: slots.length > 0 ? "happy" : "sorry",
+          expression: painted ? "happy" : "sorry",
           message,
+          painted,
         });
       },
-      onError: (error) =>
-        setResult({ expression: "sorry", message: failureMessage(error) }),
+      onError: (error) => {
+        onUndoExpired?.();
+        setResult({
+          expression: "sorry",
+          message: failureMessage(error),
+          painted: false,
+        });
+      },
     });
   };
 
-  const showUndo = undoable && onUndo && !parse.isPending;
+  const showUndo = result?.painted && undoable && onUndo;
+  const handleUndo = () => {
+    setResult(null);
+    onUndo?.();
+  };
 
   return (
     <div className="mt-3 flex flex-col gap-3">
@@ -103,7 +120,7 @@ export function NaturalTimeInput({
             showUndo ? (
               <button
                 type="button"
-                onClick={onUndo}
+                onClick={handleUndo}
                 className="text-action cursor-pointer text-sm font-semibold underline"
               >
                 되돌리기
