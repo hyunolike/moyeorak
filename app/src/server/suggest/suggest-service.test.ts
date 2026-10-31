@@ -8,6 +8,7 @@ import { ExternalApiError } from "@/server/clients/errors";
 import { computeTransitMatrix } from "@/server/clients/google-routes";
 import {
   deleteDeparture,
+  listDepartures,
   upsertDeparture,
 } from "@/server/location/location-service";
 import {
@@ -17,7 +18,10 @@ import {
 } from "@/server/meeting/meeting-service";
 import { findStationsNear } from "@/server/midpoint/stations";
 import { AlreadyConfirmedError } from "@/server/schedule/errors";
-import { saveScheduleVote } from "@/server/schedule/schedule-service";
+import {
+  confirmSchedule,
+  saveScheduleVote,
+} from "@/server/schedule/schedule-service";
 import {
   NotEnoughResponsesError,
   SuggestionClosedError,
@@ -260,13 +264,10 @@ test("시간 제안 수락 뒤 both 모임은 locating이고 다음 제안은 �
   expect(set.kind).toBe("location");
   expect(set.items).toHaveLength(2);
   expect(set.items.every((i) => i.kind === "location")).toBe(true);
-  const call = near.mock.calls.length + matrix.mock.calls.length;
-  expect(call).toBeGreaterThan(0);
+  expect(matrix).toHaveBeenCalledTimes(1);
 
   // 출발지가 바뀌면 열린 장소 제안이 지워진다.
-  const departures = await (
-    await import("@/server/location/location-service")
-  ).listDepartures(meetingId);
+  const departures = await listDepartures(meetingId);
   await deleteDeparture(
     meetingId,
     (departures[0] as { voteId: number }).voteId,
@@ -309,4 +310,66 @@ test("장소 단계에서 Google 호출이 실패하면 ExternalApiError가 그�
   await expect(createSuggestions(meetingId, deps)).rejects.toBeInstanceOf(
     ExternalApiError,
   );
+});
+
+test("모델을 부르는 동안 투표가 저장되면 오래된 제안을 저장하지 않는다", async () => {
+  const { meetingId, ids, dates } = await setup("schedule");
+  const during = vi.fn(async (_id, picks, n) => {
+    await saveScheduleVote(meetingId, ids[2] as number, [
+      new Date(`${dates[1]}T15:00:00+09:00`),
+    ]);
+    return picks.map((p: Parameters<typeof templateReason>[0]) => ({
+      reason: templateReason(p, n),
+      source: "rule" as const,
+    }));
+  });
+  const set = await createSuggestions(meetingId, {
+    writeReasons: during as never,
+  });
+  expect(set).toEqual({ kind: "schedule", items: [] });
+  expect(await proposed(meetingId)).toHaveLength(0);
+});
+
+test("모델을 부르는 동안 확정되면 옛 종류의 열린 제안이 남지 않는다", async () => {
+  const { meetingId, dates } = await setup("schedule");
+  const during = vi.fn(async (_id, picks, n) => {
+    await confirmSchedule(
+      meetingId,
+      new Date(`${dates[1]}T14:00:00+09:00`),
+      new Date(`${dates[1]}T15:00:00+09:00`),
+    );
+    return picks.map((p: Parameters<typeof templateReason>[0]) => ({
+      reason: templateReason(p, n),
+      source: "rule" as const,
+    }));
+  });
+  const set = await createSuggestions(meetingId, {
+    writeReasons: during as never,
+  });
+  expect(set).toEqual({ kind: null, items: [] });
+  expect(await proposed(meetingId)).toHaveLength(0);
+});
+
+test("출발지를 저장하면 열린 장소 제안이 지워진다", async () => {
+  const { meetingId, ids } = await setup("location");
+  for (const [i, id] of ids.slice(0, 2).entries()) {
+    await upsertDeparture(meetingId, id, {
+      label: `출발${i}`,
+      lat: 37.5 + i / 100,
+      lng: 127,
+    });
+  }
+  near.mockResolvedValue([
+    { id: 1, name: "역1", line: "2호선", lat: 37.5, lng: 127 },
+  ]);
+  matrix.mockResolvedValue([[10], [20]]);
+  expect(
+    (await createSuggestions(meetingId, deps)).items.length,
+  ).toBeGreaterThan(0);
+  await upsertDeparture(meetingId, ids[2] as number, {
+    label: "새 출발",
+    lat: 37.55,
+    lng: 127,
+  });
+  expect(await proposed(meetingId)).toHaveLength(0);
 });

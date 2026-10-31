@@ -1,6 +1,12 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { agentSuggestions } from "@/db/schema";
+import { type Db, db, type Tx } from "@/db/client";
+import {
+  agentSuggestions,
+  locationVotes,
+  meetings,
+  participants,
+  scheduleVotes,
+} from "@/db/schema";
 import { writeReasons as defaultWriteReasons } from "@/server/ai/suggest/write-reasons";
 import { confirmLocation } from "@/server/location/confirm-location";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
@@ -92,6 +98,9 @@ export async function createSuggestions(
   const kind = suggestionKind(meeting.status);
   if (!kind) throw new AlreadyConfirmedError();
 
+  // 제안 재료(투표, 출발지)의 지문. 모델을 부르는 동안 바뀌면 저장하지 않는다.
+  const before = await fingerprint(db, meetingId, kind);
+
   if (kind === "schedule") {
     const summary = await getScheduleSummary(meetingId);
     if (summary.respondedCount < MIN_RESPONSES) {
@@ -99,9 +108,10 @@ export async function createSuggestions(
     }
     const picks = pickSchedule(summary.best, summary.respondedCount);
     const reasons = await write(meetingId, picks, summary.respondedCount);
-    const items = await replaceProposed(
+    return saveIfFresh(
       meetingId,
-      "schedule",
+      kind,
+      before,
       picks.map((p, i) =>
         schedulePayload(
           p,
@@ -109,7 +119,6 @@ export async function createSuggestions(
         ),
       ),
     );
-    return { kind, items };
   }
 
   const departAt = meeting.schedulePoll?.confirmedStart ?? new Date();
@@ -118,9 +127,10 @@ export async function createSuggestions(
   const picks = pickLocation(result.stations, departAt);
   const departures = result.stations[0]?.perParticipant.length ?? 0;
   const reasons = await write(meetingId, picks, departures);
-  const items = await replaceProposed(
+  return saveIfFresh(
     meetingId,
-    "location",
+    kind,
+    before,
     picks.map((p, i) =>
       locationPayload(
         p,
@@ -128,7 +138,66 @@ export async function createSuggestions(
       ),
     ),
   );
-  return { kind, items };
+}
+
+async function fingerprint(
+  q: Tx | Db,
+  meetingId: string,
+  kind: SuggestionKind,
+): Promise<string> {
+  if (kind === "schedule") {
+    const rows = await q
+      .select({ id: scheduleVotes.participantId, slots: scheduleVotes.slots })
+      .from(scheduleVotes)
+      .innerJoin(participants, eq(participants.id, scheduleVotes.participantId))
+      .where(eq(participants.meetingId, meetingId))
+      .orderBy(scheduleVotes.participantId);
+    return JSON.stringify(rows);
+  }
+  const rows = await q
+    .select({
+      id: locationVotes.id,
+      participantId: locationVotes.participantId,
+      lat: locationVotes.lat,
+      lng: locationVotes.lng,
+    })
+    .from(locationVotes)
+    .innerJoin(participants, eq(participants.id, locationVotes.participantId))
+    .where(eq(participants.meetingId, meetingId))
+    .orderBy(locationVotes.id);
+  return JSON.stringify(rows);
+}
+
+/**
+ * 모임 행을 잠그고 재료와 단계가 그대로일 때만 저장한다.
+ * 투표 저장, 출발지 변경, 확정은 모두 같은 모임 행 잠금을 잡으므로
+ * 어느 쪽이 먼저여도 오래된 제안이 남지 않는다. 바뀌었으면 저장하지 않고 빈 items를 돌려준다.
+ */
+async function saveIfFresh(
+  meetingId: string,
+  kind: SuggestionKind,
+  before: string,
+  payloads: SuggestionPayload[],
+): Promise<SuggestionSet> {
+  const saved = await db.transaction(async (tx) => {
+    const [meeting] = await tx
+      .select({ status: meetings.status })
+      .from(meetings)
+      .where(eq(meetings.id, meetingId))
+      .for("update");
+    if (!meeting) throw new MeetingNotFoundError();
+    const current = suggestionKind(meeting.status);
+    if (current !== kind) return { stale: true as const, current };
+    if ((await fingerprint(tx, meetingId, kind)) !== before) {
+      return { stale: true as const, current };
+    }
+    return {
+      stale: false as const,
+      items: await replaceProposed(meetingId, kind, payloads, tx),
+    };
+  });
+  if (saved.stale) return { kind: saved.current, items: [] };
+  return { kind, items: saved.items };
 }
 
 export async function listSuggestions(

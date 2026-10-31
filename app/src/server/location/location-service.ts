@@ -24,7 +24,8 @@ export async function upsertDeparture(
     const [meeting] = await tx
       .select({ id: meetings.id })
       .from(meetings)
-      .where(eq(meetings.id, meetingId));
+      .where(eq(meetings.id, meetingId))
+      .for("update");
     if (!meeting) throw new MeetingNotFoundError();
 
     const [person] = await tx
@@ -80,6 +81,12 @@ export async function deleteDeparture(
   voteId: number,
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    // 제안 저장과 겹치지 않게 모임 행을 먼저 잠근다.
+    await tx
+      .select({ id: meetings.id })
+      .from(meetings)
+      .where(eq(meetings.id, meetingId))
+      .for("update");
     const [vote] = await tx
       .select({ id: locationVotes.id })
       .from(locationVotes)
