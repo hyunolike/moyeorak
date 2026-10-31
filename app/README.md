@@ -180,6 +180,8 @@ Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMI
    NVIDIA_API_KEY=<키> pnpm eval:time-parse --models <후보1>,<후보2>
    ```
 
+   같은 후보 모델로 `pnpm eval:suggest --models <후보1>,<후보2>`도 함께 돌려 결과를 비교합니다. 제안 평가는 [제안 평가 세트](../docs/eval/README.md#제안-평가-세트)의 과거 모임 20건을 채운 뒤 돌립니다.
+
    정확도가 95% 이상인 모델을 `NVIDIA_MODEL_PARSE`로 정하고, 그 모델과 구조화 출력 방식(`src/server/ai/provider.ts`의 `DEFAULT_STRUCTURED_OUTPUT`)을 `docs/eval/README.md`의 모델 선택 기록에 남깁니다. 95%에 닿는 모델이 없어도 배포는 할 수 있습니다. 말로 남기기는 시간표를 칠해 보여 주기만 하고, 사용자가 **이 시간으로 저장**을 눌러야 저장되기 때문입니다. 이때는 가장 높은 모델과 그 정확도를 같은 자리에 적어 둡니다.
 
 2. Neon에 만든 새 DB를 `DATABASE_URL`로 두고 `pnpm db:migrate`를 실행합니다. 그 전에 그 DB에서 `CREATE EXTENSION IF NOT EXISTS postgis;`를 먼저 실행해 둡니다.

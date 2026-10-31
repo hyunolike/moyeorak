@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { isAdminToken } from "@/server/admin-auth";
+import { computeAiUsage } from "@/server/metrics/ai-usage";
 import { computeMetrics, type Metrics } from "@/server/metrics/compute-metrics";
 
 const wrap = {
@@ -60,6 +61,63 @@ async function MetricsTable() {
   );
 }
 
+async function AiUsageTable() {
+  const to = new Date();
+  const usage = await computeAiUsage({
+    from: new Date(to.getTime() - 30 * 86_400_000),
+    to,
+  });
+  const heads = [
+    "용도",
+    "호출",
+    "실패",
+    "평균 지연(ms)",
+    "입력 토큰",
+    "출력 토큰",
+  ];
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr style={{ color: "var(--color-k-600)", textAlign: "right" }}>
+          {heads.map((h, i) => (
+            <th
+              key={h}
+              style={{ ...cell, textAlign: i === 0 ? "left" : "right" }}
+            >
+              {h}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {usage.length === 0 && (
+          <tr>
+            <td style={cell} colSpan={heads.length}>
+              아직 호출이 없어요
+            </td>
+          </tr>
+        )}
+        {usage.map((u) => (
+          <tr key={u.purpose}>
+            <td style={cell}>{u.purpose}</td>
+            {[
+              u.calls,
+              u.failed,
+              u.avgLatencyMs,
+              u.inputTokens,
+              u.outputTokens,
+            ].map((n, i) => (
+              <td key={heads[i + 1]} style={{ ...cell, textAlign: "right" }}>
+                {n.toLocaleString("ko-KR")}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 async function Content({
   searchParams,
 }: {
@@ -72,6 +130,12 @@ async function Content({
       <h1 style={{ fontSize: 20, marginBottom: 16 }}>모임 지표</h1>
       <Suspense fallback={<p>불러오는 중이에요</p>}>
         <MetricsTable />
+      </Suspense>
+      <h2 style={{ fontSize: 16, margin: "24px 0 8px" }}>
+        AI 사용량(최근 30일)
+      </h2>
+      <Suspense fallback={<p>불러오는 중이에요</p>}>
+        <AiUsageTable />
       </Suspense>
     </>
   );

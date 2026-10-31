@@ -11,7 +11,7 @@ export type Metrics = {
   suggestionAcceptRate: number | null;
 };
 
-type Range = { from: Date; to: Date };
+export type Range = { from: Date; to: Date };
 
 const round = (n: number) => Math.round(n * 10000) / 10000;
 const num = (v: unknown): number | null =>

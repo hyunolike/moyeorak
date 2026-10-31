@@ -62,3 +62,33 @@ NVIDIA_API_KEY=... pnpm eval:time-parse --models meta/llama-3.3-70b-instruct,oth
 | 평가한 날 | 케이스 수 | 모델 | 구조화 출력 방식 | 정확도 | 평균 지연 |
 |---|---|---|---|---|---|
 | (아직 평가 전) | 10 | | `response_format` | | |
+
+## 제안 평가 세트
+
+마주가 카드마다 쓰는 이유 문장이 쓸 만한지 보기 위한 사례 모음이다. `suggest-cases.jsonl`을 읽는다. DB와 Google 없이 돌아가고, 후보 고르기와 이유 쓰기는 실제 서비스와 같은 코드를 쓴다. 호출 기록과 모임당 상한은 거치지 않는다.
+
+### 현재 상태
+
+예시 3건만 들어 있다. 호스트가 과거 모임 20건으로 나머지를 채운다. 사례가 20건보다 적으면 스크립트가 경고 한 줄을 찍지만 평가는 그대로 돈다.
+
+### 한 줄의 형식
+
+```json
+{"id": "schedule-two-days", "respondedCount": 4, "best": [{"start": "2026-11-06T18:00:00+09:00", "end": "2026-11-06T20:00:00+09:00", "available": ["민수", "지영"], "unavailable": ["하준"]}], "stations": null}
+```
+
+`respondedCount`는 시간에 응답한 사람 수다. 시간 사례는 `best`에 후보 묶음을 넣고 `stations`는 `null`로 둔다. 장소 사례는 `best`를 `null`로 두고 `stations`에 역 추천 목록과 `departAt`(출발 시각)을 넣는다. 장소 사례에서는 첫 역의 `perParticipant` 길이를 응답자 수로 쓴다. 이동시간을 모르는 사람은 `minutes`를 `null`로 적는다. 날짜는 모두 ISO 문자열이다.
+
+### 실행
+
+```bash
+cd app
+pnpm eval:suggest --models mock
+NVIDIA_API_KEY=... pnpm eval:suggest --models meta/llama-3.3-70b-instruct,other/model [--cases ../docs/eval/suggest-cases.jsonl]
+```
+
+모델마다 `docs/eval/results/suggest-{모델 이름}-{YYYYMMDD}.md`에 표를 쓴다. 한 사례가 카드를 두 장까지 만들 수 있어서 표는 카드 한 장이 한 줄이고, 후보가 없는 사례는 "후보 없음" 한 줄이다. 맨 아래에 ai 출처 비율과 평균 지연이 붙는다.
+
+### 채점하는 법
+
+호스트가 표의 "받아들였을까(O/X)" 칸을 카드마다 채운다. 그 모임이었다면 이 카드와 이유 문장을 그대로 받아들였을지 O 또는 X로 적고, 이유 문장이 틀리거나 어색하면 X와 함께 짧게 메모한다. 출처가 rule인 줄은 모델이 실패했거나 숫자 검사를 넘지 못해 문장 틀로 내려간 카드다. ai 비율이 낮은 모델은 같은 후보 모델끼리 시간 파싱 평가와 함께 비교해서 고른다. 결과 파일은 커밋하지 않는다.
