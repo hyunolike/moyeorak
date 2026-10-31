@@ -67,8 +67,11 @@ test("달이 바뀌면 새 카운터", async () => {
   expect(await googleElementsUsed(nov)).toBe(100);
 });
 
-test("환경 변수가 비었거나 잘못되면 기본값 4000", async () => {
-  vi.stubEnv("GOOGLE_MONTHLY_ELEMENT_CAP", "");
-  expect(await reserveGoogleElements(4000, now)).toBe(true);
-  expect(await reserveGoogleElements(1, now)).toBe(false);
-});
+test.each(["", "abc", "0", "-5", "1.5"])(
+  "환경 변수가 %j이면 기본값 4000",
+  async (raw) => {
+    vi.stubEnv("GOOGLE_MONTHLY_ELEMENT_CAP", raw);
+    expect(await reserveGoogleElements(4000, now)).toBe(true);
+    expect(await reserveGoogleElements(1, now)).toBe(false);
+  },
+);

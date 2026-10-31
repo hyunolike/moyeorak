@@ -20,8 +20,6 @@ export function googleMonthlyElementCap(): number {
   return raw && Number.isInteger(n) && n > 0 ? n : DEFAULT_CAP;
 }
 
-export const GOOGLE_MONTHLY_ELEMENT_CAP = googleMonthlyElementCap();
-
 /** 서울 기준 월별 카운터 키. 모임별 계산 횟수 접두어(`midpoint:`)와 겹치지 않는다. */
 export function usageKey(now: Date): string {
   return `google-elements:${seoulYearMonth(now)}`;

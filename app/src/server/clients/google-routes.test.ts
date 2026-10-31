@@ -220,6 +220,27 @@ test("월 상한을 넘기면 Google을 부르지 않고 RateLimitedError", asyn
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
+test("월 상한 오류는 이번 달 한도를 안내하는 문구를 쓴다", async () => {
+  vi.stubEnv("GOOGLE_MONTHLY_ELEMENT_CAP", "3");
+  vi.stubGlobal("fetch", vi.fn());
+  await expect(
+    computeTransitMatrix([pt(0), pt(1)], [pt(2), pt(3)], departAt),
+  ).rejects.toThrow(
+    "이번 달 이동 시간 계산 한도를 다 썼어요. 다음 달에 다시 시도해 주세요",
+  );
+});
+
+test("Vercel 미리보기에서는 목 모드가 꺼져 있어도 Google을 부르지 않는다", async () => {
+  vi.stubEnv("VERCEL_ENV", "preview");
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  const m = await computeTransitMatrix([pt(0), pt(1)], [pt(2)], departAt);
+  expect(m).toHaveLength(2);
+  expect(m[0]?.[0]).toEqual(expect.any(Number));
+  expect(fetchMock).not.toHaveBeenCalled();
+  expect(await googleElementsUsed()).toBe(0);
+});
+
 test("호출이 성공하면 origins x destinations만큼 센다", async () => {
   vi.stubGlobal(
     "fetch",

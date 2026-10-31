@@ -17,13 +17,13 @@ export class ExternalApiError extends Error {
   }
 }
 
-/** 한 모임의 외부 API 계산이 하루 상한을 넘었을 때. 응답은 429. */
+/** 외부 API 계산이 모임별 하루 상한이나 앱 전체 월 상한을 넘었을 때. 응답은 429. */
 export class RateLimitedError extends Error {
   readonly code = "RATE_LIMITED";
-  constructor() {
-    super(
-      "오늘은 이 모임의 추천을 너무 많이 계산했어요. 내일 다시 시도해 주세요",
-    );
+  constructor(
+    message = "오늘은 이 모임의 추천을 너무 많이 계산했어요. 내일 다시 시도해 주세요",
+  ) {
+    super(message);
     this.name = "RateLimitedError";
   }
 }
