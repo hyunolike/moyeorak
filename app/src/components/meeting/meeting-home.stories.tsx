@@ -48,6 +48,25 @@ type Story = StoryObj<typeof meta>;
 
 export const Waiting: Story = {};
 export const ShareAction: Story = { args: { meId: 1 } };
+export const HostSuggest: Story = {
+  args: {
+    meId: 1,
+    progress: {
+      ...progress,
+      participantCount: 4,
+      participants: [
+        ...progress.participants.map((p) => ({ ...p, votedSchedule: true })),
+        {
+          id: 3,
+          name: "서연",
+          isHost: false,
+          votedSchedule: false,
+          votedLocation: false,
+        },
+      ],
+    },
+  },
+};
 export const Newcomer: Story = { args: { meId: null } };
 export const Checking: Story = { args: { meId: undefined } };
 export const Confirmed: Story = {

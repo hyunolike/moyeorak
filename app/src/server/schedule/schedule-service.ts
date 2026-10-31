@@ -19,6 +19,11 @@ import {
   rankSlots,
   validateSlots,
 } from "@/server/schedule/slots";
+import {
+  assertOpenSuggestion,
+  closeSuggestions,
+  dropProposed,
+} from "@/server/suggest/store";
 
 const SLOT_MS = 30 * 60 * 1000;
 const MAX_CONFIRM_MS = 24 * 60 * 60 * 1000;
@@ -80,6 +85,8 @@ export async function saveScheduleVote(
         target: scheduleVotes.participantId,
         set: { slots: unique },
       });
+    // 투표가 바뀌면 이미 만든 제안의 "n명 가능" 같은 사실이 달라지므로 지운다.
+    await dropProposed(meetingId, "schedule", tx);
     await recordEvent(meetingId, "vote_done", tx);
   });
 }
@@ -126,6 +133,7 @@ export async function confirmSchedule(
   meetingId: string,
   start: Date,
   end: Date,
+  opts: { acceptedSuggestionId?: number } = {},
 ): Promise<{ status: "locating" | "confirmed" }> {
   return db.transaction(async (tx) => {
     const [meeting] = await tx
@@ -140,6 +148,14 @@ export async function confirmSchedule(
       .where(eq(schedulePolls.meetingId, meetingId));
     if (!poll) throw new ScheduleNotFoundError();
     if (meeting.status !== "scheduling") throw new AlreadyConfirmedError();
+    if (opts.acceptedSuggestionId !== undefined) {
+      await assertOpenSuggestion(
+        tx,
+        meetingId,
+        "schedule",
+        opts.acceptedSuggestionId,
+      );
+    }
 
     // [start, end)의 30분 슬롯이 모두 투표판 안이어야 한다.
     const range: Date[] = [];
@@ -162,6 +178,13 @@ export async function confirmSchedule(
         confirmedAt: new Date(),
       })
       .where(eq(schedulePolls.meetingId, meetingId));
+
+    await closeSuggestions(
+      tx,
+      meetingId,
+      "schedule",
+      opts.acceptedSuggestionId ?? null,
+    );
 
     if (meeting.scope === "both") {
       await tx

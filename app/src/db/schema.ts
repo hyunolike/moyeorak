@@ -102,6 +102,7 @@ export const confirmedLocations = pgTable(
     name: varchar("name", { length: 100 }).notNull(),
     lat: doublePrecision("lat").notNull(),
     lng: doublePrecision("lng").notNull(),
+    travel: jsonb("travel").$type<{ name: string; minutes: number | null }[]>(),
   },
   (t) => [uniqueIndex("confirmed_locations_meeting_uq").on(t.meetingId)],
 );

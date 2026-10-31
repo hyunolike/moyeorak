@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { meetingEvents, schedulePolls } from "@/db/schema";
+import { agentSuggestions, meetingEvents, schedulePolls } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
   createMeeting,
@@ -19,6 +19,10 @@ import {
   getScheduleSummary,
   saveScheduleVote,
 } from "@/server/schedule/schedule-service";
+import {
+  SuggestionClosedError,
+  SuggestionNotFoundError,
+} from "@/server/suggest/errors";
 
 const key = (c: string) => c.repeat(21);
 
@@ -242,4 +246,62 @@ test("확정된 모임에는 투표를 저장하지 않는다", async () => {
   await expect(
     saveScheduleVote(meetingId, participantId, [at("14:00")]),
   ).rejects.toBeInstanceOf(AlreadyConfirmedError);
+});
+
+describe("confirmSchedule 제안 닫기", () => {
+  const addSuggestion = async (meetingId: string, kind = "schedule") => {
+    const [row] = await db
+      .insert(agentSuggestions)
+      .values({ meetingId, kind, payload: {} })
+      .returning({ id: agentSuggestions.id });
+    return (row as { id: number }).id;
+  };
+  const statusOf = async (id: number) =>
+    (
+      await db
+        .select({ s: agentSuggestions.status })
+        .from(agentSuggestions)
+        .where(eq(agentSuggestions.id, id))
+    )[0]?.s;
+
+  test("acceptedSuggestionId를 주면 그 제안만 accepted, 나머지는 rejected", async () => {
+    const { meetingId, at } = await setup("schedule");
+    const one = await addSuggestion(meetingId);
+    const two = await addSuggestion(meetingId);
+    await confirmSchedule(meetingId, at("14:00"), at("15:00"), {
+      acceptedSuggestionId: one,
+    });
+    expect(await statusOf(one)).toBe("accepted");
+    expect(await statusOf(two)).toBe("rejected");
+  });
+
+  test("옵션 없이 확정하면 열린 제안이 모두 rejected", async () => {
+    const { meetingId, at } = await setup("schedule");
+    const one = await addSuggestion(meetingId);
+    const two = await addSuggestion(meetingId);
+    await confirmSchedule(meetingId, at("14:00"), at("15:00"));
+    expect(await statusOf(one)).toBe("rejected");
+    expect(await statusOf(two)).toBe("rejected");
+  });
+
+  test("닫혔거나 없는 제안 id면 확정하지 않는다", async () => {
+    const { meetingId, at } = await setup("schedule");
+    const closed = await addSuggestion(meetingId);
+    await db
+      .update(agentSuggestions)
+      .set({ status: "rejected" })
+      .where(eq(agentSuggestions.id, closed));
+    await expect(
+      confirmSchedule(meetingId, at("14:00"), at("15:00"), {
+        acceptedSuggestionId: closed,
+      }),
+    ).rejects.toBeInstanceOf(SuggestionClosedError);
+    await expect(
+      confirmSchedule(meetingId, at("14:00"), at("15:00"), {
+        acceptedSuggestionId: 99999,
+      }),
+    ).rejects.toBeInstanceOf(SuggestionNotFoundError);
+    const summary = await getScheduleSummary(meetingId);
+    expect(summary.poll.confirmedStart).toBeNull();
+  });
 });

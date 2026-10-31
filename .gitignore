@@ -44,3 +44,4 @@ CLAUDE.local.md
 
 # 시간 파싱 평가 결과
 docs/eval/results/*.json
+docs/eval/results/*.md

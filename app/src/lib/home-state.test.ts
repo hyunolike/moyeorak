@@ -77,7 +77,7 @@ test("일부 응답: 기다리는 사람 한 명", () => {
       person(3, "민준", voted),
     ],
   });
-  const s = homeState(p, 1);
+  const s = homeState(p, 3);
   expect(s.expression).toBe("waiting");
   expect(s.message).toBe("3명 중 2명이 응답했어요. 서연님 기다리는 중이에요.");
   expect(s.action).toEqual({ label: "친구에게 링크 보내기", href: "#share" });
@@ -145,7 +145,7 @@ test("모두 응답하면 happy이고 결과 보기를 권한다", () => {
     participantCount: 2,
     participants: [person(1, "현호", voted), person(2, "서연", voted)],
   });
-  const s = homeState(p, 1);
+  const s = homeState(p, 2);
   expect(s.expression).toBe("happy");
   expect(s.message).toBe("모두 응답했어요. 결과를 확인해 볼까요?");
   expect(s.action).toEqual({
@@ -157,13 +157,16 @@ test("모두 응답하면 happy이고 결과 보기를 권한다", () => {
 test("장소 단계에서 모두 응답하면 역 결과로 간다", () => {
   const p = progress({
     status: "locating",
-    participantCount: 1,
-    participants: [person(1, "현호", { votedLocation: true })],
+    participantCount: 2,
+    participants: [
+      person(1, "현호", { votedLocation: true }),
+      person(2, "서연", { votedLocation: true }),
+    ],
   });
-  expect(homeState(p, 1).action?.href).toBe("/meetings/m1/location/stations");
+  expect(homeState(p, 2).action?.href).toBe("/meetings/m1/location/stations");
 });
 
-test("확정되면 celebrate이고 약속 확인하기를 권한다", () => {
+test("확정되면 celebrate이고 약속 카드 보기를 권한다", () => {
   const p = progress({
     status: "confirmed",
     confirmedStart: "2026-11-09T10:00:00.000Z",
@@ -174,8 +177,8 @@ test("확정되면 celebrate이고 약속 확인하기를 권한다", () => {
   expect(s.expression).toBe("celebrate");
   expect(s.message).toBe("11월 9일 월요일 오후 7시, 강남역으로 정해졌어요.");
   expect(s.action).toEqual({
-    label: "약속 확인하기",
-    href: "/meetings/m1/schedule",
+    label: "약속 카드 보기",
+    href: "/meetings/m1/summary",
   });
 });
 
@@ -204,8 +207,8 @@ test("확정된 모임을 처음 연 사람에게도 확정 안내가 먼저다"
   expect(s.expression).toBe("celebrate");
   expect(s.message).toBe(confirmedSentence(p));
   expect(s.action).toEqual({
-    label: "약속 확인하기",
-    href: "/meetings/m1/schedule",
+    label: "약속 카드 보기",
+    href: "/meetings/m1/summary",
   });
 });
 
@@ -273,5 +276,107 @@ describe("confirmedSentence", () => {
     expect(at("2026-11-09T15:30:00.000Z")).toContain(
       "11월 10일 화요일 오전 12시 30분",
     );
+  });
+});
+
+describe("호스트의 제안과 재촉", () => {
+  const five = (n: number, over: Partial<MeetingProgress> = {}) =>
+    progress({
+      participantCount: 5,
+      participants: [
+        person(1, "현호", n > 0 ? voted : {}),
+        person(2, "서연", n > 1 ? voted : {}),
+        person(3, "민준", n > 2 ? voted : {}),
+        person(4, "지우", n > 3 ? voted : {}),
+        person(5, "하늘", n > 4 ? voted : {}),
+      ],
+      ...over,
+    });
+
+  test("호스트이고 절반을 넘게 응답하면 제안을 묻는다", () => {
+    const s = homeState(five(3), 1);
+    expect(s.expression).toBe("guide");
+    expect(s.message).toBe(
+      "3명 응답했는데, 지금 결과로 제안 받아볼까요? 아니면 지우님과 하늘님 기다릴까요?",
+    );
+    expect(s.action).toEqual({
+      label: "제안 받기",
+      href: "/meetings/m1/suggest",
+    });
+    expect(s.canNudge).toBe(true);
+  });
+
+  test("기다리는 사람이 셋 이상이면 외 N명으로 줄인다", () => {
+    const p = progress({
+      participantCount: 7,
+      participants: [
+        person(1, "현호", voted),
+        person(2, "서연", voted),
+        person(3, "민준", voted),
+        person(4, "소라", voted),
+        person(5, "지우"),
+        person(6, "하늘"),
+        person(7, "도윤"),
+      ],
+    });
+    expect(homeState(p, 1).message).toBe(
+      "4명 응답했는데, 지금 결과로 제안 받아볼까요? 아니면 지우님 외 2명 기다릴까요?",
+    );
+  });
+
+  test("미입장 자리만 남았으면 명수로 말한다", () => {
+    const p = progress({
+      participantCount: 5,
+      participants: [
+        person(1, "현호", voted),
+        person(2, "서연", voted),
+        person(3, "민준", voted),
+      ],
+    });
+    const s = homeState(p, 1);
+    expect(s.message).toBe(
+      "3명 응답했는데, 지금 결과로 제안 받아볼까요? 아니면 2명 기다릴까요?",
+    );
+    expect(s.canNudge).toBe(true);
+  });
+
+  test("호스트이고 모두 응답하면 happy이고 제안 받기", () => {
+    const s = homeState(five(5), 1);
+    expect(s.expression).toBe("happy");
+    expect(s.message).toBe("모두 응답했어요. 제안 받아볼까요?");
+    expect(s.action).toEqual({
+      label: "제안 받기",
+      href: "/meetings/m1/suggest",
+    });
+    expect(s.canNudge).toBe(false);
+  });
+
+  test("호스트라도 2/5이면 1단계 대기 문장이고 재촉은 가능하다", () => {
+    const s = homeState(five(2), 1);
+    expect(s.message).toBe(
+      "5명 중 2명이 응답했어요. 민준님 외 2명 기다리는 중이에요.",
+    );
+    expect(s.action?.label).toBe("친구에게 링크 보내기");
+    expect(s.canNudge).toBe(true);
+  });
+
+  test("호스트가 아니면 3/5여도 1단계 그대로이고 재촉하지 못한다", () => {
+    const s = homeState(five(3), 2);
+    expect(s.message).toBe(
+      "5명 중 3명이 응답했어요. 지우님과 하늘님 기다리는 중이에요.",
+    );
+    expect(s.action?.label).toBe("친구에게 링크 보내기");
+    expect(s.canNudge).toBe(false);
+    expect(homeState(five(5), 2).action?.href).toBe("/meetings/m1/schedule");
+  });
+
+  test("확정되면 재촉하지 않는다", () => {
+    const s = homeState(five(3, { status: "confirmed" }), 1);
+    expect(s.canNudge).toBe(false);
+    expect(s.action?.href).toBe("/meetings/m1/summary");
+  });
+
+  test("호스트가 아니거나 모르는 사람은 canNudge가 false", () => {
+    expect(homeState(progress(), null).canNudge).toBe(false);
   });
 });

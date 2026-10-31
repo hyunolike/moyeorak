@@ -15,6 +15,7 @@ import {
   getStoredParticipantId,
   storeParticipantId,
 } from "@/lib/device-key";
+import type { Suggestion } from "@/server/suggest/types";
 
 export class ApiError extends Error {
   constructor(
@@ -65,6 +66,12 @@ export const keys = {
   summary: (id: string) => ["summary", id] as const,
   departures: (id: string) => ["departures", id] as const,
   midpoint: (id: string) => ["midpoint", id] as const,
+  suggestions: (id: string) => ["suggestions", id] as const,
+};
+
+export type SuggestionSet = {
+  kind: "schedule" | "location" | null;
+  items: Suggestion[];
 };
 
 export function useMeeting(id: string, initialData?: Meeting) {
@@ -209,6 +216,19 @@ export function useConfirmSchedule(meetingId: string) {
   });
 }
 
+export function useConfirmLocation(meetingId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (stationId: number) =>
+      apiFetch(
+        `/api/meetings/${meetingId}/location/confirm`,
+        withDeviceKey(json("POST", { stationId })),
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: keys.meeting(meetingId) }),
+  });
+}
+
 export function useDepartures(meetingId: string) {
   return useQuery({
     queryKey: keys.departures(meetingId),
@@ -284,5 +304,84 @@ export function useShareEvent(meetingId: string) {
         `/api/meetings/${meetingId}/events`,
         json("POST", { type: "shared" }),
       ),
+  });
+}
+
+export type NudgeMessage = { tone: "friendly" | "short"; text: string };
+export type NudgeResult = {
+  messages: NudgeMessage[];
+  source: "ai" | "rule";
+  link: string;
+};
+
+/** 호스트 전용. 단톡방에 붙일 재촉 메시지를 만든다. 서비스가 직접 보내지는 않는다. */
+export function useNudge(meetingId: string) {
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<NudgeResult>(
+        `/api/meetings/${meetingId}/nudge`,
+        withDeviceKey({ method: "POST" }),
+      ),
+  });
+}
+
+/** 호스트 전용. 화면을 열 때마다 새로 받는다(투표가 바뀌면 서버가 열린 제안을 지운다). */
+export function useSuggestions(meetingId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: keys.suggestions(meetingId),
+    queryFn: () =>
+      apiFetch<SuggestionSet>(
+        `/api/meetings/${meetingId}/suggestions`,
+        withDeviceKey({}),
+      ),
+    enabled,
+    staleTime: 0,
+  });
+}
+
+function useInvalidateDecision(meetingId: string) {
+  const client = useQueryClient();
+  return () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: keys.suggestions(meetingId) }),
+      client.invalidateQueries({ queryKey: keys.meeting(meetingId) }),
+      client.invalidateQueries({ queryKey: keys.progress(meetingId) }),
+      client.invalidateQueries({ queryKey: keys.summary(meetingId) }),
+    ]);
+}
+
+export function useCreateSuggestions(meetingId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<SuggestionSet>(
+        `/api/meetings/${meetingId}/suggestions`,
+        withDeviceKey({ method: "POST" }),
+      ),
+    onSuccess: (set) => client.setQueryData(keys.suggestions(meetingId), set),
+  });
+}
+
+export function useAcceptSuggestion(meetingId: string) {
+  const invalidate = useInvalidateDecision(meetingId);
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch<{ status: "locating" | "confirmed" }>(
+        `/api/meetings/${meetingId}/suggestions/${id}/accept`,
+        withDeviceKey({ method: "POST" }),
+      ),
+    onSettled: invalidate,
+  });
+}
+
+export function useRejectSuggestion(meetingId: string) {
+  const invalidate = useInvalidateDecision(meetingId);
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch<{ ok: true }>(
+        `/api/meetings/${meetingId}/suggestions/${id}/reject`,
+        withDeviceKey({ method: "POST" }),
+      ),
+    onSettled: invalidate,
   });
 }

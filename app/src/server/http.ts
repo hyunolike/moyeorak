@@ -18,6 +18,14 @@ import {
   ParticipantNotFoundError,
   ScheduleNotFoundError,
 } from "@/server/schedule/errors";
+import {
+  NobodyWaitingError,
+  NotConfirmedError,
+  NotEnoughResponsesError,
+  StationNotFoundError,
+  SuggestionClosedError,
+  SuggestionNotFoundError,
+} from "@/server/suggest/errors";
 
 type ErrorClass = new (
   ...args: never[]
@@ -44,6 +52,12 @@ const errorStatus = new Map<ErrorClass, number>([
   [AiLimitError, 429],
   [AiConfigError, 500],
   [ParseFailedError, 422],
+  [NotEnoughResponsesError, 409],
+  [SuggestionNotFoundError, 404],
+  [SuggestionClosedError, 409],
+  [StationNotFoundError, 404],
+  [NobodyWaitingError, 409],
+  [NotConfirmedError, 409],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {

@@ -103,6 +103,19 @@ export async function recommendMidpoint(
   return result;
 }
 
+/**
+ * 이 모임의 가장 최근 중간지점 캐시에서 그 역의 추천을 찾는다.
+ * Google을 부르지 않는다. 캐시가 없거나 그 역이 없으면 null.
+ */
+export async function cachedRecommendation(
+  meetingId: string,
+  stationId: number,
+): Promise<Recommendation | null> {
+  const latest = await latestCached<MidpointResult>(cachePrefix(meetingId));
+  if (latest?.type !== "ok") return null;
+  return latest.stations.find((s) => s.stationId === stationId) ?? null;
+}
+
 async function compute(
   departures: Awaited<ReturnType<typeof listDepartures>>,
   departAt: Date,
