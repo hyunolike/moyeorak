@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { BottomBar } from "@/components/bottom-bar";
@@ -7,7 +8,11 @@ import { MainButton } from "@/components/main-button";
 import { MeetingGate } from "@/components/meeting/meeting-gate";
 import { MobileLayout } from "@/components/mobile-layout";
 import { PageHeader } from "@/components/page-header";
-import { NaturalTimeInput } from "@/components/schedule/natural-time-input";
+import {
+  ALREADY_CONFIRMED_MESSAGE,
+  isAlreadyConfirmed,
+  NaturalTimeInput,
+} from "@/components/schedule/natural-time-input";
 import { pollDates, pollHours } from "@/components/schedule/poll";
 import { TimeSelectionGuide } from "@/components/schedule/time-selection-guide";
 import { Timetable } from "@/components/timetable";
@@ -34,6 +39,9 @@ function VoteForm({
   const dates = useMemo(() => pollDates(summary.poll), [summary.poll]);
   const { startTime, endTime } = pollHours(summary.poll);
   const schedulePath = `/meetings/${meeting.id}/schedule`;
+  // 시간이 이미 정해졌으면(처음부터, 또는 저장하다 409를 받아) 고칠 수 없게 한다.
+  const closed =
+    meeting.status !== "scheduling" || isAlreadyConfirmed(save.error);
 
   const handleManualSelect = (next: Date[]) => {
     setUndoSlots(null);
@@ -63,28 +71,32 @@ function VoteForm({
   return (
     <section className="bg-k-5 relative min-h-dvh pb-[152px]">
       <PageHeader
-        title={myVote ? "일정 수정하기" : "일정 추가하기"}
+        title={closed ? "시간표" : myVote ? "일정 수정하기" : "일정 추가하기"}
         backHref={schedulePath}
         className="px-2"
         right={
-          <button
-            type="button"
-            onClick={() => handleManualSelect([])}
-            className="text-primary-main text-t2 hover:text-p-450 cursor-pointer px-3"
-          >
-            초기화
-          </button>
+          closed ? undefined : (
+            <button
+              type="button"
+              onClick={() => handleManualSelect([])}
+              className="text-primary-main text-t2 hover:text-p-450 cursor-pointer px-3"
+            >
+              초기화
+            </button>
+          )
         }
       />
       <div className="px-5">
-        <NaturalTimeInput
-          meetingId={meeting.id}
-          onParsed={handleParsed}
-          disabled={save.isPending}
-          undoable={undoSlots !== null}
-          onUndo={handleUndo}
-          onUndoExpired={() => setUndoSlots(null)}
-        />
+        {!closed && (
+          <NaturalTimeInput
+            meetingId={meeting.id}
+            onParsed={handleParsed}
+            disabled={save.isPending}
+            undoable={undoSlots !== null}
+            onUndo={handleUndo}
+            onUndoExpired={() => setUndoSlots(null)}
+          />
+        )}
         <Timetable
           className="mt-1"
           dates={dates}
@@ -92,23 +104,37 @@ function VoteForm({
           endTime={endTime}
           selected={selected}
           onSelect={handleManualSelect}
-          disabled={save.isPending}
+          disabled={save.isPending || closed}
         />
       </div>
       <BottomBar className="flex-col items-stretch">
-        <TimeSelectionGuide />
-        {save.isError && (
-          <p className="text-action-red text-b4 text-center">
-            일정을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.
+        {closed ? (
+          <p className="text-b4 text-k-700 py-2 text-center">
+            {ALREADY_CONFIRMED_MESSAGE}{" "}
+            <Link
+              href={`/meetings/${meeting.id}`}
+              className="text-action font-semibold underline"
+            >
+              모임 홈으로 가기
+            </Link>
           </p>
+        ) : (
+          <>
+            <TimeSelectionGuide />
+            {save.isError && (
+              <p className="text-action-red text-b4 text-center">
+                일정을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.
+              </p>
+            )}
+            <MainButton
+              className="mt-2"
+              disabled={selected.length === 0 || save.isPending}
+              onClick={handleSubmit}
+            >
+              이 시간으로 저장
+            </MainButton>
+          </>
         )}
-        <MainButton
-          className="mt-2"
-          disabled={selected.length === 0 || save.isPending}
-          onClick={handleSubmit}
-        >
-          이 시간으로 저장
-        </MainButton>
       </BottomBar>
     </section>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, useId, useState } from "react";
 import { MazuBubble } from "@/components/mazu/mazu-bubble";
 import { ApiError, useParseAvailability } from "@/lib/api";
@@ -7,7 +8,15 @@ import type { Expression } from "@/lib/brand";
 
 export const NATURAL_INPUT_PLACEHOLDER = "담주 평일 저녁 되고 수요일은 빼줘";
 
+/** 투표 중에 다른 사람이 시간을 정해 409 ALREADY_CONFIRMED를 받았을 때 */
+export const ALREADY_CONFIRMED_MESSAGE =
+  "이미 시간이 정해졌어요. 모임 홈에서 확인해 주세요.";
+
+export const isAlreadyConfirmed = (error: unknown) =>
+  error instanceof ApiError && error.status === 409;
+
 function failureMessage(error: unknown) {
+  if (isAlreadyConfirmed(error)) return ALREADY_CONFIRMED_MESSAGE;
   if (error instanceof ApiError && error.status === 422) {
     return "잘 못 알아들었어요. 시간표에서 직접 골라 주세요.";
   }
@@ -43,6 +52,7 @@ export function NaturalTimeInput({
     expression: Expression;
     message: string;
     painted: boolean;
+    homeLink?: boolean;
   } | null>(null);
   const parse = useParseAvailability(meetingId);
 
@@ -72,17 +82,32 @@ export function NaturalTimeInput({
           expression: "sorry",
           message: failureMessage(error),
           painted: false,
+          homeLink: isAlreadyConfirmed(error),
         });
       },
     });
   };
 
   const showUndo = result?.painted && undoable && onUndo;
-  const handleUndo = () => {
-    setResult(null);
-    onUndo?.();
-  };
-
+  const action = showUndo ? (
+    <button
+      type="button"
+      onClick={() => {
+        setResult(null);
+        onUndo?.();
+      }}
+      className="text-action cursor-pointer text-sm font-semibold underline"
+    >
+      되돌리기
+    </button>
+  ) : result?.homeLink ? (
+    <Link
+      href={`/meetings/${meetingId}`}
+      className="text-action text-sm font-semibold underline"
+    >
+      모임 홈으로 가기
+    </Link>
+  ) : undefined;
   return (
     <div className="mt-3 flex flex-col gap-3">
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
@@ -114,20 +139,7 @@ export function NaturalTimeInput({
           시간표에 칠하고 있어요
         </MazuBubble>
       ) : result ? (
-        <MazuBubble
-          expression={result.expression}
-          action={
-            showUndo ? (
-              <button
-                type="button"
-                onClick={handleUndo}
-                className="text-action cursor-pointer text-sm font-semibold underline"
-              >
-                되돌리기
-              </button>
-            ) : undefined
-          }
-        >
+        <MazuBubble expression={result.expression} action={action}>
           {result.message}
         </MazuBubble>
       ) : null}
