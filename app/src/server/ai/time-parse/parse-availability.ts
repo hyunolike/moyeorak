@@ -43,7 +43,7 @@ function isSchemaViolation(e: unknown): boolean {
   );
 }
 
-const generateWithModel: GenerateAvailability = ({ system, user }) =>
+export const generateWithModel: GenerateAvailability = ({ system, user }) =>
   withStructuredOutputFallback("parse", async (model) => {
     const result = await generateText({
       model,

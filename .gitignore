@@ -41,3 +41,6 @@ CLAUDE.local.md
 # Claude Code worktrees and SDD scratch
 .worktrees/
 .superpowers/
+
+# 시간 파싱 평가 결과
+docs/eval/results/*.json

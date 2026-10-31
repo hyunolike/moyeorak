@@ -10,6 +10,7 @@
     "check": "biome check .",
     "test": "vitest run",
     "e2e": "playwright test",
+    "eval:time-parse": "tsx scripts/eval-time-parse.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "storybook": "storybook dev -p 6006",

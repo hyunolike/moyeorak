@@ -38,3 +38,17 @@
 ```bash
 python3 -I -c "import json; [json.loads(l) for l in open('docs/eval/time-parse-cases.jsonl')]"
 ```
+
+## 실행
+
+`app/`에서 모델 이름을 쉼표로 이어 넘기면 한 번에 여러 모델을 비교한다. 실제 모델은 `NVIDIA_API_KEY`가 필요하고, 모델 이름이 그대로 NVIDIA 모델 ID로 쓰인다. `mock`은 `mockParse`를 쓴다.
+
+```bash
+cd app
+pnpm eval:time-parse --models mock
+NVIDIA_API_KEY=... pnpm eval:time-parse --models meta/llama-3.3-70b-instruct,other/model [--cases ../docs/eval/time-parse-cases.jsonl]
+```
+
+모델별 정확도(30분 칸이 정답과 완전히 같은 케이스의 비율), 평균 지연, 스키마 위반 수를 표로 찍는다. 정확도가 95% 미만인 모델이 하나라도 있으면 종료 코드 1이다. 케이스의 기준 시각은 그 줄의 `today` 서울 정오다.
+
+케이스별 결과(빠진 칸, 더한 칸, 지연)는 `docs/eval/results/{날짜}-{모델 이름의 /를 _로}.json`에 쓴다. 이 파일은 커밋하지 않는다.
