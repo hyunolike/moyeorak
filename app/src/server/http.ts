@@ -14,6 +14,7 @@ import {
 import {
   AlreadyConfirmedError,
   InvalidSlotsError,
+  NotHostError,
   ParticipantNotFoundError,
   ScheduleNotFoundError,
 } from "@/server/schedule/errors";
@@ -36,6 +37,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],
+  [NotHostError, 403],
   [ExternalApiError, 502],
   [RateLimitedError, 429],
   [UnauthorizedError, 401],

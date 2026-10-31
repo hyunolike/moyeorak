@@ -204,9 +204,16 @@ test("확정된 모임에 투표를 보내면 409이고, 헤더가 없으면 401
   );
   expect(anonymous.status()).toBe(401);
 
+  const range = { start: slot, end: `${day}T10:00:00+09:00` };
+  const anonymousConfirm = await page.request.post(
+    `/api/meetings/${id}/schedule/confirm`,
+    { data: range },
+  );
+  expect(anonymousConfirm.status()).toBe(401);
+
   const confirmed = await page.request.post(
     `/api/meetings/${id}/schedule/confirm`,
-    { data: { start: slot, end: `${day}T10:00:00+09:00` } },
+    { headers, data: range },
   );
   expect(confirmed.status()).toBe(200);
 

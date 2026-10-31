@@ -204,7 +204,7 @@ export function useConfirmSchedule(meetingId: string) {
     mutationFn: (range: { start: string; end: string }) =>
       apiFetch(
         `/api/meetings/${meetingId}/schedule/confirm`,
-        json("POST", range),
+        withDeviceKey(json("POST", range)),
       ),
   });
 }

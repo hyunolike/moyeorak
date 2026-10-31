@@ -91,6 +91,7 @@ test("대기 상태와 확정 상태의 미리보기 이미지를 저장한다",
   expect(vote.status()).toBe(200);
   await save(id, "og-waiting.png");
   const confirmed = await request.post(`/api/meetings/${id}/schedule/confirm`, {
+    headers: { "X-Device-Key": "abcdefghijklmnopqrstu" },
     data: { start: slot, end: `${day}T10:00:00+09:00` },
   });
   expect(confirmed.status()).toBe(200);
