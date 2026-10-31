@@ -2,6 +2,25 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@/db/schema";
 
+/**
+ * Neon 풀러(PgBouncer 트랜잭션 모드)에서 쓰는 연결 옵션.
+ * - prepare: false — 트랜잭션 모드는 이름 있는 prepared statement를 세션 사이에 유지하지 못한다.
+ * - connect_timeout: Neon이 잠에서 깨는 시간을 넉넉히 덮는다.
+ */
+export function postgresOptions(): {
+  prepare: false;
+  max: number;
+  idle_timeout: number;
+  connect_timeout: number;
+} {
+  return {
+    prepare: false,
+    max: 5,
+    idle_timeout: 20,
+    connect_timeout: 10,
+  };
+}
+
 function createDb() {
   const url =
     process.env.NODE_ENV === "test"
@@ -16,7 +35,7 @@ function createDb() {
     );
   }
 
-  return drizzle(postgres(url), { schema });
+  return drizzle(postgres(url, postgresOptions()), { schema });
 }
 
 export type Db = ReturnType<typeof createDb>;
