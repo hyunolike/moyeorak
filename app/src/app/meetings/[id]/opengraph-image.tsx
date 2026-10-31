@@ -9,6 +9,23 @@ export const revalidate = 300;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+// ImageResponse는 CSS 변수를 읽지 못해 design/brand-v3/tokens.css 값을 그대로 적는다.
+const BG = "#FAF9F6"; // --color-bg
+const INK = "#202923"; // --color-ink
+const MUTED = "#625D54"; // --color-neutral-600
+
+/** 글꼴에 없는 이모지는 next/og가 외부에서 내려받으려 하므로 그리기 전에 뺀다. */
+function drawable(text: string, maxLength?: number): string {
+  const plain = text
+    .replace(/\p{Extended_Pictographic}|\u200d|\ufe0f|\u20e3/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const chars = Array.from(plain);
+  return maxLength && chars.length > maxLength
+    ? `${chars.slice(0, maxLength).join("")}…`
+    : plain;
+}
+
 const read = (...parts: string[]) =>
   readFile(path.join(process.cwd(), ...parts));
 
@@ -37,7 +54,7 @@ export default async function Image({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        background: "#FAF9F6",
+        background: BG,
         padding: "56px 72px",
         fontFamily: "Pretendard",
       }}
@@ -47,11 +64,29 @@ export default async function Image({
         <div
           style={{ display: "flex", flexDirection: "column", flex: 1, gap: 24 }}
         >
-          <div style={{ fontSize: 64, lineHeight: 1.2, color: "#1F1B16" }}>
-            {title}
+          <div
+            style={{
+              fontSize: 64,
+              lineHeight: 1.2,
+              color: INK,
+              maxHeight: 160,
+              overflow: "hidden",
+              wordBreak: "break-all",
+            }}
+          >
+            {drawable(title, 24)}
           </div>
-          <div style={{ fontSize: 36, lineHeight: 1.4, color: "#5C554B" }}>
-            {description}
+          <div
+            style={{
+              fontSize: 36,
+              lineHeight: 1.4,
+              color: MUTED,
+              maxHeight: 220,
+              overflow: "hidden",
+              wordBreak: "break-all",
+            }}
+          >
+            {drawable(description, 90)}
           </div>
         </div>
       </div>
