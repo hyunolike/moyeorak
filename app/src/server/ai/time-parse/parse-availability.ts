@@ -17,6 +17,9 @@ import type { Poll } from "@/server/schedule/slots";
 /** 스키마를 어긴 응답을 몇 번까지 받아 볼지. 첫 호출 + 다시 한 번. */
 const MAX_ATTEMPTS = 2;
 
+/** 모델 한 번을 기다리는 한도. 넘으면 일반 실패로 던진다(스키마 위반이 아니라 다시 부르지 않는다). */
+export const MODEL_TIMEOUT_MS = 15_000;
+
 /** 모델 호출 한 번. 검사 전의 원시 객체와 토큰 수를 돌려준다. */
 export type GenerateAvailability = (input: {
   system: string;
@@ -51,6 +54,9 @@ export const generateWithModel: GenerateAvailability = ({ system, user }) =>
       prompt: user,
       temperature: 0,
       output: Output.object({ schema: AvailabilityOutput }),
+      // SDK 기본 재시도(2회)와 겹치면 사용자가 너무 오래 기다린다.
+      maxRetries: 1,
+      abortSignal: AbortSignal.timeout(MODEL_TIMEOUT_MS),
     });
     return {
       object: result.output,

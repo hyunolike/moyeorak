@@ -140,6 +140,25 @@ test("스키마 위반이 아닌 오류는 다시 부르지 않고 그대로 던
   expect(generate).toHaveBeenCalledTimes(1);
 });
 
+test("모델 호출이 시간 초과로 끊기면 스키마 위반으로 세지 않고 500으로 끝난다", async () => {
+  const meetingId = await newMeeting();
+  const timeout = new DOMException("timed out", "TimeoutError");
+  const generate: GenerateAvailability = vi.fn(async () => {
+    throw timeout;
+  });
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const res = await toResponse(() =>
+    parseAvailability(
+      { meetingId, text: "저녁", poll },
+      { generate, model: "m" },
+    ),
+  );
+  expect(generate).toHaveBeenCalledTimes(1);
+  expect(res.status).toBe(500);
+  expect((await res.json()).error.code).toBe("INTERNAL");
+  vi.restoreAllMocks();
+});
+
 test("상한에 걸리면 모델을 부르지 않고 AiLimitError", async () => {
   vi.stubEnv("AI_CALL_CAP_PER_MEETING", "1");
   try {
