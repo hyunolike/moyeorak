@@ -2,6 +2,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
+import { drawable } from "@/lib/drawable-text";
 import { meetingPreview } from "@/lib/meeting-preview";
 import { loadProgress } from "./load-progress";
 
@@ -19,18 +20,6 @@ const MUTED = "#625D54"; // --color-neutral-600
  * 이름을 먼저 줄여 "님의 모임"이 잘리지 않게 한다.
  */
 const HOST_NAME_MAX = 7;
-
-/** 글꼴에 없는 이모지는 next/og가 외부에서 내려받으려 하므로 그리기 전에 뺀다. */
-function drawable(text: string, maxLength?: number): string {
-  const plain = text
-    .replace(/\p{Extended_Pictographic}|\u200d|\ufe0f|\u20e3/gu, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  const chars = Array.from(plain);
-  return maxLength && chars.length > maxLength
-    ? `${chars.slice(0, maxLength).join("")}…`
-    : plain;
-}
 
 const read = (...parts: string[]) =>
   readFile(path.join(process.cwd(), ...parts));

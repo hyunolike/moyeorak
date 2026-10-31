@@ -47,7 +47,7 @@ test("팀장이 제안을 넘겨 보고 확정하면 요약 화면으로 간다"
   const first = await card.textContent();
 
   await page.getByRole("button", { name: "다른 제안 보기" }).click();
-  await expect(card).not.toHaveText(first);
+  await expect(card).not.toHaveText(first ?? "");
   await expect(card).toBeVisible();
 
   await page.getByRole("button", { name: "이걸로 확정" }).click();
@@ -56,6 +56,7 @@ test("팀장이 제안을 넘겨 보고 확정하면 요약 화면으로 간다"
     .getByRole("button", { name: "확정하기" })
     .click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${id}/summary$`));
+  await expect(page.getByText(/로 정해졌어요\.$/)).toBeVisible();
 });
 
 test("제안을 모두 넘기면 전체 보기와 새로 제안 받기가 나온다", async ({
