@@ -60,16 +60,23 @@ export function respondedCount(p: MeetingProgress): number {
   return p.participants.filter(votedNow(p)).length;
 }
 
-function votedNow(p: MeetingProgress) {
+/** 지금 단계에서 응답했는지 가려내는 함수. */
+export function votedNow(p: { status: MeetingProgress["status"] }) {
   return (x: Participant) =>
     p.status === "locating" ? x.votedLocation : x.votedSchedule;
 }
 
-function waitingNames(p: MeetingProgress, voted: (x: Participant) => boolean) {
-  const names = p.participants.filter((x) => !voted(x)).map((x) => x.name);
+/** 1명 "A님", 2명 "A님과 B님", 3명 이상 "A님 외 N명". */
+export function joinWaitingNames(names: string[]): string {
   if (names.length === 1) return `${names[0]}님`;
   if (names.length === 2) return `${names[0]}님과 ${names[1]}님`;
   return `${names[0]}님 외 ${names.length - 1}명`;
+}
+
+function waitingNames(p: MeetingProgress, voted: (x: Participant) => boolean) {
+  return joinWaitingNames(
+    p.participants.filter((x) => !voted(x)).map((x) => x.name),
+  );
 }
 
 type Participant = MeetingProgress["participants"][number];

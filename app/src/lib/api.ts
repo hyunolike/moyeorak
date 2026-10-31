@@ -307,6 +307,24 @@ export function useShareEvent(meetingId: string) {
   });
 }
 
+export type NudgeMessage = { tone: "friendly" | "short"; text: string };
+export type NudgeResult = {
+  messages: NudgeMessage[];
+  source: "ai" | "rule";
+  link: string;
+};
+
+/** 호스트 전용. 단톡방에 붙일 재촉 메시지를 만든다. 서비스가 직접 보내지는 않는다. */
+export function useNudge(meetingId: string) {
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<NudgeResult>(
+        `/api/meetings/${meetingId}/nudge`,
+        withDeviceKey({ method: "POST" }),
+      ),
+  });
+}
+
 /** 호스트 전용. 화면을 열 때마다 새로 받는다(투표가 바뀌면 서버가 열린 제안을 지운다). */
 export function useSuggestions(meetingId: string, enabled: boolean) {
   return useQuery({
