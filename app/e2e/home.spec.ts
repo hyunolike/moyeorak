@@ -40,7 +40,7 @@ test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, brow
   await friend.getByRole("button", { name: "모임 참여하기" }).click();
   await friend.getByRole("link", { name: "일정 추가하기" }).click();
   await friend.locator('button[data-date-idx="1"][data-slot-idx="0"]').click();
-  await friend.getByRole("button", { name: "완료" }).click();
+  await friend.getByRole("button", { name: "이 시간으로 저장" }).click();
   await expect(friend).toHaveURL(/\/schedule$/);
   await context.close();
 

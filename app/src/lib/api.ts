@@ -182,6 +182,23 @@ export function useSaveVote(meetingId: string) {
   });
 }
 
+export interface ParsedAvailability {
+  slots: string[];
+  dropped: number;
+  summary: string;
+}
+
+/** 말로 적은 가능 시간을 투표판 칸으로 바꾼다. 저장은 하지 않는다. */
+export function useParseAvailability(meetingId: string) {
+  return useMutation({
+    mutationFn: (text: string) =>
+      apiFetch<ParsedAvailability>(
+        `/api/meetings/${meetingId}/schedule/parse`,
+        withDeviceKey(json("POST", { text })),
+      ),
+  });
+}
+
 export function useConfirmSchedule(meetingId: string) {
   return useMutation({
     mutationFn: (range: { start: string; end: string }) =>

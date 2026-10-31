@@ -75,7 +75,7 @@ async function voteThreeSlots(page: Page) {
       .click();
   }
   await expect(page.locator('button[aria-pressed="true"]')).toHaveCount(3);
-  await page.getByRole("button", { name: "완료" }).click();
+  await page.getByRole("button", { name: "이 시간으로 저장" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
 }
 

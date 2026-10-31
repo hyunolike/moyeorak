@@ -7,6 +7,7 @@ import { MainButton } from "@/components/main-button";
 import { MeetingGate } from "@/components/meeting/meeting-gate";
 import { MobileLayout } from "@/components/mobile-layout";
 import { PageHeader } from "@/components/page-header";
+import { NaturalTimeInput } from "@/components/schedule/natural-time-input";
 import { pollDates, pollHours } from "@/components/schedule/poll";
 import { TimeSelectionGuide } from "@/components/schedule/time-selection-guide";
 import { Timetable } from "@/components/timetable";
@@ -27,10 +28,28 @@ function VoteForm({
   const [selected, setSelected] = useState<Date[]>(() =>
     (myVote?.slots ?? []).map((slot) => new Date(slot)),
   );
+  // 말로 칠하기 직전 선택. 한 번 되돌리거나 직접 고치면 비운다.
+  const [undoSlots, setUndoSlots] = useState<Date[] | null>(null);
   const save = useSaveVote(meeting.id);
   const dates = useMemo(() => pollDates(summary.poll), [summary.poll]);
   const { startTime, endTime } = pollHours(summary.poll);
   const schedulePath = `/meetings/${meeting.id}/schedule`;
+
+  const handleManualSelect = (next: Date[]) => {
+    setUndoSlots(null);
+    setSelected(next);
+  };
+
+  const handleParsed = (slots: Date[]) => {
+    setUndoSlots(selected);
+    setSelected(slots);
+  };
+
+  const handleUndo = () => {
+    if (!undoSlots) return;
+    setSelected(undoSlots);
+    setUndoSlots(null);
+  };
 
   const handleSubmit = () => {
     save.mutate(
@@ -50,7 +69,7 @@ function VoteForm({
         right={
           <button
             type="button"
-            onClick={() => setSelected([])}
+            onClick={() => handleManualSelect([])}
             className="text-primary-main text-t2 hover:text-p-450 cursor-pointer px-3"
           >
             초기화
@@ -58,13 +77,20 @@ function VoteForm({
         }
       />
       <div className="px-5">
+        <NaturalTimeInput
+          meetingId={meeting.id}
+          onParsed={handleParsed}
+          disabled={save.isPending}
+          undoable={undoSlots !== null}
+          onUndo={handleUndo}
+        />
         <Timetable
           className="mt-1"
           dates={dates}
           startTime={startTime}
           endTime={endTime}
           selected={selected}
-          onSelect={setSelected}
+          onSelect={handleManualSelect}
           disabled={save.isPending}
         />
       </div>
@@ -80,7 +106,7 @@ function VoteForm({
           disabled={selected.length === 0 || save.isPending}
           onClick={handleSubmit}
         >
-          완료
+          이 시간으로 저장
         </MainButton>
       </BottomBar>
     </section>
