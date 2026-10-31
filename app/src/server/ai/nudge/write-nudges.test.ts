@@ -1,6 +1,7 @@
 // @vitest-environment node
+import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { agentCallLogs } from "@/db/schema";
+import { agentCallLogs, meetings } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
   type GenerateNudges,
@@ -154,4 +155,71 @@ test("확정된 모임은 NobodyWaitingError", async () => {
   await expect(
     writeNudges(id, { generate: sequence(good), model: "m" }),
   ).rejects.toBeInstanceOf(NobodyWaitingError);
+});
+
+test("출발지 단계 문장 틀은 출발지를", async () => {
+  const id = await setup();
+  await db
+    .update(meetings)
+    .set({ status: "locating" })
+    .where(eq(meetings.id, id));
+  const r = await writeNudges(id, {
+    generate: sequence(new Error("x")),
+    model: "m",
+  });
+  expect(r.messages[0].text).toContain("출발지를");
+  expect(r.messages[1].text).toBe(`출발지 남겨 주세요 🙏\n${link(id)}`);
+});
+
+test("기다리는 사람이 셋 이상이면 A님 외 N명", async () => {
+  const id = await setup(5);
+  await joinMeeting(id, { name: "지수", deviceKey: "c".repeat(21) });
+  const r = await writeNudges(id, {
+    generate: sequence(new Error("x")),
+    model: "m",
+  });
+  expect(r.messages[0].text).toContain("현호님 외 2명 시간 될 때");
+});
+
+test("호스트 이름에 님을 붙인 문장은 통과", async () => {
+  const id = await setup();
+  const generate = sequence({
+    friendly: "현호님 모임이에요. 남겨 주세요!",
+    short: "현호님이 기다려요",
+  });
+  const r = await writeNudges(id, { generate, model: "m" });
+  expect(r.source).toBe("ai");
+  expect(r.messages[0].text).toBe(
+    `현호님 모임이에요. 남겨 주세요!\n${link(id)}`,
+  );
+});
+
+test("상한에 닿으면 모델을 부르지 않고 문장 틀, rule", async () => {
+  const id = await setup();
+  await db.insert(agentCallLogs).values(
+    Array.from({ length: 40 }, () => ({
+      meetingId: id,
+      purpose: "parse",
+      model: "m",
+      inputTokens: 0,
+      outputTokens: 0,
+      latencyMs: 1,
+      ok: true,
+    })),
+  );
+  const generate = sequence(good);
+  const r = await writeNudges(id, { generate, model: "m" });
+  expect(generate).not.toHaveBeenCalled();
+  expect(r.source).toBe("rule");
+  expect(r.messages[1].text).toBe(`가능한 시간 남겨 주세요 🙏\n${link(id)}`);
+});
+
+test("두 문장 모두 검사에 걸리면 rule", async () => {
+  const id = await setup();
+  const generate = sequence({
+    friendly: "http://a.b 남겨요",
+    short: "철수님 남겨요",
+  });
+  const r = await writeNudges(id, { generate, model: "m" });
+  expect(r.source).toBe("rule");
 });

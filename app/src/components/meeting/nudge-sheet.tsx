@@ -55,19 +55,19 @@ export function NudgeSheetView({
   const canShare = typeof navigator !== "undefined" && "share" in navigator;
 
   return (
-    <div className="bg-k-900/50 fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
       <div
         role="dialog"
         aria-modal="true"
         aria-label="재촉 메시지"
-        className="bg-k-5 max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-xl px-5 pt-6 pb-8"
+        className="bg-paper max-h-[90dvh] w-full max-w-[480px] overflow-y-auto rounded-t-xl px-5 pt-6 pb-8"
       >
         <div className="flex items-center justify-between">
-          <p className="text-t1 text-k-900">단톡방에 붙여 넣어요</p>
+          <p className="text-t1 text-text">단톡방에 붙여 넣어요</p>
           <button
             type="button"
             onClick={onClose}
-            className="text-b4 text-k-500 cursor-pointer"
+            className="text-b4 text-muted cursor-pointer"
           >
             닫기
           </button>
@@ -109,10 +109,10 @@ export function NudgeSheetView({
                   <li
                     key={m.tone}
                     data-testid={`nudge-${m.tone}`}
-                    className="bg-paper border-k-100 rounded-xl border p-4"
+                    className="bg-paper border-border rounded-xl border p-4"
                   >
-                    <p className="text-b4 text-k-500">{TONE_LABEL[m.tone]}</p>
-                    <p className="text-b3 text-k-900 mt-2 whitespace-pre-line">
+                    <p className="text-b4 text-muted">{TONE_LABEL[m.tone]}</p>
+                    <p className="text-b3 text-text mt-2 whitespace-pre-line">
                       {m.text}
                     </p>
                     <div className="mt-3 flex gap-2">
@@ -134,7 +134,7 @@ export function NudgeSheetView({
                         <button
                           type="button"
                           onClick={() => onShare(m.text)}
-                          className="bg-p-50 text-primary-main h-11 flex-1 cursor-pointer rounded-lg font-semibold"
+                          className="border-border text-text h-11 flex-1 cursor-pointer rounded-lg border font-semibold"
                         >
                           공유
                         </button>
@@ -147,7 +147,7 @@ export function NudgeSheetView({
           )}
         </div>
         {notice && (
-          <p role="status" className="text-b4 text-k-500 mt-3 text-center">
+          <p role="status" className="text-b4 text-muted mt-3 text-center">
             {notice}
           </p>
         )}
