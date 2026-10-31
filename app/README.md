@@ -163,8 +163,8 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 
 키, 결제, 계정이 필요한 단계는 호스트가 직접 합니다.
 
-1. Neon에서 `aws-ap-southeast-1` 프로젝트를 만들고, 기본 소유자 역할로 `CREATE EXTENSION IF NOT EXISTS postgis;`를 실행합니다. 운영 브랜치의 풀링 연결 문자열과 직접 연결 문자열을 확인합니다.
-2. 운영 브랜치에 마이그레이션을 적용합니다. 빌드 때 자동으로 돌리지 않고, 마이그레이션이 든 PR은 머지 전에 운영 DB의 직접 연결 문자열(풀러가 아닌 주소)로 사람이 실행합니다. `drizzle.config.ts`가 `DATABASE_URL_TEST`를 먼저 읽기 때문에 그 변수를 비운 셸에서 돌립니다.
+1. Neon에서 `aws-ap-southeast-1` 프로젝트를 만들고, 기본 소유자 역할로 `CREATE EXTENSION IF NOT EXISTS postgis;`를 실행합니다. 이 SQL은 Neon 콘솔의 SQL Editor에서 실행해도 됩니다. 운영 브랜치의 풀링 연결 문자열과 직접 연결 문자열을 확인합니다.
+2. 운영 브랜치에 마이그레이션을 적용합니다. 먼저 `app/`에서 `pnpm install`을 실행해 둡니다. 빌드 때 자동으로 돌리지 않고, 마이그레이션이 든 PR은 머지 전에 운영 DB의 직접 연결 문자열(풀러가 아닌 주소)로 사람이 실행합니다. `drizzle.config.ts`가 `DATABASE_URL_TEST`를 먼저 읽기 때문에 그 변수를 비운 셸에서 돌립니다.
 
    ```bash
    env -u DATABASE_URL_TEST DATABASE_URL=<직접 연결 주소> pnpm db:migrate
@@ -174,9 +174,13 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 3. 운영 브랜치에서 `preview` 브랜치를 만들고 풀링 연결 문자열을 확인합니다. 사용자가 들어오기 전에 만들어야 사용자 데이터가 복사되지 않습니다. 다시 만들 때는 Neon의 "부모에서 초기화"를 쓰지 않습니다. 새 루트 브랜치를 만들고 PostGIS를 켠 뒤 마이그레이션을 적용합니다.
 4. Google Cloud 프로젝트를 만들고 결제 계정을 연결한 뒤 Routes API를 사용 설정합니다. API 키를 발급해 Routes API에만 쓰도록 제한합니다. 요청 할당량은 하루 300요청으로 두고(분당 할당량만 있으면 분당 10요청), 예산 알림은 1,000원으로 걸어 둡니다. 실제로 비용을 막는 장치는 앱의 월 상한(`GOOGLE_MONTHLY_ELEMENT_CAP`)이고, 할당량과 예산 알림은 그 바깥에서 한 번 더 받쳐 주는 용도입니다.
 5. Kakao Developers 앱의 REST API 키를 확인합니다. NVIDIA 개발자 키를 발급하고 임시 모델을 `NVIDIA_MODEL_PARSE`와 `NVIDIA_MODEL_SUGGEST`에 지정합니다.
-6. Vercel에 GitHub 저장소를 연결합니다. Root Directory는 `app/`, Production Branch는 `develop`, Node는 24로 두고 아래 환경 변수를 운영과 미리보기에 따로 넣습니다. 첫 배포 로그에서 함수 리전이 `sin1`인지 확인합니다.
+6. Vercel에 GitHub 저장소를 연결합니다. Root Directory는 `app/`, Production Branch는 `develop`, Node는 24로 둡니다. 가져오기 화면에서는 환경 변수를 입력하지 않습니다. 이 화면에 넣은 값은 모든 환경에 한꺼번에 적용되어 운영 키가 미리보기와 개발 환경에 섞입니다. 첫 배포는 환경 변수가 없어 실패해도 괜찮으니 그대로 둡니다.
+
+   배포가 만들어진 뒤 Settings의 Environment Variables에서 아래 [배포 환경 변수](#배포-환경-변수) 표대로 하나씩 추가합니다. 변수마다 Production만 또는 Preview만 체크하고, Development는 어떤 변수에도 체크하지 않습니다. 이 화면의 기본값이 모든 환경이라서 체크를 직접 풀어야 합니다. 이와 별개로 `ENABLE_EXPERIMENTAL_COREPACK=1`을 Production과 Preview 둘 다에 추가합니다. `packageManager`가 `pnpm@10.17.0`인데 Vercel은 이 값을 이 변수가 있을 때만 따릅니다.
+
+   변수를 다 넣고 나면 다시 배포(Redeploy)합니다. 첫 빌드 로그에서 pnpm 버전이 10.17.0인지, 함수 리전이 `sin1`인지 확인합니다. 첫 PR을 열기 전에 Preview 환경에 `MOCK_EXTERNAL=1`이 들어 있고 Google, Kakao, NVIDIA 키가 없는지 한 번 더 봅니다. 앱도 `VERCEL_ENV`가 `preview`이면 Google을 부르지 않지만, 다른 서비스는 이 변수 설정에만 기대기 때문입니다.
 7. Vercel에 `moyeorak.hyunolike.dev`를 추가하고, 가비아 DNS에 Vercel이 알려 주는 CNAME을 넣어 인증서가 발급되는지 확인합니다.
-8. 운영 주소에서 모임 하나를 끝까지 진행합니다. 만들기, 투표, 말로 입력, 제안, 확정, 출발지, 장소 제안, 요약 카드와 이미지를 확인하고, `ADMIN_TOKEN`으로 관리자 지표를 열어 AI 사용량을 봅니다. 카카오톡 공유 디버거로 미리보기도 확인합니다.
+8. 운영 주소에서 모임 하나를 끝까지 진행합니다. 만들기, 투표, 말로 입력, 제안, 확정, 출발지, 장소 제안, 요약 카드와 이미지를 확인하고, `ADMIN_TOKEN`으로 관리자 지표를 열어 AI 사용량을 봅니다. 카카오톡 공유 디버거로 미리보기도 확인하고, 공유 링크의 og:url이 `moyeorak.hyunolike.dev`인지 확인합니다. Vercel의 미리보기 보호가 카카오 스크래퍼를 막기 때문에 링크 미리보기는 운영 주소에서만 확인합니다.
 9. 확인용 모임을 2단계와 같은 직접 연결로 지웁니다. 모임 행을 지우면 연결된 행이 함께 지워집니다. 지표에 섞이지 않게 하려는 작업입니다.
 
    ```sql
@@ -196,6 +200,7 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 | `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST` | 넣음                             | 넣지 않음                       |
 | `ADMIN_TOKEN`                                                  | 긴 무작위 문자열                 | 다른 무작위 문자열              |
 | `GOOGLE_MONTHLY_ELEMENT_CAP`                                   | 기본값이면 생략                  | 생략                            |
+| `ENABLE_EXPERIMENTAL_COREPACK`                                 | `1`                              | `1`                             |
 
 `DATABASE_URL_TEST`는 테스트에서만, `LEGACY_DATABASE_URL`은 이전 도구를 돌릴 때 셸에서만 쓰므로 Vercel에는 넣지 않습니다. `MIDPOINT_DAILY_CAP`, `NVIDIA_BASE_URL`, `AI_CALL_CAP_PER_MEETING`도 기본값을 바꿀 때만 넣습니다.
 
