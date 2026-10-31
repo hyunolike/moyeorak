@@ -14,17 +14,21 @@
 
 `.env.example`을 `.env.local`로 복사해 채웁니다. `pnpm dev`는 `.env.local`을 읽고, 이 파일은 git에 올라가지 않습니다.
 
-| 이름                          | 용도                                                                        |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| `DATABASE_URL`                | 앱이 쓰는 PostgreSQL 연결 문자열                                            |
-| `DATABASE_URL_TEST`           | 테스트용 DB. `.env.test`에 로컬 값이 들어 있어서 보통 따로 채우지 않습니다. |
-| `ADMIN_TOKEN`                 | 관리자 지표 페이지 접근 토큰. 비워 두면 접근이 항상 거부됩니다.             |
-| `GOOGLE_API_KEY`              | Google Routes 이동시간 계산                                                 |
-| `KAKAO_API_KEY`               | Kakao Local 장소 검색                                                       |
-| `ODSAY_API_KEY`               | ODsay 대중교통 경로 (다음 단계에서 사용)                                    |
-| `NEXT_PUBLIC_NAVER_CLIENT_ID` | 네이버 지도 클라이언트 ID                                                   |
-| `MIDPOINT_DAILY_CAP`          | 모임 하나가 하루에 새로 계산할 수 있는 중간지점 추천 수. 비우면 30          |
-| `LEGACY_DATABASE_URL`         | 옛 서비스 DB. 교체 배포 때 `pnpm migrate:legacy`에서만 씁니다.              |
+| 이름                      | 용도                                                                        |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL`            | 앱이 쓰는 PostgreSQL 연결 문자열                                            |
+| `DATABASE_URL_TEST`       | 테스트용 DB. `.env.test`에 로컬 값이 들어 있어서 보통 따로 채우지 않습니다. |
+| `ADMIN_TOKEN`             | 관리자 지표 페이지 접근 토큰. 비워 두면 접근이 항상 거부됩니다.             |
+| `GOOGLE_API_KEY`          | Google Routes 이동시간 계산                                                 |
+| `KAKAO_API_KEY`           | Kakao Local 장소 검색                                                       |
+| `SITE_URL`                | 공유 미리보기에 쓰는 사이트 주소. `https://`를 포함한 전체 주소로 적습니다. |
+| `NVIDIA_API_KEY`          | 말로 남기기에 쓰는 NVIDIA AI 키                                             |
+| `NVIDIA_MODEL_PARSE`      | 가능 시간 문장을 해석하는 모델 이름                                         |
+| `NVIDIA_MODEL_SUGGEST`    | 제안에 쓰는 모델 이름                                                       |
+| `NVIDIA_BASE_URL`         | (선택) AI 호출 주소. 비우면 `https://integrate.api.nvidia.com/v1`           |
+| `AI_CALL_CAP_PER_MEETING` | (선택) 모임 하나의 AI 호출 상한. 비우면 40                                  |
+| `MIDPOINT_DAILY_CAP`      | 모임 하나가 하루에 새로 계산할 수 있는 중간지점 추천 수. 비우면 30          |
+| `LEGACY_DATABASE_URL`     | 옛 서비스 DB. 교체 배포 때 `pnpm migrate:legacy`에서만 씁니다.              |
 
 외부 API 키가 없으면 `MOCK_EXTERNAL=1`을 붙여 실행합니다. Google Routes와 Kakao 클라이언트가 가짜 데이터를 돌려줘서 키 없이도 전체 흐름을 볼 수 있습니다.
 
@@ -160,7 +164,7 @@ Vercel과 Neon을 쓰는 배포입니다. 호스트 계정이 있어야 해서 �
 
 ### 운영 환경 변수
 
-Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMIN_TOKEN`, `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST`, `SITE_URL`입니다. `DATABASE_URL_TEST`는 테스트에서만, `LEGACY_DATABASE_URL`은 이전 도구를 돌릴 때 셸에서만 쓰므로 Vercel에는 넣지 않습니다. `MIDPOINT_DAILY_CAP`과 `NVIDIA_BASE_URL`은 기본값을 바꿀 때만 넣습니다.
+Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMIN_TOKEN`, `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST`, `SITE_URL`입니다. `DATABASE_URL_TEST`는 테스트에서만, `LEGACY_DATABASE_URL`은 이전 도구를 돌릴 때 셸에서만 쓰므로 Vercel에는 넣지 않습니다. `MIDPOINT_DAILY_CAP`, `NVIDIA_BASE_URL`, `AI_CALL_CAP_PER_MEETING`은 기본값을 바꿀 때만 넣습니다.
 
 ## 옛 서비스에서 옮겨 오기
 
@@ -170,9 +174,17 @@ Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMI
 
 아래 순서대로 진행합니다.
 
-1. Neon에 만든 새 DB를 `DATABASE_URL`로 두고 `pnpm db:migrate`를 실행합니다. 그 전에 그 DB에서 `CREATE EXTENSION IF NOT EXISTS postgis;`를 먼저 실행해 둡니다.
+1. 말로 남기기에 쓸 모델을 고릅니다. [시간 파싱 평가 세트](../docs/eval/README.md)를 실제 단톡방 문장으로 50개까지 채운 뒤, 후보 모델을 쉼표로 이어 평가합니다.
 
-2. 옛 DB 연결 문자열을 `LEGACY_DATABASE_URL`로 주고 dry run으로 보고서를 확인합니다. dry run은 실제와 똑같이 옮긴 다음 롤백하므로 보고서 숫자가 실제 이전과 같습니다.
+   ```bash
+   NVIDIA_API_KEY=<키> pnpm eval:time-parse --models <후보1>,<후보2>
+   ```
+
+   정확도가 95% 이상인 모델을 `NVIDIA_MODEL_PARSE`로 정하고, 그 모델과 구조화 출력 방식(`src/server/ai/provider.ts`의 `DEFAULT_STRUCTURED_OUTPUT`)을 `docs/eval/README.md`의 모델 선택 기록에 남깁니다. 95%에 닿는 모델이 없어도 배포는 할 수 있습니다. 말로 남기기는 시간표를 칠해 보여 주기만 하고, 사용자가 **이 시간으로 저장**을 눌러야 저장되기 때문입니다. 이때는 가장 높은 모델과 그 정확도를 같은 자리에 적어 둡니다.
+
+2. Neon에 만든 새 DB를 `DATABASE_URL`로 두고 `pnpm db:migrate`를 실행합니다. 그 전에 그 DB에서 `CREATE EXTENSION IF NOT EXISTS postgis;`를 먼저 실행해 둡니다.
+
+3. 옛 DB 연결 문자열을 `LEGACY_DATABASE_URL`로 주고 dry run으로 보고서를 확인합니다. dry run은 실제와 똑같이 옮긴 다음 롤백하므로 보고서 숫자가 실제 이전과 같습니다.
 
    ```bash
    LEGACY_DATABASE_URL=<옛 DB> DATABASE_URL=<새 DB> pnpm migrate:legacy --dry-run
@@ -180,19 +192,19 @@ Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMI
 
    보고서에는 테이블마다 옮긴 수와 건너뛴 수가 나오고, 버린 행이 있으면 그 이유와 수가 함께 나옵니다. 참여자 없이 손으로 넣은 출발지는 새 스키마에 담을 자리가 없어서 버리고, 30분 단위가 아니거나 투표판 밖에 있는 일정 칸도 버립니다. 옛 서비스는 일정을 확정할 때 확정 시간을 저장하지 않았기 때문에, 확정된 일정은 옛 결과 화면이 맨 위에 보여 주던 가장 많이 겹친 시간으로 채우고 쓸 표가 하나도 없으면 확정 전 단계로 되돌립니다. 이렇게 값을 고쳐 옮긴 경우는 보고서 끝에 따로 나옵니다. 버린 수가 예상보다 많으면 여기서 멈추고 원인부터 확인합니다.
 
-3. 옛 앱 사용자에게 쓰기 중단을 공지한 뒤 실제 이전을 실행합니다. 공지 뒤에 들어온 투표는 옮겨지지 않으니 공지와 이전 사이를 짧게 잡습니다.
+4. 옛 앱 사용자에게 쓰기 중단을 공지한 뒤 실제 이전을 실행합니다. 공지 뒤에 들어온 투표는 옮겨지지 않으니 공지와 이전 사이를 짧게 잡습니다.
 
    ```bash
    LEGACY_DATABASE_URL=<옛 DB> DATABASE_URL=<새 DB> pnpm migrate:legacy
    ```
 
-4. Vercel 프로젝트에 위의 [운영 환경 변수](#운영-환경-변수)를 넣습니다. `SITE_URL`에는 옛 앱이 쓰던 도메인을 그대로 적습니다.
+5. Vercel 프로젝트에 위의 [운영 환경 변수](#운영-환경-변수)를 넣습니다. `SITE_URL`에는 옛 앱이 쓰던 도메인을 `https://`를 포함한 전체 주소로 적습니다.
 
-5. 도메인을 새 앱으로 돌립니다. 옛 앱과 같은 도메인이어야 브라우저에 남아 있는 `moyeorak.session`을 새 앱이 읽을 수 있습니다.
+6. 도메인을 새 앱으로 돌립니다. 옛 앱과 같은 도메인이어야 브라우저에 남아 있는 `moyeorak.session`을 새 앱이 읽을 수 있습니다.
 
-6. 옮겨 온 모임 하나를 골라 옛 링크 세 개가 모두 열리는지 확인합니다. 모임 홈 `/meetings/{id}`, 일정 화면 `/meetings/{id}/schedule`, 장소 화면 `/meetings/{id}/location`이고, 마지막 주소는 `/meetings/{id}/location/votes`로 넘어가야 합니다. 같은 링크를 [카카오톡 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에 넣어 캐시를 비우고 새 미리보기 제목과 이미지가 나오는지 봅니다. 옛 앱으로 참여했던 브라우저가 있다면 그 브라우저로 링크를 열어 이름을 다시 묻지 않는지도 확인합니다.
+7. 옮겨 온 모임 하나를 골라 옛 링크 세 개가 모두 열리는지 확인합니다. 모임 홈 `/meetings/{id}`, 일정 화면 `/meetings/{id}/schedule`, 장소 화면 `/meetings/{id}/location`이고, 마지막 주소는 `/meetings/{id}/location/votes`로 넘어가야 합니다. 같은 링크를 [카카오톡 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에 넣어 캐시를 비우고 새 미리보기 제목과 이미지가 나오는지 봅니다. 옛 앱으로 참여했던 브라우저가 있다면 그 브라우저로 링크를 열어 이름을 다시 묻지 않는지도 확인합니다.
 
-7. 문제가 생기면 도메인을 옛 앱으로 되돌리면 됩니다. 이전 도구는 옛 DB를 건드리지 않았으므로 옛 앱은 공지 직전 상태로 다시 돌아갑니다. 원인을 고친 뒤에는 새 DB의 모임 데이터를 비우고 2단계부터 다시 진행합니다.
+8. 문제가 생기면 도메인을 옛 앱으로 되돌리면 됩니다. 이전 도구는 옛 DB를 건드리지 않았으므로 옛 앱은 공지 직전 상태로 다시 돌아갑니다. 원인을 고친 뒤에는 새 DB의 모임 데이터를 비우고 3단계부터 다시 진행합니다.
 
 ## 알아 둘 것
 
