@@ -181,3 +181,30 @@ test("프롬프트에 출발지 이름과 좌표가 없다", () => {
   expect(user).toContain("합정");
   expect(user).toContain("현호 20분");
 });
+
+test("불가능한 사람이 있는데 모두 가능하다고 쓰면 그 카드만 문장 틀로 바뀐다", async () => {
+  const meetingId = await newMeeting();
+  const generate = sequence({
+    reasons: ["세 명 모두 가능해요.", "가장 빨라요. 2명이 가능해요."],
+  });
+  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  expect(r.map((x) => x.source)).toEqual(["rule", "ai"]);
+  expect(r[0]?.reason).toBe(rule[0]);
+});
+
+test("이동 분을 모르는 사람이 있는데 모두 도착한다고 쓰면 문장 틀로 바뀐다", async () => {
+  const meetingId = await newMeeting();
+  const unknown = {
+    ...averagePick,
+    perParticipant: [
+      { name: "현호", minutes: 20 },
+      { name: "민수", minutes: null },
+    ],
+  };
+  const generate = sequence({ reasons: ["평균 20분이면 모두 도착해요."] });
+  const r = await writeReasons(meetingId, [unknown], 2, {
+    generate,
+    model: "m",
+  });
+  expect(r[0]?.source).toBe("rule");
+});

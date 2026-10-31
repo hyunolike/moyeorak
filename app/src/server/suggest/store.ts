@@ -87,7 +87,12 @@ export async function closeSuggestions(
         status: id === acceptedId ? "accepted" : "rejected",
         resolvedAt: now,
       })
-      .where(eq(agentSuggestions.id, id));
+      .where(
+        and(
+          eq(agentSuggestions.id, id),
+          eq(agentSuggestions.status, "proposed"),
+        ),
+      );
   }
 }
 
@@ -125,7 +130,8 @@ export async function assertOpenSuggestion(
         eq(agentSuggestions.meetingId, meetingId),
         eq(agentSuggestions.id, id),
       ),
-    );
+    )
+    .for("update");
   if (!row || row.kind !== kind) throw new SuggestionNotFoundError();
   if (row.status !== "proposed") throw new SuggestionClosedError();
 }

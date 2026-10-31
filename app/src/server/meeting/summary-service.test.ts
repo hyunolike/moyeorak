@@ -118,3 +118,23 @@ test("출발지가 없으면 travel은 빈 배열", async () => {
   await confirm(meetingId);
   expect((await getMeetingSummary(meetingId)).travel).toEqual([]);
 });
+
+test("확정 뒤 travel에 없는 사람도 요약에서 빠지지 않는다", async () => {
+  const { meetingId, host, seoyeon } = await setup("location");
+  await db.insert(locationVotes).values([
+    { participantId: host, label: "수원", lat: 37.2, lng: 127 },
+    { participantId: seoyeon, label: "인천", lat: 37.4, lng: 126.7 },
+  ]);
+  await db.insert(confirmedLocations).values({
+    meetingId,
+    name: "강남",
+    lat: 37.5,
+    lng: 127.02,
+    travel: [{ name: "현호", minutes: 42 }],
+  });
+  await confirm(meetingId);
+  expect((await getMeetingSummary(meetingId)).travel).toEqual([
+    { name: "현호", from: "수원", minutes: 42 },
+    { name: "서연", from: "인천", minutes: null },
+  ]);
+});

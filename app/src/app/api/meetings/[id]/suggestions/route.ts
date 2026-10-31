@@ -7,6 +7,9 @@ import {
   listSuggestions,
 } from "@/server/suggest/suggest-service";
 
+/** 모델 호출이 길어질 수 있어 호스팅 기본 제한보다 넉넉히 둔다. */
+export const maxDuration = 60;
+
 type Ctx = { params: Promise<{ id: string }> };
 
 async function requireHost(req: Request, id: string) {

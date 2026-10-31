@@ -184,3 +184,17 @@ test("이미 닫혔거나 다른 종류거나 없는 제안 id면 확정하지 �
     .where(eq(meetings.id, meetingId));
   expect(m?.status).toBe("locating");
 });
+
+test("opts.travel을 주면 캐시가 비어 있어도 그 값이 travel로 남는다", async () => {
+  const { meetingId, station } = await setup("locating");
+  const travel = [
+    { name: "현호", minutes: 20 },
+    { name: "민수", minutes: 33 },
+  ];
+  await confirmLocation(meetingId, station.id, { travel });
+  const [loc] = await db
+    .select()
+    .from(confirmedLocations)
+    .where(eq(confirmedLocations.meetingId, meetingId));
+  expect(loc?.travel).toEqual(travel);
+});

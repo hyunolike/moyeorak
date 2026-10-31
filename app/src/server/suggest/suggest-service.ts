@@ -222,24 +222,35 @@ export async function acceptSuggestion(
       acceptedSuggestionId: id,
     });
   }
-  return confirmLocation(meetingId, s.stationId, { acceptedSuggestionId: id });
+  return confirmLocation(meetingId, s.stationId, {
+    acceptedSuggestionId: id,
+    travel: s.perParticipant,
+  });
 }
 
 export async function rejectSuggestion(
   meetingId: string,
   id: number,
 ): Promise<void> {
-  const rows = await db
-    .update(agentSuggestions)
-    .set({ status: "rejected", resolvedAt: new Date() })
-    .where(
-      and(
-        eq(agentSuggestions.id, id),
-        eq(agentSuggestions.meetingId, meetingId),
-        eq(agentSuggestions.status, "proposed"),
-      ),
-    )
-    .returning({ id: agentSuggestions.id });
+  // 확정과 같은 순서로 모임 행을 먼저 잠가, 같은 카드의 수락과 거절이 겹치지 않게 한다.
+  const rows = await db.transaction(async (tx) => {
+    await tx
+      .select({ id: meetings.id })
+      .from(meetings)
+      .where(eq(meetings.id, meetingId))
+      .for("update");
+    return tx
+      .update(agentSuggestions)
+      .set({ status: "rejected", resolvedAt: new Date() })
+      .where(
+        and(
+          eq(agentSuggestions.id, id),
+          eq(agentSuggestions.meetingId, meetingId),
+          eq(agentSuggestions.status, "proposed"),
+        ),
+      )
+      .returning({ id: agentSuggestions.id });
+  });
   if (rows.length > 0) return;
   const existing = await getSuggestion(meetingId, id);
   if (!existing) throw new SuggestionNotFoundError();

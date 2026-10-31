@@ -1,7 +1,13 @@
 // @vitest-environment node
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { agentCallLogs, agentSuggestions, meetingEvents } from "@/db/schema";
+import {
+  agentCallLogs,
+  agentSuggestions,
+  confirmedLocations,
+  externalCache,
+  meetingEvents,
+} from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import { templateReason } from "@/server/ai/suggest/templates";
 import { ExternalApiError } from "@/server/clients/errors";
@@ -372,4 +378,64 @@ test("출발지를 저장하면 열린 장소 제안이 지워진다", async () 
     lng: 127,
   });
   expect(await proposed(meetingId)).toHaveLength(0);
+});
+
+test("장소 제안을 수락하면 캐시가 없어도 카드의 이동 분이 travel로 남는다", async () => {
+  const { meetingId, ids } = await setup("location");
+  for (const [i, id] of ids.slice(0, 2).entries()) {
+    await upsertDeparture(meetingId, id, {
+      label: `출발${i}`,
+      lat: 37.5 + i / 100,
+      lng: 127,
+    });
+  }
+  const real = await db.execute<{ id: number }>(
+    sql`SELECT id FROM stations ORDER BY id LIMIT 2`,
+  );
+  const [a, b] = real.map((r) => Number(r.id));
+  near.mockResolvedValue([
+    { id: a as number, name: "역1", line: "2호선", lat: 37.5, lng: 127 },
+    { id: b as number, name: "역2", line: "2호선", lat: 37.6, lng: 127 },
+  ]);
+  matrix.mockResolvedValue([
+    [10, 30],
+    [50, 30],
+  ]);
+  const { items } = await createSuggestions(meetingId, deps);
+  const card = items[0];
+  if (card?.kind !== "location") throw new Error("location card expected");
+  // 한 시간이 지나 캐시가 만료된 상황
+  await db.delete(externalCache);
+  await acceptSuggestion(meetingId, card.id);
+  const [loc] = await db
+    .select()
+    .from(confirmedLocations)
+    .where(eq(confirmedLocations.meetingId, meetingId));
+  expect(loc?.travel).toEqual(card.perParticipant);
+  expect(loc?.travel).not.toBeNull();
+});
+
+test("같은 카드를 동시에 수락하고 거절해도 결과가 어긋나지 않는다", async () => {
+  for (let round = 0; round < 5; round++) {
+    await resetTestDb();
+    const { meetingId } = await setup("schedule");
+    const { items } = await createSuggestions(meetingId, deps);
+    const id = (items[0] as { id: number }).id;
+    const [acc, rej] = await Promise.allSettled([
+      acceptSuggestion(meetingId, id),
+      rejectSuggestion(meetingId, id),
+    ]);
+    const rows = await proposed(meetingId);
+    const status = rows.find((r) => r.id === id)?.status;
+    const confirmed = (await getMeeting(meetingId))?.status === "confirmed";
+    if (acc.status === "fulfilled") {
+      expect(confirmed).toBe(true);
+      expect(status).toBe("accepted");
+      expect(rej.status).toBe("rejected");
+    } else {
+      expect(confirmed).toBe(false);
+      expect(status).toBe("rejected");
+      expect(rej.status).toBe("fulfilled");
+    }
+  }
 });

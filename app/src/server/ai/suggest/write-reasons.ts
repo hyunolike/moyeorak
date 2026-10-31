@@ -66,6 +66,16 @@ function templates(picks: Pick[], respondedCount: number): WrittenReason[] {
   }));
 }
 
+const EVERYONE = /모두|전원|다 (?:가능|도착|올 수)/;
+
+/** 모두 가능하다고 말하지만 카드 데이터가 그렇지 않으면 true. */
+function claimsEveryone(text: string, pick: Pick): boolean {
+  if (!EVERYONE.test(text)) return false;
+  return pick.kind === "schedule"
+    ? pick.unavailable.length > 0
+    : pick.perParticipant.some((p) => p.minutes === null);
+}
+
 /**
  * 모델 응답을 한 번 받아 스키마와 숫자를 검사한다. 기록과 상한은 다루지 않는다.
  * 스키마 위반이면 SchemaViolation을 던진다. 길이가 다르면 모두, 숫자가 틀리면 그 카드만 문장 틀.
@@ -94,7 +104,8 @@ export async function reasonsFromModel(
     out.length !== picks.length
       ? fallback
       : picks.map((p, i) =>
-          numbersAreTrue(out[i], allowedNumbers(p, respondedCount))
+          numbersAreTrue(out[i], allowedNumbers(p, respondedCount)) &&
+          !claimsEveryone(out[i], p)
             ? { reason: out[i], source: "ai" as const }
             : fallback[i],
         );

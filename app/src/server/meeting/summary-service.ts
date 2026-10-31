@@ -44,21 +44,16 @@ export async function getMeetingSummary(
       .orderBy(participants.id),
   ]);
 
-  const labelOf = (name: string) =>
-    departures.find((d) => d.name === name)?.label ?? null;
+  // 현재 출발지를 기준으로 줄을 만든다. 이동 분이 없는 사람도 빠지지 않는다.
+  const minutesOf = (name: string) =>
+    place?.travel?.find((t) => t.name === name)?.minutes ?? null;
   const travel: MeetingSummary["travel"] = !place
     ? []
-    : place.travel
-      ? place.travel.map((t) => ({
-          name: t.name,
-          from: labelOf(t.name),
-          minutes: t.minutes,
-        }))
-      : departures.map((d) => ({
-          name: d.name,
-          from: d.label,
-          minutes: null,
-        }));
+    : departures.map((d) => ({
+        name: d.name,
+        from: d.label,
+        minutes: minutesOf(d.name),
+      }));
 
   return {
     meetingId,

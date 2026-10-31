@@ -10,14 +10,19 @@ import { assertOpenSuggestion, closeSuggestions } from "@/server/suggest/store";
 
 /**
  * 호스트가 고른 역으로 장소를 확정한다. locating 모임만 가능하다.
- * 이동 분(travel)은 이 모임의 최근 중간지점 캐시에서 가져오고, 없으면 null이다.
+ * 이동 분(travel)은 opts.travel을 먼저 쓰고, 없으면 이 모임의 최근 중간지점 캐시에서 가져오며, 그것도 없으면 null이다.
  */
 export async function confirmLocation(
   meetingId: string,
   stationId: number,
-  opts: { acceptedSuggestionId?: number } = {},
+  opts: {
+    acceptedSuggestionId?: number;
+    travel?: { name: string; minutes: number | null }[];
+  } = {},
 ): Promise<{ status: "confirmed" }> {
-  const recommendation = await cachedRecommendation(meetingId, stationId);
+  const recommendation = opts.travel
+    ? null
+    : await cachedRecommendation(meetingId, stationId);
   return db.transaction(async (tx) => {
     const [meeting] = await tx
       .select({ status: meetings.status })
@@ -53,7 +58,7 @@ export async function confirmLocation(
       name: station.name,
       lat: Number(station.lat),
       lng: Number(station.lng),
-      travel: recommendation?.perParticipant ?? null,
+      travel: opts.travel ?? recommendation?.perParticipant ?? null,
     });
     await closeSuggestions(
       tx,
