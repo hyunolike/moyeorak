@@ -1,10 +1,6 @@
+import { seoulMidnight, slotInstant } from "@/lib/seoul-time";
 import type { AvailabilityRange } from "@/server/ai/time-parse/schema";
-import {
-  type Poll,
-  seoulMidnight,
-  slotInstant,
-  validateSlots,
-} from "@/server/schedule/slots";
+import { type Poll, validateSlots } from "@/server/schedule/slots";
 
 const SLOT_MINUTES = 30;
 
@@ -23,12 +19,13 @@ export function expandRanges(
     const start = Math.ceil(startMinute / SLOT_MINUTES) * SLOT_MINUTES;
     const end = Math.floor(endMinute / SLOT_MINUTES) * SLOT_MINUTES;
     if (end <= start) continue;
-    const midnight = seoulMidnight(date);
-    if (Number.isNaN(midnight.getTime())) {
-      // 달력에 없는 날짜는 칸 하나하나가 판 밖이다.
+    // 후보 날짜가 아니면 칸 하나하나가 판 밖이다. seoulMidnight는 달력에 없는 날짜
+    // (예: 2026-10-33)를 다음 달로 넘기므로 펼치기 전에 걸러야 판 안으로 새지 않는다.
+    if (!poll.dateOptions.includes(date)) {
       dropped += (end - start) / SLOT_MINUTES;
       continue;
     }
+    const midnight = seoulMidnight(date);
     for (let m = start; m < end; m += SLOT_MINUTES) {
       times.add(slotInstant(midnight, m).getTime());
     }
