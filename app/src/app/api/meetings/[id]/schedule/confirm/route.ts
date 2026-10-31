@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { readJson, toResponse } from "@/server/http";
+import { requireParticipant } from "@/server/meeting/require-participant";
+import { NotHostError } from "@/server/schedule/errors";
 import { confirmSchedule } from "@/server/schedule/schedule-service";
 
 const body = z
@@ -18,6 +20,8 @@ export async function POST(
 ) {
   return toResponse(async () => {
     const { id } = await params;
+    const me = await requireParticipant(req, id);
+    if (!me.isHost) throw new NotHostError();
     const { start, end } = body.parse(await readJson(req));
     return confirmSchedule(id, new Date(start), new Date(end));
   });

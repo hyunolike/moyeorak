@@ -58,3 +58,23 @@ export type Station = {
 export type Midpoint =
   | { type: "ok"; stations: Station[] }
   | { type: "insufficient" };
+
+export type MeetingProgress = {
+  meetingId: string;
+  hostName: string;
+  scope: Scope;
+  status: Meeting["status"];
+  /** 호스트가 정한 인원 */
+  participantCount: number;
+  participants: {
+    id: number;
+    name: string;
+    isHost: boolean;
+    votedSchedule: boolean;
+    votedLocation: boolean;
+  }[];
+  confirmedStart: string | null;
+  confirmedEnd: string | null;
+  /** confirmed_locations.name */
+  confirmedPlace: string | null;
+};

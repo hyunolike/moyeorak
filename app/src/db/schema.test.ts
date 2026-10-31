@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { meetings } from "@/db/schema";
 import { withTestDb } from "@/db/test-utils";
 
@@ -12,7 +12,11 @@ test("모임을 넣고 읽을 수 있다", () =>
       scope: "both",
       status: "scheduling",
     });
-    const rows = await tx.select().from(meetings);
+    // 앞선 테스트 파일이 남긴 모임이 있을 수 있어 넣은 행만 읽는다.
+    const rows = await tx
+      .select()
+      .from(meetings)
+      .where(eq(meetings.id, "a".repeat(21)));
     expect(rows[0].status).toBe("scheduling");
   }));
 

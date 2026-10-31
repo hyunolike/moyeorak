@@ -17,9 +17,12 @@ async function copyText(text: string) {
 export function ShareButton({
   meetingId,
   path,
+  label,
 }: {
   meetingId: string;
   path: string;
+  /** 주면 아이콘 버튼 대신 글자가 있는 가로 꽉 찬 주 버튼으로 그린다. */
+  label?: string;
 }) {
   const shareEvent = useShareEvent(meetingId);
   const [message, setMessage] = useState<string | null>(null);
@@ -42,23 +45,29 @@ export function ShareButton({
     <>
       <button
         type="button"
-        aria-label="공유하기"
+        aria-label={label ? undefined : "공유하기"}
         data-testid="share-button"
         onClick={handleClick}
-        className="bg-p-50 text-primary-main hover:bg-p-100 flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-lg"
+        className={
+          label
+            ? "bg-action text-on-action flex h-[54px] w-full cursor-pointer items-center justify-center rounded-lg px-5 font-semibold"
+            : "bg-p-50 text-primary-main hover:bg-p-100 flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-lg"
+        }
       >
-        <svg
-          aria-hidden
-          viewBox="0 0 24 24"
-          className="size-6"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
-        </svg>
+        {label ?? (
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            className="size-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+          </svg>
+        )}
       </button>
       {message && (
         <p

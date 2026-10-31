@@ -57,7 +57,8 @@ export async function createMeeting(
       hostName: input.hostName,
       participantCount: input.participantCount,
       scope: input.scope,
-      status: "scheduling",
+      // 장소만 정하는 모임은 시간 단계 없이 장소 단계에서 시작한다.
+      status: input.scope === "location" ? "locating" : "scheduling",
     });
     const [host] = await tx
       .insert(participants)

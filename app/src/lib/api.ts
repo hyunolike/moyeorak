@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   Departure,
   Meeting,
+  MeetingProgress,
   Midpoint,
   Place,
   ScheduleSummary,
@@ -46,6 +47,12 @@ export async function apiFetch<T>(path: string, init?: RequestInit) {
   return body.data as T;
 }
 
+/** 참여자를 확인하는 요청에 이 기기의 키를 헤더로 붙인다. */
+const withDeviceKey = (init: RequestInit): RequestInit => ({
+  ...init,
+  headers: { ...init.headers, "X-Device-Key": getDeviceKey() },
+});
+
 const json = (method: string, body: unknown): RequestInit => ({
   method,
   body: JSON.stringify(body),
@@ -53,6 +60,7 @@ const json = (method: string, body: unknown): RequestInit => ({
 
 export const keys = {
   meeting: (id: string) => ["meeting", id] as const,
+  progress: (id: string) => ["progress", id] as const,
   me: (id: string) => ["me", id] as const,
   summary: (id: string) => ["summary", id] as const,
   departures: (id: string) => ["departures", id] as const,
@@ -67,12 +75,26 @@ export function useMeeting(id: string, initialData?: Meeting) {
   });
 }
 
+/** 15초마다 새로 읽고, 창이 숨겨지면 멈춘다. */
+export function useMeetingProgress(id: string, initialData?: MeetingProgress) {
+  return useQuery({
+    queryKey: keys.progress(id),
+    queryFn: () => apiFetch<MeetingProgress>(`/api/meetings/${id}/progress`),
+    initialData,
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
+  });
+}
+
 /**
  * 이 브라우저(device_key)의 참여자 id. localStorage 맵은 캐시일 뿐이고,
  * 맵에 없거나 목록에 없는 id면 `GET /me`로 서버에 device_key를 물어본다.
  * localStorage를 읽으므로 서버 렌더에서는 pending으로 남는다.
  */
-export function useMe(meeting: Meeting) {
+export function useMe<P extends { id: number }>(meeting: {
+  id: string;
+  participants: P[];
+}) {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: keys.me(meeting.id),
@@ -150,10 +172,30 @@ export function useScheduleSummary(meetingId: string) {
 export function useSaveVote(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { participantId: number; slots: string[] }) =>
-      apiFetch(`/api/meetings/${meetingId}/schedule/votes`, json("PUT", input)),
+    mutationFn: (input: { slots: string[] }) =>
+      apiFetch(
+        `/api/meetings/${meetingId}/schedule/votes`,
+        withDeviceKey(json("PUT", input)),
+      ),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: keys.summary(meetingId) }),
+  });
+}
+
+export interface ParsedAvailability {
+  slots: string[];
+  dropped: number;
+  summary: string;
+}
+
+/** 말로 적은 가능 시간을 투표판 칸으로 바꾼다. 저장은 하지 않는다. */
+export function useParseAvailability(meetingId: string) {
+  return useMutation({
+    mutationFn: (text: string) =>
+      apiFetch<ParsedAvailability>(
+        `/api/meetings/${meetingId}/schedule/parse`,
+        withDeviceKey(json("POST", { text })),
+      ),
   });
 }
 
@@ -162,7 +204,7 @@ export function useConfirmSchedule(meetingId: string) {
     mutationFn: (range: { start: string; end: string }) =>
       apiFetch(
         `/api/meetings/${meetingId}/schedule/confirm`,
-        json("POST", range),
+        withDeviceKey(json("POST", range)),
       ),
   });
 }
@@ -178,13 +220,16 @@ export function useDepartures(meetingId: string) {
 export function useSaveDeparture(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { participantId: number; voteId?: number } & Place) => {
+    mutationFn: (input: { voteId?: number } & Place) => {
       const { voteId, ...body } = input;
       return voteId === undefined
-        ? apiFetch(`/api/meetings/${meetingId}/departures`, json("POST", body))
+        ? apiFetch(
+            `/api/meetings/${meetingId}/departures`,
+            withDeviceKey(json("POST", body)),
+          )
         : apiFetch(
             `/api/meetings/${meetingId}/departures/${voteId}`,
-            json("PUT", body),
+            withDeviceKey(json("PUT", body)),
           );
     },
     // 출발지가 바뀌면 중간지점도 다시 계산해야 하므로 staleTime을 무시하고 무효화한다.
@@ -200,9 +245,10 @@ export function useDeleteDeparture(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (voteId: number) =>
-      apiFetch(`/api/meetings/${meetingId}/departures/${voteId}`, {
-        method: "DELETE",
-      }),
+      apiFetch(
+        `/api/meetings/${meetingId}/departures/${voteId}`,
+        withDeviceKey({ method: "DELETE" }),
+      ),
     // 출발지가 바뀌면 중간지점도 다시 계산해야 하므로 staleTime을 무시하고 무효화한다.
     onSuccess: () =>
       Promise.all([

@@ -9,13 +9,21 @@ import { PageHeader } from "@/components/page-header";
 import { Stepper } from "@/components/stepper";
 import { TextField } from "@/components/text-field";
 import { useCreateMeeting } from "@/lib/api";
+import type { Scope } from "@/lib/api-types";
 
-export type Flow = "schedule" | "location";
+export type Flow = "both" | "schedule" | "location";
+
+const SCOPES: { value: Scope; label: string }[] = [
+  { value: "both", label: "시간과 장소 둘 다" },
+  { value: "schedule", label: "시간만" },
+  { value: "location", label: "장소만" },
+];
 
 export function NewMeetingForm({ flow }: { flow: Flow }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [count, setCount] = useState(2);
+  const [scope, setScope] = useState<Scope>(flow);
   const create = useCreateMeeting();
   const trimmed = name.trim();
 
@@ -24,15 +32,10 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
       {
         hostName: trimmed,
         participantCount: count,
-        scope: flow === "schedule" ? "both" : "location",
+        scope,
       },
       {
-        onSuccess: ({ meetingId }) =>
-          router.push(
-            flow === "schedule"
-              ? `/meetings/${meetingId}/schedule`
-              : `/meetings/${meetingId}/location/votes`,
-          ),
+        onSuccess: ({ meetingId }) => router.push(`/meetings/${meetingId}`),
       },
     );
   };
@@ -67,6 +70,29 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
           value={count}
           onChange={setCount}
         />
+        <fieldset className="mt-6 flex flex-col gap-2">
+          <legend className="text-t2 mb-2">무엇을 정할까요?</legend>
+          {SCOPES.map(({ value, label }) => (
+            <label
+              key={value}
+              className={`flex h-12 cursor-pointer items-center gap-3 rounded-lg border px-4 ${
+                scope === value
+                  ? "border-action bg-selected font-semibold"
+                  : "border-border bg-paper"
+              }`}
+            >
+              <input
+                type="radio"
+                name="scope"
+                value={value}
+                checked={scope === value}
+                onChange={() => setScope(value)}
+                className="accent-action size-4"
+              />
+              {label}
+            </label>
+          ))}
+        </fieldset>
         <div className="mt-auto pt-10">
           <MainButton type="submit" disabled={!trimmed || create.isPending}>
             모임 생성하기

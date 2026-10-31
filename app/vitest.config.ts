@@ -10,7 +10,7 @@ export default defineConfig({
     globals: true,
     env: loadEnv("test", process.cwd(), ""),
     fileParallelism: false,
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.{ts,mjs}"],
     exclude: ["e2e/**", "node_modules/**"],
   },
 });

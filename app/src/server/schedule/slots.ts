@@ -21,7 +21,7 @@ export type BestSlot = {
 };
 
 /** 서울 시각 기준 날짜(YYYY-MM-DD)와 자정부터의 분 */
-function seoulParts(d: Date): { date: string; minute: number } {
+export function seoulParts(d: Date): { date: string; minute: number } {
   const shifted = new Date(d.getTime() + SEOUL_OFFSET_MS);
   return {
     date: shifted.toISOString().slice(0, 10),

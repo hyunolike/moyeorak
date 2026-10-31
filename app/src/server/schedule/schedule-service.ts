@@ -42,11 +42,19 @@ export async function saveScheduleVote(
   slots: Date[],
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    // 확정과 투표가 겹치지 않게 모임 행을 잠그고 상태를 본다.
+    const [meeting] = await tx
+      .select({ status: meetings.status })
+      .from(meetings)
+      .where(eq(meetings.id, meetingId))
+      .for("update");
+    if (!meeting) throw new MeetingNotFoundError();
     const [poll] = await tx
       .select()
       .from(schedulePolls)
       .where(eq(schedulePolls.meetingId, meetingId));
     if (!poll) throw new MeetingNotFoundError();
+    if (meeting.status !== "scheduling") throw new AlreadyConfirmedError();
 
     const [person] = await tx
       .select({ id: participants.id })

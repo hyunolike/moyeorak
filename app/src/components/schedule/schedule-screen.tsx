@@ -63,7 +63,7 @@ function ScheduleMain({
         meeting={meeting}
         isHost={me.isHost}
         hasMyVote={hasMyVote}
-        showLocation={tab === "optimal"}
+        onBestTab={tab === "optimal"}
         topSlot={summary?.best[0]}
       />
     </MobileLayout>

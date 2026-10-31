@@ -1,6 +1,11 @@
 import { unstable_rethrow } from "next/navigation";
 import { ZodError } from "zod";
 import { UnauthorizedError } from "@/server/admin-auth";
+import {
+  AiConfigError,
+  AiLimitError,
+  ParseFailedError,
+} from "@/server/ai/errors";
 import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
   MeetingFullError,
@@ -9,6 +14,7 @@ import {
 import {
   AlreadyConfirmedError,
   InvalidSlotsError,
+  NotHostError,
   ParticipantNotFoundError,
   ScheduleNotFoundError,
 } from "@/server/schedule/errors";
@@ -31,9 +37,13 @@ const errorStatus = new Map<ErrorClass, number>([
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],
+  [NotHostError, 403],
   [ExternalApiError, 502],
   [RateLimitedError, 429],
   [UnauthorizedError, 401],
+  [AiLimitError, 429],
+  [AiConfigError, 500],
+  [ParseFailedError, 422],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {

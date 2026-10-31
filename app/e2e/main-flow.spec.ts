@@ -34,12 +34,21 @@ function meetingIdFrom(page: Page): string {
   return match[1];
 }
 
-async function createMeeting(page: Page, button: string, name: string) {
+/** 범위를 고르고 모임을 만든 뒤, 홈을 거쳐 단계 화면(path)으로 들어간다. */
+async function createMeeting(
+  page: Page,
+  scope: string,
+  name: string,
+  stage: "schedule" | "location/votes",
+) {
   await page.goto("/");
-  await page.getByRole("link", { name: button }).click();
+  await page.getByRole("link", { name: "모임 만들기" }).click();
   await page.getByLabel("팀장 이름").fill(name);
+  await page.getByLabel(scope).check();
   await expect(page.getByTestId("participant-count")).toHaveText("2명");
   await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
+  await page.goto(`${new URL(page.url()).pathname}/${stage}`);
 }
 
 async function addDeparture(page: Page, keyword: string, pick: number) {
@@ -66,7 +75,7 @@ async function voteThreeSlots(page: Page) {
       .click();
   }
   await expect(page.locator('button[aria-pressed="true"]')).toHaveCount(3);
-  await page.getByRole("button", { name: "완료" }).click();
+  await page.getByRole("button", { name: "이 시간으로 저장" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
 }
 
@@ -91,7 +100,7 @@ async function expectSeoulSlots(page: Page, id: string) {
 }
 
 test("모임을 만들고 투표하면 최적일정에 내 이름이 나온다", async ({ page }) => {
-  await createMeeting(page, "일정 조율하기", "현호");
+  await createMeeting(page, "시간과 장소 둘 다", "현호", "schedule");
   await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
   scheduleMeetingId = meetingIdFrom(page);
 
@@ -142,7 +151,7 @@ test("출발지 2개를 넣으면 중간지점 결과에 역 이름이 나온다
   page,
   browser,
 }) => {
-  await createMeeting(page, "중간지점 찾기", "현호");
+  await createMeeting(page, "장소만", "현호", "location/votes");
   await expect(page).toHaveURL(/\/meetings\/[^/]+\/location\/votes$/);
   const id = meetingIdFrom(page);
   await addDeparture(page, "합정", 0);
@@ -165,13 +174,64 @@ test("출발지 2개를 넣으면 중간지점 결과에 역 이름이 나온다
   await expect(page.getByTestId("per-participant")).toHaveCount(2);
 });
 
+test("확정된 모임에 투표를 보내면 409이고, 헤더가 없으면 401", async ({
+  page,
+}) => {
+  await createMeeting(page, "시간과 장소 둘 다", "현호", "schedule");
+  await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
+  const id = meetingIdFrom(page);
+  await voteThreeSlots(page);
+
+  const summary = await page.request.get(
+    `/api/meetings/${id}/schedule/summary`,
+  );
+  const { data } = (await summary.json()) as {
+    data: { poll: { dateOptions: string[] } };
+  };
+  const day = data.poll.dateOptions[1];
+  const slot = `${day}T09:00:00+09:00`;
+  const deviceKey = await page.evaluate(() =>
+    window.localStorage.getItem("device_key"),
+  );
+  expect(deviceKey).not.toBeNull();
+  const headers = { "X-Device-Key": deviceKey as string };
+
+  const anonymous = await page.request.put(
+    `/api/meetings/${id}/schedule/votes`,
+    {
+      data: { slots: [slot] },
+    },
+  );
+  expect(anonymous.status()).toBe(401);
+
+  const range = { start: slot, end: `${day}T10:00:00+09:00` };
+  const anonymousConfirm = await page.request.post(
+    `/api/meetings/${id}/schedule/confirm`,
+    { data: range },
+  );
+  expect(anonymousConfirm.status()).toBe(401);
+
+  const confirmed = await page.request.post(
+    `/api/meetings/${id}/schedule/confirm`,
+    { headers, data: range },
+  );
+  expect(confirmed.status()).toBe(200);
+
+  const late = await page.request.put(`/api/meetings/${id}/schedule/votes`, {
+    headers,
+    data: { slots: [slot] },
+  });
+  expect(late.status()).toBe(409);
+  expect((await late.json()).error.code).toBe("ALREADY_CONFIRMED");
+});
+
 test.describe("서울 밖 브라우저", () => {
   test.use({ timezoneId: "America/New_York" });
 
   test("뉴욕 시간대에서 투표해도 서울 슬롯에 저장되고 같은 시각으로 보인다", async ({
     page,
   }) => {
-    await createMeeting(page, "일정 조율하기", "현호");
+    await createMeeting(page, "시간과 장소 둘 다", "현호", "schedule");
     await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
     const id = meetingIdFrom(page);
     expect(
