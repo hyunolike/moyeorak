@@ -13,6 +13,6 @@ export default defineConfig({
     command: "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: true,
-    env: { MOCK_EXTERNAL: "1" },
+    env: { MOCK_EXTERNAL: "1", ADMIN_TOKEN: "e2e-admin-token" },
   },
 });
