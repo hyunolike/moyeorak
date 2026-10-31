@@ -142,7 +142,7 @@ pnpm install
 pnpm dev
 ```
 
-DB 준비, 환경 변수, 테스트, 배포 체크리스트는 [app/README.md](./app/README.md)에 정리했습니다.
+DB 준비, 환경 변수, 테스트, 배포 절차는 [app/README.md](./app/README.md)에 정리했습니다.
 
 ### Backend
 
