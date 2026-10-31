@@ -14,6 +14,12 @@ const BG = "#FAF9F6"; // --color-bg
 const INK = "#202923"; // --color-ink
 const MUTED = "#625D54"; // --color-neutral-600
 
+/**
+ * 제목은 낱말 단위로 줄을 바꾸므로(keep-all) "{이름}님의"가 한 줄(64px 글자 약 10자)에 들어가야 한다.
+ * 이름을 먼저 줄여 "님의 모임"이 잘리지 않게 한다.
+ */
+const HOST_NAME_MAX = 7;
+
 /** 글꼴에 없는 이모지는 next/og가 외부에서 내려받으려 하므로 그리기 전에 뺀다. */
 function drawable(text: string, maxLength?: number): string {
   const plain = text
@@ -35,9 +41,9 @@ export default async function Image({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { title, description, expression } = meetingPreview(
-    await loadProgress(id),
-  );
+  const progress = await loadProgress(id);
+  const { description, expression } = meetingPreview(progress);
+  const title = `${drawable(progress.hostName, HOST_NAME_MAX)}님의 모임`;
   const [font, mazu, lockup] = await Promise.all([
     read("src/assets/fonts/Pretendard-Bold.otf"),
     read("public/brand/3d", `${expression}-512.png`),
@@ -71,10 +77,10 @@ export default async function Image({
               color: INK,
               maxHeight: 160,
               overflow: "hidden",
-              wordBreak: "break-all",
+              wordBreak: "keep-all",
             }}
           >
-            {drawable(title, 24)}
+            {title}
           </div>
           <div
             style={{
@@ -83,7 +89,7 @@ export default async function Image({
               color: MUTED,
               maxHeight: 220,
               overflow: "hidden",
-              wordBreak: "break-all",
+              wordBreak: "keep-all",
             }}
           >
             {drawable(description, 90)}
