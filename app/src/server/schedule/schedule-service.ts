@@ -19,7 +19,11 @@ import {
   rankSlots,
   validateSlots,
 } from "@/server/schedule/slots";
-import { assertOpenSuggestion, closeSuggestions } from "@/server/suggest/store";
+import {
+  assertOpenSuggestion,
+  closeSuggestions,
+  dropProposed,
+} from "@/server/suggest/store";
 
 const SLOT_MS = 30 * 60 * 1000;
 const MAX_CONFIRM_MS = 24 * 60 * 60 * 1000;
@@ -81,6 +85,8 @@ export async function saveScheduleVote(
         target: scheduleVotes.participantId,
         set: { slots: unique },
       });
+    // 투표가 바뀌면 이미 만든 제안의 "n명 가능" 같은 사실이 달라지므로 지운다.
+    await dropProposed(meetingId, "schedule", tx);
     await recordEvent(meetingId, "vote_done", tx);
   });
 }

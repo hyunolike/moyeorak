@@ -4,6 +4,7 @@ import { locationVotes, meetings, participants } from "@/db/schema";
 import { recordEvent } from "@/server/events/record-event";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import { ParticipantNotFoundError } from "@/server/schedule/errors";
+import { dropProposed } from "@/server/suggest/store";
 
 export type Departure = {
   voteId: number;
@@ -45,6 +46,7 @@ export async function upsertDeparture(
         set: { label: input.label, lat: input.lat, lng: input.lng },
       })
       .returning({ voteId: locationVotes.id });
+    await dropProposed(meetingId, "location", tx);
     await recordEvent(meetingId, "departure_done", tx);
     return { voteId: (row as { voteId: number }).voteId };
   });
@@ -90,6 +92,7 @@ export async function deleteDeparture(
       );
     if (!vote) throw new MeetingNotFoundError();
     await tx.delete(locationVotes).where(eq(locationVotes.id, voteId));
+    await dropProposed(meetingId, "location", tx);
   });
 }
 
