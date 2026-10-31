@@ -76,7 +76,13 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
   const [isModalOpen, setModalOpen] = useState(false);
   const data = midpoint.data;
   const stationList = data?.type === "ok" ? data.stations : [];
-  const selectedId = pickedId ?? stationList[0]?.stationId ?? 0;
+  // 목록이 다시 받아져 고른 역이 사라졌으면 화면에 보이는 첫 역으로 돌아간다.
+  const selectedId = stationList.some((s) => s.stationId === pickedId)
+    ? (pickedId as number)
+    : (stationList[0]?.stationId ?? 0);
+  const selectedName = stationList.find(
+    (s) => s.stationId === selectedId,
+  )?.name;
   const canConfirm =
     !!me?.isHost && meeting.status === "locating" && stationList.length > 0;
   const alreadyConfirmed =
@@ -152,7 +158,7 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
       </BottomBar>
       {isModalOpen && (
         <ConfirmModal
-          title="이 역으로 정할까요?"
+          title={`${selectedName ?? "이"}역으로 정할까요?`}
           caption="정한 뒤에는 장소를 바꿀 수 없어요."
           confirmLabel="정하기"
           pending={confirm.isPending}
