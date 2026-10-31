@@ -115,3 +115,36 @@ test("응답이 한 명뿐이면 마주가 기다려 달라고 말한다", async
     page.getByText("두 명 이상 응답하면 제안할 수 있어요."),
   ).toBeVisible();
 });
+
+for (const [status, code] of [
+  [502, "EXTERNAL_FAILED"],
+  [429, "RATE_LIMITED"],
+] as const) {
+  test(`제안 만들기가 ${status}를 받으면 마주가 미안해하며 역 목록으로 안내한다`, async ({
+    page,
+  }) => {
+    const id = await createVotedMeeting(page);
+    await page.route("**/api/meetings/*/suggestions", (route) =>
+      route.request().method() === "POST"
+        ? route.fulfill({
+            status,
+            contentType: "application/json",
+            body: JSON.stringify({ error: { code, message: "fail" } }),
+          })
+        : route.continue(),
+    );
+    await page.goto(`/meetings/${id}/suggest`);
+    const bubble = page.getByRole("status");
+    await expect(bubble).toContainText(
+      "지금은 이동시간을 확인하지 못했어요. 역 목록에서 직접 볼 수 있어요.",
+    );
+    await expect(bubble.getByRole("presentation")).toHaveAttribute(
+      "src",
+      "/brand/2d/sorry.svg",
+    );
+    await expect(
+      bubble.getByRole("link", { name: "전체 보기" }),
+    ).toHaveAttribute("href", `/meetings/${id}/location/stations`);
+    await expect(page.locator("article")).toHaveCount(0);
+  });
+}

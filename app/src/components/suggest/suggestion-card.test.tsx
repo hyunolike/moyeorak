@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { SuggestionCard } from "@/components/suggest/suggestion-card";
 import type { Suggestion } from "@/server/suggest/types";
@@ -95,7 +101,7 @@ test("확정은 한 번 묻고 나서 onAccept를 부른다", () => {
   fireEvent.click(screen.getByRole("button", { name: "이걸로 확정" }));
   expect(onAccept).not.toHaveBeenCalled();
   const dialog = screen.getByRole("dialog");
-  fireEvent.click(dialog.querySelector("button:last-child") as HTMLElement);
+  fireEvent.click(within(dialog).getByRole("button", { name: "확정하기" }));
   expect(onAccept).toHaveBeenCalledOnce();
 });
 

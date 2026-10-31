@@ -152,7 +152,10 @@ function SuggestMain({
           expression={msg.expression}
           action={
             msg.list ? (
-              <MainButtonLink variant="white" href={listHref(meeting.id, kind)}>
+              <MainButtonLink
+                variant="white"
+                href={listHref(meeting.id, "location")}
+              >
                 전체 보기
               </MainButtonLink>
             ) : undefined
@@ -199,15 +202,10 @@ function SuggestMain({
     );
   }
 
-  const busy = accept.isPending || reject.isPending;
+  const busy = accept.isPending || accept.isSuccess || reject.isPending;
   const msg = failure ? errorMessage(failure) : null;
   return (
     <Body>
-      <MazuBubble expression="guide">
-        {current.kind === "location"
-          ? "이 역이 가장 무난해 보여요."
-          : "이 시간이 가장 무난해 보여요."}
-      </MazuBubble>
       {msg && (
         <MazuBubble expression={msg.expression} state="error">
           {msg.text}
