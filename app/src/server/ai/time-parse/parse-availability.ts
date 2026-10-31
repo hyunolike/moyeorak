@@ -34,7 +34,7 @@ export type ParseDeps = {
 /** 모델 응답이 스키마를 어겼다는 내부 신호. 밖으로 나가지 않는다. */
 class SchemaViolation extends Error {}
 
-function isSchemaViolation(e: unknown): boolean {
+export function isSchemaViolation(e: unknown): boolean {
   return (
     e instanceof SchemaViolation ||
     NoObjectGeneratedError.isInstance(e) ||

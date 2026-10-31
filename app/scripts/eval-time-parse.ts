@@ -4,7 +4,10 @@ import { pathToFileURL } from "node:url";
 import { seoulMidnight, slotInstant } from "@/lib/seoul-time";
 import { expandRanges } from "@/server/ai/time-parse/expand";
 import { mockParse } from "@/server/ai/time-parse/mock";
-import { generateWithModel } from "@/server/ai/time-parse/parse-availability";
+import {
+  generateWithModel,
+  isSchemaViolation,
+} from "@/server/ai/time-parse/parse-availability";
 import { buildPrompt } from "@/server/ai/time-parse/prompt";
 import { AvailabilityOutput } from "@/server/ai/time-parse/schema";
 import { type Poll, seoulParts } from "@/server/schedule/slots";
@@ -42,6 +45,20 @@ export function scoreCase(
   return { exact: missing.length === 0 && extra.length === 0, missing, extra };
 }
 
+/** 호출이 던진 오류를 결과로 바꾼다. 스키마를 어긴 응답만 위반으로 센다. */
+export function classifyError(
+  e: unknown,
+  expected: string[],
+): Omit<CaseResult, "text" | "latencyMs"> {
+  return {
+    exact: false,
+    missing: expected,
+    extra: [],
+    schemaViolation: isSchemaViolation(e),
+    error: e instanceof Error ? e.message : String(e),
+  };
+}
+
 async function runCase(model: string, c: EvalCase): Promise<CaseResult> {
   const started = performance.now();
   const done = (r: Omit<CaseResult, "text" | "latencyMs">): CaseResult => ({
@@ -72,13 +89,7 @@ async function runCase(model: string, c: EvalCase): Promise<CaseResult> {
     const { slots } = expandRanges(parsed.data.ranges, c.poll);
     return done({ ...scoreCase(c.expected, slots), schemaViolation: false });
   } catch (e) {
-    return done({
-      exact: false,
-      missing: c.expected,
-      extra: [],
-      schemaViolation: false,
-      error: e instanceof Error ? e.message : String(e),
-    });
+    return done(classifyError(e, c.expected));
   }
 }
 
