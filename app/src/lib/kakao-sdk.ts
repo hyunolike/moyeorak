@@ -17,6 +17,7 @@ export type KakaoMaps = {
       center: KakaoLatLng;
       level: number;
       draggable: boolean;
+      zoomable: boolean;
       scrollwheel: boolean;
       disableDoubleClick: boolean;
       disableDoubleClickZoom: boolean;
@@ -41,6 +42,7 @@ export type KakaoMaps = {
   }) => KakaoOverlay;
   event: {
     addListener(target: object, type: string, handler: () => void): void;
+    removeListener(target: object, type: string, handler: () => void): void;
   };
   load(callback: () => void): void;
 };
@@ -63,7 +65,11 @@ export function loadKakaoSdk(appKey: string): Promise<KakaoMaps> {
     const ready = () => {
       const maps = window.kakao?.maps;
       if (!maps) return reject(new Error("kakao maps unavailable"));
-      maps.load(() => resolve(maps));
+      try {
+        maps.load(() => resolve(maps));
+      } catch (error) {
+        reject(error);
+      }
     };
     if (window.kakao?.maps) return ready();
     const script = document.createElement("script");

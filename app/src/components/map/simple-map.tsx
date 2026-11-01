@@ -7,6 +7,7 @@ export type MapProps = {
 };
 
 type Point = { lat: number; lng: number };
+type Pt = { x: number; y: number };
 const MIN_RANGE = 0.01;
 
 /** 점들의 위경도 경계 상자. 범위가 0이어도 최소 범위(0.01도)를 두어 나눗셈이 0이 되지 않게 한다. */
@@ -31,16 +32,16 @@ export function projectPoints(
 ): { x: number; y: number }[] {
   if (points.length === 0) return [];
   const { lat, lng } = boundingBox(points);
+  // 위도가 높을수록 경도 1도의 실제 거리가 짧다. 동서가 늘어나 보이지 않게 줄인다.
+  const kx = Math.cos((((lat.min + lat.max) / 2) * Math.PI) / 180);
+  const spanX = (lng.max - lng.min) * kx;
   const innerW = box.w - box.pad * 2;
   const innerH = box.h - box.pad * 2;
-  const scale = Math.min(
-    innerW / (lng.max - lng.min),
-    innerH / (lat.max - lat.min),
-  );
-  const offsetX = box.pad + (innerW - (lng.max - lng.min) * scale) / 2;
+  const scale = Math.min(innerW / spanX, innerH / (lat.max - lat.min));
+  const offsetX = box.pad + (innerW - spanX * scale) / 2;
   const offsetY = box.pad + (innerH - (lat.max - lat.min) * scale) / 2;
   return points.map((p) => ({
-    x: offsetX + (p.lng - lng.min) * scale,
+    x: offsetX + (p.lng - lng.min) * kx * scale,
     y: offsetY + (lat.max - p.lat) * scale,
   }));
 }
@@ -49,6 +50,31 @@ const W = 335;
 const H = 176;
 const PAD = 40;
 export const MAP_LABEL = "출발지와 후보 역 지도";
+
+const PIN_R = 12;
+const LABEL_H = 24;
+
+function overlaps(rect: { x: number; y: number; w: number }, pin: Pt) {
+  const nx = Math.min(Math.max(pin.x, rect.x), rect.x + rect.w);
+  const ny = Math.min(Math.max(pin.y, rect.y), rect.y + LABEL_H);
+  return (pin.x - nx) ** 2 + (pin.y - ny) ** 2 < PIN_R ** 2;
+}
+
+/** 라벨을 고른 역 위나 아래에 둔다. 출발지 핀과 덜 겹치는 쪽을 고르고, 같으면 위쪽이다. */
+export function placeLabel(
+  pos: Pt,
+  labelW: number,
+  pins: Pt[],
+  w: number,
+  h: number,
+): { x: number; y: number } {
+  const x = Math.min(Math.max(pos.x - labelW / 2, 4), w - labelW - 4);
+  const above = { x, y: Math.max(pos.y - 48, 4), w: labelW };
+  const below = { x, y: Math.min(pos.y + 24, h - 28), w: labelW };
+  const count = (r: typeof above) => pins.filter((p) => overlaps(r, p)).length;
+  const pick = count(below) < count(above) ? below : above;
+  return { x: pick.x, y: pick.y };
+}
 
 export function stationLabel(station: Station) {
   return `${station.name} · 평균 ${Math.round(station.averageMinutes)}분`;
@@ -70,14 +96,11 @@ export function SimpleMap({ departures, stations, selectedId }: MapProps) {
 
   const label = selected ? stationLabel(selected) : "";
   const labelW = Math.min(W - 8, 28 + [...label].length * 12);
-  const labelX = selectedPos
-    ? Math.min(Math.max(selectedPos.x - labelW / 2, 4), W - labelW - 4)
-    : 0;
-  const labelY = selectedPos
-    ? selectedPos.y - 24 - 24 < 4
-      ? selectedPos.y + 24
-      : selectedPos.y - 48
-    : 0;
+  const labelPos = selectedPos
+    ? placeLabel(selectedPos, labelW, dep, W, H)
+    : { x: 0, y: 0 };
+  const labelX = labelPos.x;
+  const labelY = labelPos.y;
 
   return (
     <svg
@@ -119,7 +142,11 @@ export function SimpleMap({ departures, stations, selectedId }: MapProps) {
         strokeWidth="3"
       >
         {stations.map((s, i) =>
-          s.stationId === selectedId || !st[i] ? null : (
+          s.stationId === selectedId ||
+          !st[i] ||
+          (selected &&
+            s.lat === selected.lat &&
+            s.lng === selected.lng) ? null : (
             <circle key={s.stationId} cx={st[i].x} cy={st[i].y} r="7" />
           ),
         )}

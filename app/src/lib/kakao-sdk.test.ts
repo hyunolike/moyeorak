@@ -19,6 +19,8 @@ test("스크립트는 한 번만 넣고, 오류면 거절한 뒤 다시 시도�
   scripts[0]?.dispatchEvent(new Event("error"));
   await expect(a).rejects.toThrow();
 
-  loadKakaoSdk("k").catch(() => {});
+  const retry = loadKakaoSdk("k");
+  retry.catch(() => {});
+  expect(retry).not.toBe(a);
   expect(document.head.querySelectorAll("script")).toHaveLength(1);
 });
