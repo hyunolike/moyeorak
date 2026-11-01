@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모여락 v4 화면 시안</title>
+<link rel="stylesheet" href="../../../app/src/styles/tokens.css">
+<link rel="stylesheet" href="tokens.vars.css">
+<style>
+/* 앱 tokens.css의 @font-face는 /fonts 절대 경로라 파일로 열면 못 읽는다. 같은 파일을 상대 경로로 다시 선언한다. */
+@font-face { font-family: "Pretendard"; src: url("../../../app/public/fonts/Pretendard-Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Pretendard"; src: url("../../../app/public/fonts/Pretendard-Medium.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: "Pretendard"; src: url("../../../app/public/fonts/Pretendard-SemiBold.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Pretendard"; src: url("../../../app/public/fonts/Pretendard-Bold.woff2") format("woff2"); font-weight: 700; }
+@font-face { font-family: "Pretendard"; src: url("../../../app/public/fonts/Pretendard-ExtraBold.woff2") format("woff2"); font-weight: 800; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Pretendard", system-ui, sans-serif; background: var(--color-ink-200); color: var(--color-text); -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; }
+.board { display: flex; flex-wrap: wrap; gap: 40px; padding: 40px; }
+section.phone { width: 375px; height: 812px; background: var(--color-bg); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.status { height: 44px; flex: none; }
+.appbar { height: 52px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 8px; }
+.appbar .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; color: var(--color-text); }
+.appbar .title { font-size: 16px; font-weight: 700; }
+.appbar .spacer { flex: 1; }
+.scroll { flex: 1; overflow: hidden; padding-bottom: 100px; }
+.pad { padding: 0 20px; }
+.eyebrow { font-size: 14px; font-weight: 600; color: var(--color-action-text); }
+.h1 { font-size: 28px; font-weight: 800; line-height: 1.3; letter-spacing: -0.03em; }
+.h2 { font-size: 22px; font-weight: 800; line-height: 1.3; letter-spacing: -0.03em; }
+.sub { font-size: 15px; color: var(--color-muted); line-height: 1.5; }
+.band { height: 8px; background: var(--color-surface-sunken); margin: 24px 0; }
+.num { font-variant-numeric: tabular-nums; }
+.cta-wrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px 28px; background: var(--color-bg); display: flex; flex-direction: column; gap: 8px; }
+.cta { height: 52px; border-radius: 14px; background: var(--color-action); color: var(--color-on-action); font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+.cta.disabled { background: var(--color-disabled-bg); color: var(--color-disabled-text); }
+.text-btn { height: 40px; display: grid; place-items: center; font-size: 15px; font-weight: 600; color: var(--color-text); }
+.guide { display: flex; gap: 10px; align-items: center; background: var(--color-assistant); border-radius: 14px; padding: 12px 14px; font-size: 15px; font-weight: 600; line-height: 1.45; }
+.guide svg { flex: none; }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border-radius: 8px; font-size: 13px; font-weight: 600; background: var(--color-surface-sunken); color: var(--color-text); }
+.chip.on { background: var(--color-selected); }
+.chip.ok { background: var(--color-selected); }
+.chip.wait { background: var(--color-surface-sunken); color: var(--color-muted); }
+.maju-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--color-action-text); }
+.maju-tag::before { content: ""; width: 6px; height: 6px; border-radius: 2px; background: var(--color-action); }
+.row { display: flex; align-items: center; gap: 12px; padding: 14px 20px; }
+.avatar { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; font-size: 14px; font-weight: 700; background: var(--color-surface-sunken); }
+.row .name { font-size: 16px; font-weight: 600; flex: 1; }
+.list-title { font-size: 15px; font-weight: 700; padding: 0 20px 4px; display: flex; justify-content: space-between; }
+.list-title span { color: var(--color-muted); font-weight: 500; }
+
+/* 노선 진행 표시: 정류장 셋을 잇는 선. 지난 구간은 탠저린, 남은 구간은 회색 */
+.route { display: flex; align-items: center; gap: 0; margin-top: 20px; }
+.route .stop { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 56px; font-size: 12px; font-weight: 600; color: var(--color-muted); }
+.route .stop i { width: 16px; height: 16px; border-radius: 50%; border: 4px solid var(--color-ink-300); background: var(--color-bg); }
+.route .stop.done i, .route .stop.now i { border-color: var(--color-ink-900); }
+.route .stop.now i { background: var(--color-action); }
+.route .stop.now { color: var(--color-text); }
+.route .seg { flex: 1; height: 4px; background: var(--color-ink-200); margin-top: -22px; border-radius: 2px; }
+.route .seg.done { background: var(--color-ink-900); }
+.meter { margin-top: 20px; }
+.meter .bar { height: 10px; background: var(--color-surface-sunken); border-radius: 99px; overflow: hidden; }
+.meter .bar i { display: block; height: 100%; width: 80%; background: var(--color-action); border-radius: 99px; }
+.meter .lbl { display: flex; justify-content: space-between; font-size: 13px; color: var(--color-muted); margin-top: 6px; }
+.meter .lbl b { color: var(--color-text); font-size: 15px; }
+
+/* 시간표 */
+.input { display: flex; gap: 8px; align-items: center; background: var(--color-surface-sunken); border-radius: 14px; padding: 6px 6px 6px 14px; }
+.input p { flex: 1; font-size: 15px; color: var(--color-ink-400); }
+.input .go { height: 40px; padding: 0 14px; border-radius: 10px; background: var(--color-ink-900); color: var(--color-white); font-size: 14px; font-weight: 700; display: grid; place-items: center; }
+.tabs { display: flex; gap: 20px; padding: 0 20px; border-bottom: 1px solid var(--color-border); margin-top: 20px; }
+.tabs b { font-size: 16px; padding: 12px 0; font-weight: 600; color: var(--color-muted); }
+.tabs b.on { color: var(--color-text); font-weight: 700; box-shadow: inset 0 -3px 0 var(--color-ink-900); }
+.grid { display: grid; grid-template-columns: 40px repeat(5, 1fr); gap: 3px; padding: 14px 20px 0; }
+.grid .h { font-size: 12px; font-weight: 600; text-align: center; color: var(--color-muted); padding-bottom: 4px; line-height: 1.3; }
+.grid .h b { display: block; font-size: 15px; color: var(--color-text); }
+.grid .t { font-size: 11px; color: var(--color-muted); text-align: right; padding-right: 6px; height: 28px; line-height: 28px; }
+.grid .c { height: 28px; border-radius: 6px; background: var(--color-surface-sunken); }
+.c.l1 { background: var(--color-tangerine-200); }
+.c.l2 { background: var(--color-tangerine-300); }
+.c.l3 { background: var(--color-tangerine-400); }
+.c.l4 { background: var(--color-tangerine-500); }
+.c.mine { box-shadow: inset 0 0 0 2px var(--color-ink-900); }
+.legend { display: flex; gap: 6px; align-items: center; padding: 12px 20px 0; font-size: 12px; color: var(--color-muted); }
+.legend i { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* 제안 카드 */
+.cards { display: flex; gap: 12px; padding: 20px 20px 0; overflow: hidden; }
+.card { flex: none; width: 300px; border-radius: 24px; padding: 20px; background: var(--color-bg); border: 1.5px solid var(--color-border); display: flex; flex-direction: column; gap: 12px; }
+.card.on { border: 2px solid var(--color-ink-900); }
+.card .k { font-size: 13px; font-weight: 700; color: var(--color-action-text); }
+.card .big { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.25; }
+.card .sum { font-size: 15px; font-weight: 600; }
+.card .reason { font-size: 14px; line-height: 1.5; color: var(--color-text); background: var(--color-surface-sunken); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.card .more { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+.people { display: flex; flex-wrap: wrap; gap: 6px; }
+.dots { display: flex; justify-content: center; gap: 6px; padding-top: 14px; }
+.dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--color-ink-300); }
+.dots i.on { width: 18px; background: var(--color-ink-900); }
+
+/* 역 목록 */
+.station { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.station.on { background: var(--color-selected); }
+.station .top { display: flex; align-items: center; gap: 10px; }
+.station .rank { width: 24px; height: 24px; border-radius: 7px; font-size: 13px; font-weight: 800; display: grid; place-items: center; background: var(--color-surface-sunken); }
+.station.on .rank { background: var(--color-action); color: var(--color-on-action); }
+.station .nm { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
+.station .line { font-size: 12px; font-weight: 700; border: 1.5px solid var(--color-ink-900); border-radius: 99px; padding: 1px 7px; }
+.station .avg { margin-left: auto; font-size: 14px; color: var(--color-muted); }
+.station .avg b { color: var(--color-text); font-size: 16px; }
+.bars { display: grid; grid-template-columns: 44px 1fr 40px; gap: 6px 8px; align-items: center; font-size: 13px; }
+.bars .who { color: var(--color-muted); }
+.bars .track { height: 8px; border-radius: 4px; background: var(--color-bg); }
+.station:not(.on) .bars .track { background: var(--color-surface-sunken); }
+.bars .track i { display: block; height: 100%; border-radius: 4px; background: var(--color-ink-900); }
+.station.on .bars .track i { background: var(--color-action); }
+.bars .m { text-align: right; font-weight: 700; }
+
+/* 약속 카드 */
+.ticket { margin: 20px; border-radius: 24px; background: var(--color-action); color: var(--color-on-action); padding: 24px 22px; position: relative; overflow: hidden; }
+.ticket .when { font-size: 30px; font-weight: 800; line-height: 1.2; letter-spacing: -0.035em; }
+.ticket .where { margin-top: 18px; display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; }
+.ticket .where .line { font-size: 12px; border: 2px solid var(--color-ink-900); border-radius: 99px; padding: 0 7px; }
+.ticket .rule { height: 0; border-top: 2px dashed var(--color-ink-900); margin: 20px -22px; opacity: 1; }
+.ticket .who { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 15px; }
+.ticket .who span { font-weight: 500; }
+.ticket .who b { font-variant-numeric: tabular-nums; }
+.ticket .stamp { position: absolute; right: 18px; top: 18px; width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--color-ink-900); display: grid; place-items: center; font-size: 13px; font-weight: 800; transform: rotate(-8deg); }
+.actions { display: flex; justify-content: space-between; padding: 0 20px; }
+.actions div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; width: 100px; }
+.actions .ic { width: 48px; height: 48px; border-radius: 16px; background: var(--color-surface-sunken); display: grid; place-items: center; }
+
+/* 시트 */
+.dim { position: absolute; inset: 0; background: var(--color-ink-900); opacity: 0.4; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--color-bg); border-radius: 24px 24px 0 0; padding: 10px 20px 28px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-sheet); }
+.sheet .handle { width: 40px; height: 5px; border-radius: 3px; background: var(--color-ink-300); margin: 0 auto 6px; }
+.sheet .msg { background: var(--color-surface-sunken); border-radius: 14px; padding: 14px; font-size: 15px; line-height: 1.6; }
+.seg2 { display: flex; background: var(--color-surface-sunken); border-radius: 12px; padding: 4px; }
+.seg2 b { flex: 1; text-align: center; font-size: 14px; padding: 8px 0; border-radius: 9px; color: var(--color-muted); font-weight: 600; }
+.seg2 b.on { background: var(--color-bg); color: var(--color-text); font-weight: 700; box-shadow: 0 1px 2px rgb(23 24 26 / 0.08); }
+.warn { font-size: 14px; color: var(--color-warning); font-weight: 600; }
+.label { font-size: 13px; color: var(--color-muted); font-weight: 600; }
+.cap { width: 375px; font-size: 13px; color: var(--color-ink-700); margin-top: 8px; font-weight: 600; }
+.col { display: flex; flex-direction: column; }
+</style>
+</head>
+<body>
+<div class="board">
+
+<!-- 1. 첫 화면 -->
+<div class="col">
+<section class="phone" id="landing" aria-label="첫 화면">
+  <div class="status"></div>
+  <div class="appbar"><img src="../logo/final/horizontal.svg" alt="모여락" height="26" style="margin-left:12px"></div>
+  <div class="scroll pad" style="padding-top:36px">
+    <h1 class="h1" style="font-size:34px">친구들 약속,<br>링크 하나로<br>정해요</h1>
+    <p class="sub" style="margin-top:14px">각자 되는 시간과 출발지를 남기면, 마주가 한두 개로 추려 드려요. 마지막 결정은 모임을 만든 사람이 해요.</p>
+    <svg viewBox="0 0 335 150" width="335" height="150" style="margin-top:28px" aria-hidden="true">
+      <path d="M0 26 H120 Q150 26 150 56 V96" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
+      <path d="M335 26 H210 Q182 26 182 56 V96" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
+      <path d="M0 76 H90 Q130 76 150 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
+      <path d="M335 76 H245 Q205 76 182 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
+      <circle cx="166" cy="112" r="30" fill="var(--color-ink-900)"/>
+      <circle cx="166" cy="112" r="16" fill="var(--color-action)"/>
+    </svg>
+    <ol style="list-style:none;margin-top:28px;display:flex;flex-direction:column;gap:14px">
+      <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">1</span><b style="font-size:16px">링크를 단톡방에 보내요</b></li>
+      <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">2</span><b style="font-size:16px">각자 되는 시간과 출발지를 남겨요</b></li>
+      <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">3</span><b style="font-size:16px">제안 중 하나를 골라 확정해요</b></li>
+    </ol>
+  </div>
+  <div class="cta-wrap"><div class="cta" data-cta>모임 만들기</div></div>
+</section>
+<p class="cap">첫 화면 — 장면 일러스트 대신 노선 두 개가 한 역에 모이는 그림. 마주는 없음.</p>
+</div>
+
+<!-- 2. 모임 홈 -->
+<div class="col">
+<section class="phone" id="home" aria-label="모임 홈">
+  <div class="status"></div>
+  <div class="appbar"><span class="spacer"></span><span class="icon-btn" aria-label="공유"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg></span></div>
+  <div class="scroll">
+    <div class="pad">
+      <p class="eyebrow">현호님의 모임</p>
+      <h1 class="h1" style="margin-top:6px">5명 중 <span class="num">4</span>명이<br>응답했어요</h1>
+      <div class="route" aria-label="진행 단계">
+        <div class="stop done"><i></i>시간</div><div class="seg done"></div>
+        <div class="stop now"><i></i>제안</div><div class="seg"></div>
+        <div class="stop"><i></i>확정</div>
+      </div>
+      <div class="meter"><div class="bar"><i></i></div><div class="lbl"><span>응답</span><span><b class="num">4</b> / 5명</span></div></div>
+      <div class="guide" style="margin-top:20px"><svg data-maju="waiting" role="img" aria-label="마주 — 기다림" width="32" height="32" viewBox="0 0 64 64"><path fill="var(--color-tangerine-500)" d="M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z"/><path fill="var(--color-ink-900)" d="M21 12 H21 A6 6 0 0 1 27 18 V21 A6 6 0 0 1 21 27 H21 A6 6 0 0 1 15 21 V18 A6 6 0 0 1 21 12 Z M43 12 H43 A6 6 0 0 1 49 18 V21 A6 6 0 0 1 43 27 H43 A6 6 0 0 1 37 21 V18 A6 6 0 0 1 43 12 Z M31.5 36 H32.5 A4.5 4.5 0 0 1 37 40.5 V40.5 A4.5 4.5 0 0 1 32.5 45 H31.5 A4.5 4.5 0 0 1 27 40.5 V40.5 A4.5 4.5 0 0 1 31.5 36 Z"/></svg><span>민지님만 남았어요. 지금 결과로 제안 받아 볼까요?</span></div>
+    </div>
+    <div class="band"></div>
+    <div class="list-title">참여자 <span class="num">5명</span></div>
+    <div class="row"><span class="avatar">현</span><span class="name">현호</span><span class="chip ok">응답함</span></div>
+    <div class="row"><span class="avatar">서</span><span class="name">서연</span><span class="chip ok">응답함</span></div>
+    <div class="row"><span class="avatar">준</span><span class="name">준호</span><span class="chip ok">응답함</span></div>
+    <div class="row"><span class="avatar">지</span><span class="name">지우</span><span class="chip ok">응답함</span></div>
+    <div class="row"><span class="avatar">민</span><span class="name">민지</span><span class="chip wait">기다리는 중</span></div>
+  </div>
+  <div class="cta-wrap"><div class="cta" data-cta>제안 받기</div><div class="text-btn" style="margin-top:-4px">재촉하기</div></div>
+</section>
+<p class="cap">모임 홈 — 진행 단계를 노선(정류장 셋)으로. 응답 수는 굴러 올라가고 막대가 늘어남.</p>
+</div>
+
+<!-- 3. 시간 투표 -->
+<div class="col">
+<section class="phone" id="vote" aria-label="시간 투표">
+  <div class="status"></div>
+  <div class="appbar"><span class="icon-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span><span class="title">가능한 시간</span></div>
+  <div class="scroll">
+    <div class="pad">
+      <h1 class="h2" style="margin-top:4px">언제 되세요?</h1>
+      <p class="sub" style="margin-top:4px">되는 시간을 손가락으로 쓸어 칠해 주세요</p>
+      <div class="input" style="margin-top:16px"><p>담주 평일 저녁 되고 수요일은 빼줘</p><span class="go">칠해 보기</span></div>
+    </div>
+    <div class="tabs"><b class="on">시간 고르기</b><b>최적일정</b></div>
+    <div class="grid num">
+      <span></span><span class="h">토<b>8</b></span><span class="h">일<b>9</b></span><span class="h">월<b>10</b></span><span class="h">화<b>11</b></span><span class="h">수<b>12</b></span>
+      <span class="t">17:00</span><i class="c l1"></i><i class="c"></i><i class="c"></i><i class="c l1"></i><i class="c"></i>
+      <span class="t"></span><i class="c l2"></i><i class="c l1"></i><i class="c"></i><i class="c l1"></i><i class="c"></i>
+      <span class="t">18:00</span><i class="c l4 mine"></i><i class="c l2 mine"></i><i class="c l1"></i><i class="c l2 mine"></i><i class="c"></i>
+      <span class="t"></span><i class="c l4 mine"></i><i class="c l3 mine"></i><i class="c l1"></i><i class="c l3 mine"></i><i class="c"></i>
+      <span class="t">19:00</span><i class="c l3 mine"></i><i class="c l3 mine"></i><i class="c l2"></i><i class="c l2"></i><i class="c l1"></i>
+      <span class="t"></span><i class="c l3"></i><i class="c l2"></i><i class="c l2"></i><i class="c l1"></i><i class="c l1"></i>
+      <span class="t">20:00</span><i class="c l2"></i><i class="c l1"></i><i class="c l1"></i><i class="c"></i><i class="c"></i>
+      <span class="t"></span><i class="c l1"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i>
+      <span class="t">21:00</span><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i>
+    </div>
+    <div class="legend"><span>되는 사람</span><i style="background:var(--color-tangerine-200)"></i>1<i style="background:var(--color-tangerine-300)"></i>2<i style="background:var(--color-tangerine-400)"></i>3<i style="background:var(--color-tangerine-500)"></i>4명 · 테두리는 내가 고른 칸</div>
+  </div>
+  <div class="cta-wrap"><div class="cta" data-cta>이 시간으로 저장 <span class="num" style="margin-left:6px;font-weight:600">· 6칸</span></div></div>
+</section>
+<p class="cap">시간 투표 — 칸의 진하기가 되는 사람 수, 테두리가 내 선택. 칠할 때 칸이 커졌다 자리 잡음.</p>
+</div>
+
+<!-- 4. 마주의 제안 -->
+<div class="col">
+<section class="phone" id="suggest" aria-label="마주의 제안">
+  <div class="status"></div>
+  <div class="appbar"><span class="icon-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span></div>
+  <div class="scroll">
+    <div class="pad">
+      <div style="display:flex;align-items:center;gap:8px"><svg data-maju="thinking" role="img" aria-label="마주 — 생각 중" width="24" height="24" viewBox="0 0 64 64"><path fill="var(--color-tangerine-500)" d="M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z"/><path fill="var(--color-ink-900)" d="M21 15 H21 A6 6 0 0 1 27 21 V27 A6 6 0 0 1 21 33 H21 A6 6 0 0 1 15 27 V21 A6 6 0 0 1 21 15 Z M40.5 25 H47.5 A3.5 3.5 0 0 1 51 28.5 V28.5 A3.5 3.5 0 0 1 47.5 32 H40.5 A3.5 3.5 0 0 1 37 28.5 V28.5 A3.5 3.5 0 0 1 40.5 25 Z M33 37 H33 A4 4 0 0 1 37 41 V42 A4 4 0 0 1 33 46 H33 A4 4 0 0 1 29 42 V41 A4 4 0 0 1 33 37 Z"/></svg><p class="eyebrow">마주의 제안</p></div>
+      <h1 class="h1" style="margin-top:8px">두 가지를<br>골라 봤어요</h1>
+    </div>
+    <div class="cards">
+      <article class="card on">
+        <p class="k">가장 많이 되는 시간</p>
+        <p class="big num">11월 8일 (토)<br>오후 6시</p>
+        <p class="sum num">5명 중 4명 가능</p>
+        <div class="reason"><span class="maju-tag">마주</span>4명이 되는 시간 중 가장 빨라요. 민지님 응답만 남았어요.</div>
+        <p class="label">가능</p>
+        <div class="people"><span class="chip on">현호</span><span class="chip on">서연</span><span class="chip on">준호</span><span class="chip on">지우</span></div>
+        <p class="label">어려움</p>
+        <div class="people"><span class="chip wait">민지 (미응답)</span></div>
+      </article>
+      <article class="card">
+        <p class="k">가장 빨리 모이는 날</p>
+        <p class="big num">11월 9일 (일)<br>오후 2시</p>
+        <p class="sum num">5명 중 3명 가능</p>
+        <div class="more">이유 보기 ⌄</div>
+      </article>
+    </div>
+    <div class="dots"><i class="on"></i><i></i></div>
+  </div>
+  <div class="cta-wrap"><div class="cta" data-cta>이걸로 확정</div><div class="text-btn" style="margin-top:-4px">다른 제안 보기</div></div>
+</section>
+<p class="cap">제안 — 카드 두 장을 옆으로 넘김. 이유 보기를 펼친 상태(가능/어려움 칩). AI 문장에는 "마주" 표시.</p>
+</div>
+
+<!-- 5. 역 목록 -->
+<div class="col">
+<section class="phone" id="stations" aria-label="역 목록">
+  <div class="status"></div>
+  <div class="appbar"><span class="icon-btn"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></span><span class="title">장소</span></div>
+  <div class="scroll">
+    <div class="pad">
+      <h1 class="h2" style="margin-top:4px">어디서 만날까요?</h1>
+      <p class="sub" style="margin-top:4px">출발지 5곳에서 가운데에 있는 역이에요</p>
+    </div>
+    <div style="height:16px"></div>
+    <div class="station on">
+      <div class="top"><span class="rank">1</span><span class="nm">녹사평</span><span class="line">6호선</span><span class="avg num">평균 <b>30</b>분</span></div>
+      <div class="bars num">
+        <span class="who">현호</span><span class="track"><i style="width:44%"></i></span><span class="m">22분</span>
+        <span class="who">서연</span><span class="track"><i style="width:56%"></i></span><span class="m">28분</span>
+        <span class="who">준호</span><span class="track"><i style="width:62%"></i></span><span class="m">31분</span>
+        <span class="who">지우</span><span class="track"><i style="width:66%"></i></span><span class="m">33분</span>
+        <span class="who">민지</span><span class="track"><i style="width:76%"></i></span><span class="m">38분</span>
+      </div>
+    </div>
+    <div class="station">
+      <div class="top"><span class="rank">2</span><span class="nm">옥수</span><span class="line">3호선</span><span class="avg num">평균 <b>31</b>분</span></div>
+      <div class="bars num">
+        <span class="who">현호</span><span class="track"><i style="width:58%"></i></span><span class="m">29분</span>
+        <span class="who">민지</span><span class="track"><i style="width:64%"></i></span><span class="m">32분</span>
+      </div>
+    </div>
+    <div class="station">
+      <div class="top"><span class="rank">3</span><span class="nm">약수</span><span class="line">3호선</span><span class="avg num">평균 <b>33</b>분</span></div>
+    </div>
+  </div>
+  <div class="cta-wrap"><div class="cta" data-cta>녹사평역으로 정하기</div></div>
+</section>
+<p class="cap">역 목록 — 카드 대신 목록. 고른 역은 연한 탠저린, 사람별 이동 시간 막대가 늘고 줆. 마주 없음.</p>
+</div>
+
+<!-- 6. 약속 카드 -->
+<div class="col">
+<section class="phone" id="summary" aria-label="약속 카드 화면">
+  <div class="status"></div>
+  <div class="appbar"><span class="spacer"></span></div>
+  <div class="scroll">
+    <div class="pad"><div class="guide"><svg data-maju="happy" role="img" aria-label="마주 — 기쁨" width="32" height="32" viewBox="0 0 64 64"><path fill="var(--color-tangerine-500)" d="M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z"/><path fill="var(--color-ink-900)" d="M14 27 Q21 10 28 27 Q29 30 26 31 Q24 32 23 29 Q21 24 19 29 Q18 32 15 31 Q13 30 14 27 Z M36 27 Q43 10 50 27 Q51 30 48 31 Q46 32 45 29 Q43 24 41 29 Q40 32 37 31 Q35 30 36 27 Z M23 34 H41 Q43 34 43 36 Q43 44 32 44 Q21 44 21 36 Q21 34 23 34 Z"/></svg><span>약속이 정해졌어요</span></div></div>
+    <article class="ticket" aria-label="약속 카드">
+      <div class="stamp">확정</div>
+      <p style="font-size:14px;font-weight:700">현호님의 모임</p>
+      <p class="when num" style="margin-top:8px">11월 8일 토요일<br>오후 6시</p>
+      <p class="where">녹사평역 <span class="line">6호선</span></p>
+      <div class="rule"></div>
+      <div class="who num">
+        <span>현호 · 홍대입구</span><b>22분</b>
+        <span>서연 · 잠실</span><b>28분</b>
+        <span>준호 · 사당</span><b>31분</b>
+        <span>지우 · 노원</span><b>33분</b>
+        <span>민지 · 수원</span><b>38분</b>
+      </div>
+    </article>
+    <div class="actions">
+      <div><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 16l4-4 4 4 3-3 5 5"/></svg></span>이미지로 저장</div>
+      <div><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></span>글로 복사</div>
+      <div><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>카카오맵</div>
+    </div>
+  </div>
+  <div class="cta-wrap"><div class="cta" data-cta>단톡방에 공유하기</div><div class="text-btn" style="margin-top:-4px">모임 홈으로 가기</div></div>
+</section>
+<p class="cap">약속 카드 — 탠저린 승차권. 확정 순간 날짜와 역에 도장처럼 한 번 강조. 색종이 없음.</p>
+</div>
+
+<!-- 7. 재촉 시트 -->
+<div class="col">
+<section class="phone" id="sheet-nudge" aria-label="재촉 시트">
+  <div class="status"></div>
+  <div class="pad" style="padding-top:60px"><p class="eyebrow">현호님의 모임</p><h1 class="h1" style="margin-top:6px">5명 중 4명이<br>응답했어요</h1></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 class="h2" style="font-size:20px">민지님에게 보낼 메시지</h2>
+    <p class="sub" style="margin-top:-8px">단톡방에 붙여 넣으면 돼요</p>
+    <div class="seg2"><b class="on">다정하게</b><b>짧게</b></div>
+    <div class="msg">민지야! 이번 주말 모임 시간 정하고 있는데, 되는 시간 하나만 남겨 줄래? 1분이면 돼<br><span style="color:var(--color-muted)">moyeorak.hyunolike.dev/m/…</span></div>
+    <div class="cta" data-cta style="margin-top:4px">복사하기</div>
+  </div>
+</section>
+<p class="cap">재촉 시트 — 아래에서 올라오고 끌어내려 닫음. 메시지 속 이모지는 사용자에게 보낼 글이라 허용.</p>
+</div>
+
+<!-- 8. 확정 확인 시트 -->
+<div class="col">
+<section class="phone" id="sheet-confirm" aria-label="확정 확인">
+  <div class="status"></div>
+  <div class="pad" style="padding-top:60px"><p class="eyebrow">마주의 제안</p><h1 class="h1" style="margin-top:6px">두 가지를<br>골라 봤어요</h1></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="handle"></div>
+    <h2 class="h2" style="font-size:22px">이걸로 확정할까요?</h2>
+    <p class="num" style="font-size:20px;font-weight:800;letter-spacing:-0.02em">11월 8일 (토) 오후 6시</p>
+    <p class="warn">확정하면 시간 투표가 닫혀요</p>
+    <div class="cta" data-cta style="margin-top:8px">확정하기</div>
+    <div class="text-btn">취소</div>
+  </div>
+</section>
+<p class="cap">확정 확인 — 되돌릴 수 없는 동작이라 시트에서 한 번 더 확인.</p>
+</div>
+
+</div>
+</body>
+</html>
