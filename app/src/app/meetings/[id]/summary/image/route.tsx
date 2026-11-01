@@ -168,6 +168,7 @@ export async function GET(
             style={{
               display: "flex",
               flexDirection: "column",
+              gap: 14,
               width: CARD_W,
               marginTop: 48,
               paddingTop: 48,
@@ -184,18 +185,26 @@ export async function GET(
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  marginBottom: 14,
                   gap: 24,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
                   fontSize: 44,
                   fontWeight: 700,
                 }}
               >
-                <div style={{ display: "flex" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    minWidth: 0,
+                    flexShrink: 1,
+                    overflow: "hidden",
+                  }}
+                >
                   {t.from
                     ? `${drawable(t.name, 7)} · ${drawable(t.from, 8)}`
                     : drawable(t.name, 7)}
                 </div>
-                <div style={{ display: "flex" }}>
+                <div style={{ display: "flex", flexShrink: 0 }}>
                   {t.minutes === null ? "" : `${t.minutes}분`}
                 </div>
               </div>
