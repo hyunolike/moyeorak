@@ -11,13 +11,13 @@ import { toResponse } from "@/server/http";
 import { getMeetingSummary } from "@/server/meeting/summary-service";
 
 // ImageResponse는 CSS 변수와 Tailwind를 읽지 못한다. 색은 brand-colors 상수만 쓴다.
-const read = (...parts: string[]) =>
-  readFile(path.join(process.cwd(), ...parts));
+// 파일 경로는 글자 그대로 적어야 Vercel 파일 추적(nft)이 찾는다. next.config.ts의 outputFileTracingIncludes도 함께 둔다.
 
 // 카드 안쪽 너비(1080 - 바깥 여백 128). satori는 열 방향에서 자식을 늘리지 않아 너비를 직접 적는다.
 const CARD_W = 952;
 const PAD = { paddingLeft: 72, paddingRight: 72 } as const;
 
+const MAX_ROWS = 5;
 const lineLabel = (line: string) =>
   /^[1-9]$/.test(line.trim()) ? `${line.trim()}호선` : line;
 
@@ -35,9 +35,11 @@ export async function GET(
   const s = summary as Awaited<ReturnType<typeof getMeetingSummary>>;
 
   const [bold, extraBold, logo] = await Promise.all([
-    read("src/assets/fonts/Pretendard-Bold.otf"),
-    read("src/assets/fonts/Pretendard-ExtraBold.otf"),
-    read("public/brand/v4/logo-horizontal.svg"),
+    readFile(path.join(process.cwd(), "src/assets/fonts/Pretendard-Bold.otf")),
+    readFile(
+      path.join(process.cwd(), "src/assets/fonts/Pretendard-ExtraBold.otf"),
+    ),
+    readFile(path.join(process.cwd(), "public/brand/v4/logo-horizontal.svg")),
   ]);
   const logoSrc = `data:image/svg+xml;base64,${logo.toString("base64")}`;
   const maju = majuDataUri("happy");
@@ -85,7 +87,15 @@ export async function GET(
         >
           확정
         </div>
-        <div style={{ display: "flex", fontSize: 44, fontWeight: 700, ...PAD }}>
+        <div
+          style={{
+            display: "flex",
+            flexShrink: 0,
+            fontSize: 44,
+            fontWeight: 700,
+            ...PAD,
+          }}
+        >
           {`${drawable(s.hostName, 10)}님의 모임`}
         </div>
         {s.start && s.end ? (
@@ -94,6 +104,7 @@ export async function GET(
               display: "flex",
               flexDirection: "column",
               ...PAD,
+              flexShrink: 0,
               marginTop: 28,
               fontSize: 112,
               fontWeight: 800,
@@ -113,6 +124,7 @@ export async function GET(
               display: "flex",
               alignItems: "center",
               ...PAD,
+              flexShrink: 0,
               gap: 24,
               marginTop: 56,
               fontSize: 68,
@@ -166,27 +178,33 @@ export async function GET(
               borderTopColor: INK_900,
             }}
           >
-            {s.travel.slice(0, 6).map((t) => (
+            {s.travel.slice(0, MAX_ROWS).map((t) => (
               <div
                 key={t.name}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  marginBottom: 20,
+                  marginBottom: 14,
+                  gap: 24,
                   fontSize: 44,
                   fontWeight: 700,
                 }}
               >
                 <div style={{ display: "flex" }}>
                   {t.from
-                    ? `${drawable(t.name, 8)} · ${drawable(t.from, 12)}`
-                    : drawable(t.name, 8)}
+                    ? `${drawable(t.name, 7)} · ${drawable(t.from, 8)}`
+                    : drawable(t.name, 7)}
                 </div>
                 <div style={{ display: "flex" }}>
                   {t.minutes === null ? "" : `${t.minutes}분`}
                 </div>
               </div>
             ))}
+            {s.travel.length > MAX_ROWS ? (
+              <div
+                style={{ display: "flex", fontSize: 40, fontWeight: 700 }}
+              >{`외 ${s.travel.length - MAX_ROWS}명`}</div>
+            ) : null}
           </div>
         ) : null}
       </div>

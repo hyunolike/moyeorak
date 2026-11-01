@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import {
   SummaryCard,
@@ -22,6 +23,10 @@ vi.mock("next/link", () => ({
 }));
 const mutate = vi.fn();
 vi.mock("@/lib/api", () => ({ useShareEvent: () => ({ mutate }) }));
+vi.mock("motion/react", async (orig) => ({
+  ...(await orig<typeof import("motion/react")>()),
+  useReducedMotion: vi.fn(() => false),
+}));
 vi.mock("sonner", () => ({ toast: vi.fn() }));
 
 const summary: MeetingSummary = {
@@ -126,6 +131,16 @@ test("확정 직후 표시가 있으면 올라오고, 한 번 재생한 뒤 표�
   expect(replace).toHaveBeenCalledWith("/meetings/m1/summary", {
     scroll: false,
   });
+});
+
+test("움직임 줄이기이면 확정 직후여도 카드가 바로 나타난다", () => {
+  vi.mocked(useReducedMotion).mockReturnValue(true);
+  search = "just=confirmed";
+  render(<SummaryCard summary={summary} />);
+  expect(
+    screen.getByRole("article", { name: "약속 카드" }).dataset.enter,
+  ).toBeUndefined();
+  vi.mocked(useReducedMotion).mockReturnValue(false);
 });
 
 test("표시가 없으면 주소를 바꾸지 않는다", () => {

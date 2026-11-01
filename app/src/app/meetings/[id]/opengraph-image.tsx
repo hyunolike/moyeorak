@@ -19,8 +19,7 @@ export const contentType = "image/png";
 const HOST_NAME_MAX = 7;
 
 // ImageResponse는 CSS 변수와 Tailwind를 읽지 못한다. 색은 brand-colors 상수만 쓴다.
-const read = (...parts: string[]) =>
-  readFile(path.join(process.cwd(), ...parts));
+// 파일 경로는 글자 그대로 적어야 Vercel 파일 추적(nft)이 찾는다. next.config.ts의 outputFileTracingIncludes도 함께 둔다.
 
 export default async function Image({
   params,
@@ -32,9 +31,11 @@ export default async function Image({
   const { description } = meetingPreview(progress);
   const eyebrow = `${drawable(progress.hostName, HOST_NAME_MAX)}님의 모임`;
   const [bold, extraBold, logo] = await Promise.all([
-    read("src/assets/fonts/Pretendard-Bold.otf"),
-    read("src/assets/fonts/Pretendard-ExtraBold.otf"),
-    read("public/brand/v4/logo-horizontal.svg"),
+    readFile(path.join(process.cwd(), "src/assets/fonts/Pretendard-Bold.otf")),
+    readFile(
+      path.join(process.cwd(), "src/assets/fonts/Pretendard-ExtraBold.otf"),
+    ),
+    readFile(path.join(process.cwd(), "public/brand/v4/logo-horizontal.svg")),
   ]);
   const logoSrc = `data:image/svg+xml;base64,${logo.toString("base64")}`;
   const maju = majuDataUri(
@@ -87,7 +88,7 @@ export default async function Image({
             wordBreak: "keep-all",
           }}
         >
-          {drawable(description, 60)}
+          {drawable(description, 40)}
         </div>
       </div>
       <img
