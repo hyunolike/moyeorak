@@ -5,7 +5,14 @@ export type MeetingSummary = {
   hostName: string;
   start: string | null;
   end: string | null;
-  place: { name: string; lat: number; lng: number; mapUrl: string } | null;
+  place: {
+    name: string;
+    lat: number;
+    lng: number;
+    /** 확정 역의 노선. 데이터에 따라 "6호선", "6", null 등으로 온다. */
+    line: string | null;
+    mapUrl: string;
+  } | null;
   travel: { name: string; from: string | null; minutes: number | null }[];
 };
 

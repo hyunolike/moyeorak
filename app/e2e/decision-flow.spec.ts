@@ -95,19 +95,21 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
     .click();
 
   // 요약 카드
-  await expect(page).toHaveURL(new RegExp(`/meetings/${id}/summary$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/meetings/${id}/summary(\\?just=confirmed)?$`),
+  );
   const card = page.getByRole("article", { name: "약속 카드" });
   await expect(card).toContainText("현호님의 모임");
   await expect(card).toContainText(/09:00 ~ \d\d:\d\d/);
-  await expect(card.locator("p.font-semibold")).toContainText(/역$/);
+  await expect(card.getByTestId("summary-station")).toContainText(/역$/);
   const lines = card.locator("li");
   await expect(lines).toHaveCount(3);
   for (const name of ["현호", "서연", "민지"] as const) {
     await expect(card.locator("li", { hasText: name })).toContainText(
-      new RegExp(`${name} ${PLACES[name].label}에서 \\d+분`),
+      new RegExp(`${name} · ${PLACES[name].label} \\d+분`),
     );
   }
-  await expect(page.getByRole("button", { name: "텍스트 복사" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "글로 복사" })).toBeVisible();
 
   // 관리자 지표
   await page.goto("/admin/metrics?token=e2e-admin-token");

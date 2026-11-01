@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import sharp from "sharp";
+import { buildCss } from "./build-tokens.mjs";
+import { brandColorsTs } from "./build-app-assets.mjs";
 
 const pub = new URL("../../../app/public/brand/", import.meta.url).pathname;
 
@@ -31,4 +33,25 @@ test("로고 파일과 마주 스프라이트가 생성된다", () => {
   const sprites = fs.readFileSync(new URL("../../../app/src/components/brand/maju-sprites.ts", import.meta.url), "utf8");
   for (const e of ["default", "thinking", "happy", "sorry", "waiting", "ignored", "match"]) assert.match(sprites, new RegExp(`${e}:`), e);
   assert.match(sprites, /손으로 고치지 않는다/);
+});
+
+test("brand-colors.ts의 모든 상수가 토큰 CSS의 값과 같다", () => {
+  const file = fs.readFileSync(new URL("../../../app/src/lib/brand-colors.ts", import.meta.url), "utf8");
+  assert.match(file, /손으로 고치지 않는다/);
+  assert.equal(file, brandColorsTs(), "생성기 출력과 커밋된 파일이 같다");
+  const css = buildCss();
+  const vars = Object.fromEntries([...css.matchAll(/--color-([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+  const resolve = (name) => {
+    let v = vars[name];
+    for (let i = 0; i < 5 && v?.startsWith("var("); i++) v = vars[v.match(/--color-([\w-]+)/)[1]];
+    return v;
+  };
+  const consts = [...file.matchAll(/export const ([A-Z0-9_]+) = "(#[0-9A-F]{6})";/g)];
+  assert.ok(consts.length >= 30, "탠저린 10 + 잉크 10 + 흰색 + 성공 + 경고 + 노선 11");
+  for (const [, name, hex] of consts) {
+    const token = name.toLowerCase().replaceAll("_", "-");
+    assert.equal(hex, resolve(token)?.toUpperCase(), `${name} = --color-${token}`);
+  }
+  for (const n of ["TANGERINE_500", "TANGERINE_100", "INK_900", "INK_500", "WHITE", "SUCCESS", "WARNING", "LINE_6", "LINE_GYEONGUI"])
+    assert.ok(consts.some((c) => c[1] === n), n);
 });

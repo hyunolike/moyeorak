@@ -7,6 +7,7 @@ import {
   locationVotes,
   meetings,
   schedulePolls,
+  stations,
 } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
@@ -137,4 +138,30 @@ test("확정 뒤 travel에 없는 사람도 요약에서 빠지지 않는다", a
     { name: "현호", from: "수원", minutes: 42 },
     { name: "서연", from: "인천", minutes: null },
   ]);
+});
+
+test("확정 역의 노선이 place.line에 담기고, 역 번호가 없으면 null이다", async () => {
+  const [station] = await db.select().from(stations).limit(1);
+  const { meetingId } = await setup("location");
+  await db.insert(confirmedLocations).values({
+    meetingId,
+    stationId: station.id,
+    name: station.name,
+    lat: 37.5,
+    lng: 127.02,
+    travel: [],
+  });
+  await confirm(meetingId);
+  expect((await getMeetingSummary(meetingId)).place?.line).toBe(station.line);
+
+  const other = await setup("location");
+  await db.insert(confirmedLocations).values({
+    meetingId: other.meetingId,
+    name: "강남",
+    lat: 37.5,
+    lng: 127.02,
+    travel: [],
+  });
+  await confirm(other.meetingId);
+  expect((await getMeetingSummary(other.meetingId)).place?.line).toBeNull();
 });

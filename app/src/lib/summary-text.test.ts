@@ -4,6 +4,7 @@ const place = {
   name: "강남",
   lat: 37.5,
   lng: 127.02,
+  line: null,
   mapUrl: "https://map.kakao.com/link/map/%EA%B0%95%EB%82%A8,37.5,127.02",
 };
 const base: MeetingSummary = {

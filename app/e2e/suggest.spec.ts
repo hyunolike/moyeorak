@@ -58,8 +58,10 @@ test("팀장이 제안을 넘겨 보고 확정하면 요약 화면으로 간다"
     .getByRole("dialog", { name: "이걸로 확정할까요?" })
     .getByRole("button", { name: "확정하기" })
     .click();
-  await expect(page).toHaveURL(new RegExp(`/meetings/${id}/summary$`));
-  await expect(page.getByText(/로 정해졌어요\.$/)).toBeVisible();
+  await expect(page).toHaveURL(
+    new RegExp(`/meetings/${id}/summary(\\?just=confirmed)?$`),
+  );
+  await expect(page.getByText("약속이 정해졌어요")).toBeVisible();
 });
 
 test("제안을 모두 넘기면 전체 보기와 새로 제안 받기가 나온다", async ({

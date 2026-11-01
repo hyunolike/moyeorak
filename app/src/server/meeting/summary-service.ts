@@ -6,6 +6,7 @@ import {
   meetings,
   participants,
   schedulePolls,
+  stations,
 } from "@/db/schema";
 import type { MeetingSummary } from "@/lib/summary-text";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
@@ -44,6 +45,14 @@ export async function getMeetingSummary(
       .orderBy(participants.id),
   ]);
 
+  // 확정 역의 노선. 역 번호가 없거나 역이 사라졌으면 null이다.
+  const [station] = place?.stationId
+    ? await db
+        .select({ line: stations.line })
+        .from(stations)
+        .where(eq(stations.id, place.stationId))
+    : [];
+
   // 현재 출발지를 기준으로 줄을 만든다. 이동 분이 없는 사람도 빠지지 않는다.
   const minutesOf = (name: string) =>
     place?.travel?.find((t) => t.name === name)?.minutes ?? null;
@@ -65,6 +74,7 @@ export async function getMeetingSummary(
           name: place.name,
           lat: place.lat,
           lng: place.lng,
+          line: station?.line ?? null,
           mapUrl: `https://map.kakao.com/link/map/${encodeURIComponent(place.name)},${place.lat},${place.lng}`,
         }
       : null,

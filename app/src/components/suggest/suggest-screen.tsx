@@ -20,6 +20,7 @@ import {
   useSuggestions,
 } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
+import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
 
 type Kind = "schedule" | "location";
 
@@ -294,7 +295,11 @@ function SuggestMain({
           onAccept={(s) =>
             accept.mutate(s.id, {
               onSuccess: ({ status }) =>
-                router.push(status === "confirmed" ? `${home}/summary` : home),
+                router.push(
+                  status === "confirmed"
+                    ? `${home}/summary?${JUST_CONFIRMED_QUERY}`
+                    : home,
+                ),
             })
           }
         />

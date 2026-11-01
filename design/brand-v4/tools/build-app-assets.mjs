@@ -2,6 +2,7 @@
 // - app/public/brand/icons/*  (기존 경로를 v4로 교체: favicon, 앱 아이콘, maskable)
 // - app/public/brand/v4/logo-*.svg
 // - app/src/components/brand/maju-sprites.ts  (마주 일곱 표정 × 일반/소형 경로)
+// - app/src/lib/brand-colors.ts  (ImageResponse용 16진 상수. 토큰과 같은 원본)
 // 실행: node build-app-assets.mjs
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -10,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { logoSymbol } from "./build-logo.mjs";
 import { majuParts } from "./build-maju.mjs";
+import { LINES, RAMPS, SINGLES } from "./build-tokens.mjs";
 import { PALETTE } from "./palette.mjs";
 
 export const EXPRESSIONS = ["default", "thinking", "happy", "sorry", "waiting", "ignored", "match"];
@@ -61,6 +63,23 @@ ${block(true)}
 `;
 }
 
+const constName = (key) => key.toUpperCase().replaceAll("-", "_");
+
+/** ImageResponse(satori)는 CSS 변수를 못 읽는다. 토큰과 같은 원본(build-tokens.mjs)에서 16진 상수를 만든다. */
+export function brandColorsTs() {
+  const rows = [];
+  for (const [ramp, levels] of Object.entries(RAMPS)) for (const [level, hex] of Object.entries(levels)) rows.push([`${ramp}-${level}`, hex]);
+  rows.push(["white", SINGLES.white], ["success", SINGLES["green-700"]], ["warning", SINGLES["amber-700"]]);
+  for (const [key, hex] of Object.entries(LINES)) rows.push([key, hex]);
+  const body = rows.map(([k, hex]) => `export const ${constName(k)} = ${JSON.stringify(hex.toUpperCase())};`).join("\n");
+  return `// 생성 파일: design/brand-v4/tools/build-app-assets.mjs. 손으로 고치지 않는다.
+// 이미지 라우트(ImageResponse)만 쓴다. 화면 코드는 토큰 유틸리티와 CSS 변수를 쓴다.
+// 값은 app/src/styles/tokens.css와 같은 원본에서 나온다.
+
+${body}
+`;
+}
+
 export async function buildAppAssets() {
   const root = path.resolve(import.meta.dirname, "..");
   const app = path.resolve(root, "../../app");
@@ -84,7 +103,8 @@ export async function buildAppAssets() {
   fs.writeFileSync(sprites, spritesTs());
   // 앱의 Biome 형식으로 맞춘다(pnpm check가 생성 파일도 검사한다).
   execFileSync(path.join(app, "node_modules/.bin/biome"), ["format", "--write", sprites], { cwd: app, stdio: "ignore" });
-  console.log("앱 에셋 생성: 아이콘 6개, 로고 2개, 마주 스프라이트");
+  fs.writeFileSync(path.join(app, "src/lib/brand-colors.ts"), brandColorsTs());
+  console.log("앱 에셋 생성: 아이콘 6개, 로고 2개, 마주 스프라이트, 브랜드 색 상수");
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await buildAppAssets();

@@ -5,6 +5,7 @@ const place = {
   name: "강남",
   lat: 37.5,
   lng: 127.02,
+  line: "2호선",
   mapUrl: "https://map.kakao.com/link/map/강남,37.5,127.02",
 };
 
@@ -24,8 +25,8 @@ const meta = {
         { name: "민준", from: "인천", minutes: null },
       ],
     },
-    sentence: "11월 7일 토요일 오전 9시, 강남으로 정해졌어요.",
-    onCopy: () => true,
+    onShare: () => {},
+    onCopy: () => {},
   },
 } satisfies Meta<typeof SummaryCardView>;
 export default meta;
@@ -35,12 +36,11 @@ export const Full: Story = {};
 export const TimeOnly: Story = {
   args: {
     summary: { ...meta.args.summary, place: null, travel: [] },
-    sentence: "11월 7일 토요일 오전 9시로 정해졌어요.",
   },
 };
 export const PlaceOnly: Story = {
   args: {
     summary: { ...meta.args.summary, start: null, end: null },
-    sentence: "강남으로 정해졌어요.",
   },
 };
+export const JustConfirmed: Story = { args: { justConfirmed: true } };
