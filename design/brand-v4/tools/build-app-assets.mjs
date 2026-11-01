@@ -20,7 +20,7 @@ export function iconSvg({ size = 64, rounded = true, scale = 0.78 } = {}) {
   const field = rounded
     ? `<rect width="64" height="64" rx="14" fill="${PALETTE.tangerine500}"/>`
     : `<rect width="64" height="64" fill="${PALETTE.tangerine500}"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="모여락"><title>모여락</title>${field}<g transform="translate(${inset} ${inset}) scale(${scale})">${logoSymbol({ mono: true })}</g></svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="모여락"><title>모여락</title>${field}<g transform="translate(${inset} ${inset}) scale(${scale})">${logoSymbol({ face: "white" })}</g></svg>\n`;
 }
 
 async function png(svg, size, file) {

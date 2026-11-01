@@ -20,8 +20,9 @@ test("앱 아이콘 가운데는 탠저린 바탕이고 심볼이 잉크로 들�
   const { data, info } = await sharp(pub + "icons/icon-512.png").raw().ensureAlpha().toBuffer({ resolveWithObject: true });
   const px = (x, y) => [...data.subarray((y * info.width + x) * 4, (y * info.width + x) * 4 + 3)];
   assert.deepEqual(px(20, 256), [255, 106, 19], "가장자리 바탕");
+  assert.deepEqual(px(256, 280), [255, 255, 255], "얼굴은 흰색이라 바탕과 구분된다");
   const inkRows = [...Array(512).keys()].filter((y) => { const [r, g, b] = px(256, y); return r < 40 && g < 40 && b < 40; });
-  assert.ok(inkRows.length > 40, "가운데 세로줄에 잉크 줄기");
+  assert.ok(inkRows.length > 20, "가운데 세로줄에 잉크(노선이 만나는 자리와 얼굴 테두리)");
 });
 
 test("로고 파일과 마주 스프라이트가 생성된다", () => {
