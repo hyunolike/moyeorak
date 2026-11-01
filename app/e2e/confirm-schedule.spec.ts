@@ -6,7 +6,7 @@ const CONFIRMED_COPY = "이미 시간이 정해졌어요. 모임 홈에서 확�
 async function createVotedScheduleMeeting(page: Page) {
   await page.goto("/new/schedule");
   await page.getByLabel("팀장 이름").fill("현호");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   await page.getByRole("link", { name: "가능한 시간 남기기" }).click();

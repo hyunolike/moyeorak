@@ -14,11 +14,15 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   page,
 }) => {
   await page.goto("/new/schedule");
-  await page.getByLabel("시간과 장소 둘 다").check();
+  await page.getByRole("button", { name: "둘 다" }).click();
+  await expect(page.getByRole("button", { name: "둘 다" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.getByLabel("팀장 이름").fill("현호");
   await page.getByRole("button", { name: "증가" }).click();
   await expect(page.getByTestId("participant-count")).toHaveText("3명");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   const hostKey = (await page.evaluate(() =>

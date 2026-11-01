@@ -1,6 +1,7 @@
 "use client";
 
 import { type InputHTMLAttributes, useId } from "react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 
 export function TextField({
@@ -23,29 +24,26 @@ export function TextField({
   return (
     <div className={cn("flex w-full flex-col gap-2", className)}>
       {label && (
-        <label htmlFor={inputId} className="text-b3 text-k-900">
+        <label htmlFor={inputId} className="text-b3 text-text">
           {label}
         </label>
       )}
-      <input
+      <Input
         {...props}
         id={inputId}
         value={value}
         maxLength={maxLength}
         autoComplete="off"
-        className={cn(
-          "bg-k-50 text-b2 text-k-900 caret-primary-main placeholder:text-k-400 w-full rounded-xl border px-4 py-4 transition-colors outline-none",
-          "focus:border-primary-main focus:bg-k-5",
-          error ? "border-action-red" : "border-transparent",
-        )}
+        aria-invalid={error || undefined}
+        className="h-14 px-4"
       />
       {(helperText || maxLength) && (
-        <div className="text-c3 flex justify-between px-1">
-          <span className={error ? "text-action-red" : "text-k-400"}>
+        <div className="text-c2 flex justify-between px-1">
+          <span className={error ? "text-error" : "text-muted"}>
             {helperText}
           </span>
           {maxLength && (
-            <span className="text-k-400">
+            <span className="text-muted">
               {value.length}/{maxLength}
             </span>
           )}

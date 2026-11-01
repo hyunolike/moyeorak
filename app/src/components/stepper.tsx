@@ -1,7 +1,7 @@
 "use client";
 
 const stepButton =
-  "grid size-9 cursor-pointer place-items-center rounded-lg text-t1 disabled:cursor-not-allowed disabled:opacity-50";
+  "grid size-10 cursor-pointer place-items-center rounded-full text-t1 transition-transform duration-(--duration-press) active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-disabled-bg disabled:text-disabled-text";
 
 export function Stepper({
   label,
@@ -20,18 +20,18 @@ export function Stepper({
 }) {
   return (
     <fieldset className={className}>
-      <legend className="text-b3 text-k-900 mb-2">{label}</legend>
-      <div className="bg-k-50 flex h-14 w-full items-center justify-between rounded-lg px-4">
+      <legend className="text-b3 text-text mb-2">{label}</legend>
+      <div className="bg-surface-sunken flex h-14 w-full items-center justify-between rounded-md px-2">
         <button
           type="button"
           aria-label="감소"
           disabled={value <= min}
           onClick={() => onChange(value - 1)}
-          className={`${stepButton} bg-k-5 text-k-700`}
+          className={`${stepButton} bg-bg text-text`}
         >
           −
         </button>
-        <span data-testid="participant-count" className="text-b2 text-k-900">
+        <span data-testid="participant-count" className="text-t2 text-text">
           {value}명
         </span>
         <button
@@ -39,7 +39,7 @@ export function Stepper({
           aria-label="증가"
           disabled={value >= max}
           onClick={() => onChange(value + 1)}
-          className={`${stepButton} bg-primary-main text-on-action`}
+          className={`${stepButton} bg-action text-on-action`}
         >
           +
         </button>

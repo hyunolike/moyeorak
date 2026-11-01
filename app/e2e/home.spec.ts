@@ -1,10 +1,24 @@
 import { expect, test } from "@playwright/test";
 
+test("첫 화면은 링크 하나로 정하는 흐름을 장면으로 보여 준다", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "링크 하나로 정해요",
+  );
+  await expect(
+    page.getByText("단톡방에 링크만 보내면 돼요. 앱 설치도, 가입도 없어요."),
+  ).toBeVisible();
+  await expect(page.locator("[data-scene]")).toBeVisible();
+  await expect(page.getByRole("link", { name: "모임 만들기" })).toBeVisible();
+});
+
 test("모임을 만들면 홈에서 마주가 상황을 알려준다", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "모임 만들기" }).click();
   await page.getByLabel("팀장 이름").fill("현호");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   await expect(page.getByRole("status")).toContainText(
     "아직 아무도 응답하지 않았어요",
@@ -16,9 +30,12 @@ test("모임을 만들면 홈에서 마주가 상황을 알려준다", async ({ 
 
 test("범위를 장소만 고르면 장소 단계로 시작한다", async ({ page }) => {
   await page.goto("/new/location");
-  await expect(page.getByLabel("장소만")).toBeChecked();
+  await expect(page.getByRole("button", { name: "장소만" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.getByLabel("팀장 이름").fill("현호");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   await expect(page.getByRole("link", { name: "출발지 남기기" })).toBeVisible();
 });
@@ -26,7 +43,7 @@ test("범위를 장소만 고르면 장소 단계로 시작한다", async ({ pag
 test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, browser }) => {
   await page.goto("/new/schedule");
   await page.getByLabel("팀장 이름").fill("현호");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   await expect(page.getByRole("status")).toContainText(
@@ -56,7 +73,7 @@ test("호스트가 재촉하기를 누르면 메시지 두 개가 보인다", as
 }) => {
   await page.goto("/new/schedule");
   await page.getByLabel("팀장 이름").fill("현호");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
 

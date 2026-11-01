@@ -34,7 +34,7 @@ export function AppBar({
   className,
 }: {
   back?: string | (() => void);
-  title?: string;
+  title?: ReactNode;
   action?: ReactNode;
   className?: string;
 }) {
