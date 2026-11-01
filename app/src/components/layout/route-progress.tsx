@@ -13,7 +13,7 @@ export function RouteProgress({ stops }: { stops: RouteStop[] }) {
             <li
               aria-hidden="true"
               className={cn(
-                "-mt-[22px] h-1 flex-1 rounded-[2px]",
+                "-mt-[22px] h-1 flex-1 rounded-full",
                 stops[i - 1].state === "done" ? "bg-ink-900" : "bg-ink-200",
               )}
             />
@@ -22,7 +22,7 @@ export function RouteProgress({ stops }: { stops: RouteStop[] }) {
             aria-current={stop.state === "now" ? "step" : undefined}
             data-state={stop.state}
             className={cn(
-              "flex w-14 flex-col items-center gap-1.5 text-xs font-semibold",
+              "text-c1 flex w-14 flex-col items-center gap-1.5",
               stop.state === "now" ? "text-text" : "text-muted",
             )}
           >

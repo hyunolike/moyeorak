@@ -69,13 +69,10 @@ export function Meter({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="text-muted mt-1.5 flex justify-between text-[13px]">
+      <div className="text-muted text-b4 mt-1.5 flex justify-between">
         <span>{label}</span>
         <span>
-          <b className="text-text text-[15px] font-bold tabular-nums">
-            {shown}
-          </b>{" "}
-          / {max}
+          <b className="text-text text-t2 tabular-nums">{shown}</b> / {max}
           {unit}
         </span>
       </div>

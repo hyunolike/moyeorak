@@ -13,7 +13,7 @@ export function Avatar({
     <span
       aria-hidden="true"
       className={cn(
-        "bg-surface-sunken text-text grid size-9 flex-none place-items-center rounded-[12px] text-sm font-bold",
+        "bg-surface-sunken text-text text-b3 grid size-9 flex-none place-items-center rounded-md",
         className,
       )}
     >
@@ -36,9 +36,7 @@ export function ListRow({
   return (
     <div className={cn("flex items-center gap-3 px-5 py-3.5", className)}>
       {leading}
-      <span className="text-text min-w-0 flex-1 truncate text-base font-semibold">
-        {title}
-      </span>
+      <span className="text-text text-t2 min-w-0 flex-1 truncate">{title}</span>
       {trailing}
     </div>
   );

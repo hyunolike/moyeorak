@@ -13,9 +13,7 @@ export function PageTitle({
 }) {
   return (
     <div className={className}>
-      {eyebrow ? (
-        <p className="text-action-text text-sm font-semibold">{eyebrow}</p>
-      ) : null}
+      {eyebrow ? <p className="text-action-text text-b3">{eyebrow}</p> : null}
       <h1
         className={cn("text-h1 text-text font-extrabold", eyebrow && "mt-1.5")}
       >

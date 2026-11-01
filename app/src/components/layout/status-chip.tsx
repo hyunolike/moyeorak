@@ -18,7 +18,7 @@ export function StatusChip({
     <span
       data-tone={tone}
       className={cn(
-        "inline-flex h-7 items-center gap-1 rounded-sm px-2.5 text-[13px] font-semibold whitespace-nowrap",
+        "text-c1 inline-flex h-7 items-center gap-1 rounded-sm px-2.5 whitespace-nowrap",
         TONE[tone],
       )}
     >

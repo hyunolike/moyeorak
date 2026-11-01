@@ -55,9 +55,7 @@ export function AppBar({
             <BackIcon />
           </button>
         ) : null}
-        {title ? (
-          <span className="text-text text-base font-bold">{title}</span>
-        ) : null}
+        {title ? <span className="text-text text-t2">{title}</span> : null}
         <span className="flex-1" />
         {action}
       </div>

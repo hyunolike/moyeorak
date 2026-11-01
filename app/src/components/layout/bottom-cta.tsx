@@ -31,7 +31,7 @@ export function BottomCta({
       >
         {primary}
         {secondary ? (
-          <div className="text-text grid h-10 place-items-center text-[15px] font-semibold">
+          <div className="text-text text-t2 grid h-10 place-items-center">
             {secondary}
           </div>
         ) : null}
