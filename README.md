@@ -11,9 +11,7 @@
 
 <br/>
 
-<a href="docs/assets/intro/moyeorak-intro.mp4">
-  <img src="docs/assets/intro/thumbnail.png" width="720" alt="모여락 소개 영상 (21초). 누르면 재생됩니다" />
-</a>
+https://github.com/user-attachments/assets/f0a9be91-336c-49d0-a5df-f31b487eab14
 
 <sub>단톡방 링크에서 약속 카드까지, 21초 소개 영상</sub>
 
