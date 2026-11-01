@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { type FormEvent, type ReactNode, useRef, useState } from "react";
+import { paintedMessage } from "@/components/schedule/paint-message";
 import { Button } from "@/components/ui/button";
 import { ApiError, useParseAvailability } from "@/lib/api";
 import { cn } from "@/lib/cn";
@@ -100,11 +101,13 @@ export function NaturalTimeInput({
     setResult(null);
     parse.mutate(value, {
       onSuccess: ({ slots, dropped, summary }) => {
-        const message =
-          dropped > 0
+        const painted = slots.length > 0;
+        // 칠했으면 승인 문구대로 저장 안내를 붙이고, 못 칠했으면 요약만.
+        const message = painted
+          ? paintedMessage(summary, slots.length, dropped)
+          : dropped > 0
             ? `${summary} 투표 날짜 밖의 ${dropped}칸은 뺐어요.`
             : summary;
-        const painted = slots.length > 0;
         if (painted) onParsed(slots.map((slot) => new Date(slot)));
         else onUndoExpired?.();
         setResult({ message, painted });
