@@ -73,6 +73,18 @@ const EXPRESSIONS = Object.freeze({
 });
 
 /**
+ * 부위별 경로. 앱 컴포넌트가 눈만 따로 움직일 수 있게 나눠 준다.
+ * @returns {{ label: string, face: string, eyes: string[], mouth: string, band: string | null }}
+ */
+export function majuParts(expression, { small = false } = {}) {
+  if (!Object.hasOwn(EXPRESSIONS, expression)) {
+    throw new RangeError(`Unknown Maju expression: ${expression}`);
+  }
+  const { label, eyes, mouth } = EXPRESSIONS[expression];
+  return { label, face: FACE, eyes: [...eyes], mouth, band: small ? null : BAND };
+}
+
+/**
  * Render a small Maju face; importing this module never writes files.
  * @param {"default" | "thinking" | "happy" | "sorry" | "waiting" | "ignored" | "match"} expression
  * @param {{ mono?: boolean, small?: boolean }} [options]

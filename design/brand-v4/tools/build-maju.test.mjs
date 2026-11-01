@@ -145,3 +145,15 @@ test("단색에서도 얼굴 몸통은 잉크로 남아 눈과 입이 보인다"
     }
   }
 });
+
+test("majuParts는 majuSvg와 같은 경로를 부위별로 나눠 준다", async () => {
+  const { majuParts } = await import("./build-maju.mjs");
+  for (const { expression, small } of variants) {
+    const parts = majuParts(expression, { small });
+    const svg = majuSvg(expression, { small });
+    assert.ok(svg.includes(parts.face), expression);
+    for (const eye of parts.eyes) assert.ok(svg.includes(eye), `${expression} eye`);
+    assert.ok(svg.includes(parts.mouth), `${expression} mouth`);
+    assert.equal(parts.band === null, small);
+  }
+});
