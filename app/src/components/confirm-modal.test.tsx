@@ -43,3 +43,15 @@ test("pending이면 확정 버튼이 잠긴다", () => {
   );
   expect(screen.getByRole("button", { name: "확정하기" })).toBeDisabled();
 });
+
+test("제목은 h2 글자 크기 토큰을 쓴다", () => {
+  render(
+    <ConfirmModal
+      title="이걸로 확정할까요?"
+      confirmLabel="확정하기"
+      onConfirm={() => {}}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByText("이걸로 확정할까요?")).toHaveClass("text-h2");
+});

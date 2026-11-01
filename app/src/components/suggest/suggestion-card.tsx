@@ -33,7 +33,15 @@ function Summary({ suggestion }: { suggestion: Suggestion }) {
     : `평균 ${suggestion.averageMinutes}분 · 가장 먼 사람 ${suggestion.maxMinutes}분`;
 }
 
-function People({ label, names }: { label: string; names: string[] }) {
+function People({
+  label,
+  tone,
+  names,
+}: {
+  label: string;
+  tone: "done" | "waiting";
+  names: string[];
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-b4 text-muted">{label}</p>
@@ -42,7 +50,7 @@ function People({ label, names }: { label: string; names: string[] }) {
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {names.map((name) => (
-            <StatusChip key={name} tone={label === "가능" ? "done" : "waiting"}>
+            <StatusChip key={name} tone={tone}>
               {name}
             </StatusChip>
           ))}
@@ -117,7 +125,7 @@ export function SuggestionCard({
     <article
       aria-current={selected ? "true" : undefined}
       className={cn(
-        "bg-bg flex flex-none snap-start flex-col gap-3 rounded-[24px] p-5",
+        "bg-bg flex flex-none snap-start flex-col gap-3 rounded-lg p-5",
         selected ? "border-ink-900 border-2" : "border-border border-[1.5px]",
         className,
       )}
@@ -139,7 +147,7 @@ export function SuggestionCard({
       <p className="text-t2 text-text tabular-nums">
         <Summary suggestion={suggestion} />
       </p>
-      <div className="bg-surface-sunken text-b1 text-text flex flex-col gap-1 rounded-[14px] px-3 py-2.5">
+      <div className="bg-surface-sunken text-b1 text-text flex flex-col gap-1 rounded-md px-3 py-2.5">
         <span className="text-c1 text-action-text inline-flex items-center gap-1">
           <i className="bg-action block size-1.5 rounded-sm" />
           마주
@@ -183,8 +191,16 @@ export function SuggestionCard({
             <div className="flex flex-col gap-3">
               {suggestion.kind === "schedule" ? (
                 <>
-                  <People label="가능" names={suggestion.available} />
-                  <People label="어려움" names={suggestion.unavailable} />
+                  <People
+                    label="가능"
+                    tone="done"
+                    names={suggestion.available}
+                  />
+                  <People
+                    label="어려움"
+                    tone="waiting"
+                    names={suggestion.unavailable}
+                  />
                 </>
               ) : (
                 <Travel suggestion={suggestion} animate={!reduce} />

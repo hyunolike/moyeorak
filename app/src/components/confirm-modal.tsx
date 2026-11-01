@@ -41,7 +41,7 @@ export function ConfirmModal({
     >
       <DrawerContent>
         <DrawerHeader className="gap-3.5 px-5 pt-2 group-data-[swipe-axis=y]/drawer-popup:text-left">
-          <DrawerTitle className="text-h3 text-text">{title}</DrawerTitle>
+          <DrawerTitle className="text-h2 text-text">{title}</DrawerTitle>
           {summary && (
             <p className="text-t1 text-text tabular-nums">{summary}</p>
           )}

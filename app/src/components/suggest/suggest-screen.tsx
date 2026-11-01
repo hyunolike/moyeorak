@@ -237,7 +237,7 @@ function SuggestMain({
           <p role="status" className="text-h1 text-text font-extrabold">
             모두의 응답을 살펴보는 중이에요
           </p>
-          <Skeleton className="h-[300px] w-full rounded-[24px]" />
+          <Skeleton className="h-[300px] w-full rounded-lg" />
         </div>
       </Body>
     );
