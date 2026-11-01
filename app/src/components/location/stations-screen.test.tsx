@@ -86,7 +86,7 @@ test("고른 역이 새 목록에서 사라지면 보이는 첫 역으로 확정
 
   fireEvent.click(screen.getByRole("button", { name: "신촌역으로 정하기" }));
   const dialog = screen.getByRole("dialog", { name: "신촌역으로 정할까요?" });
-  fireEvent.click(within(dialog).getByRole("button", { name: "정하기" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "확정하기" }));
   expect(confirmMutate.mock.calls[0]?.[0]).toBe(3);
 });
 
@@ -103,7 +103,7 @@ test("고른 역이 목록에 있으면 그 역으로 확정한다", () => {
   const dialog = screen.getByRole("dialog", {
     name: "홍대입구역으로 정할까요?",
   });
-  fireEvent.click(within(dialog).getByRole("button", { name: "정하기" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "확정하기" }));
   expect(confirmMutate.mock.calls[0]?.[0]).toBe(2);
 });
 
@@ -177,12 +177,22 @@ test("확정 시트의 평균 시간도 60분이 넘으면 시간과 분으로 �
   expect(within(dialog).getByText("평균 1시간 15분")).toBeInTheDocument();
 });
 
+test("역 확정 시트는 다른 확정 시트와 같은 말투다(확정하기, 마침표 없는 주의 문구)", () => {
+  midpointData = { type: "ok", stations: [station(1, "합정")] };
+  render(<StationsScreen meeting={meeting} />);
+  fireEvent.click(screen.getByRole("button", { name: "합정역으로 정하기" }));
+  const dialog = screen.getByRole("dialog", { name: "합정역으로 정할까요?" });
+  expect(within(dialog).getByText("확정하면 장소 투표가 닫혀요")).toBeTruthy();
+  expect(within(dialog).getByRole("button", { name: "확정하기" })).toBeTruthy();
+  expect(within(dialog).queryByRole("button", { name: "정하기" })).toBeNull();
+});
+
 test("장소를 정하면 확정 카드 화면으로 간다", () => {
   midpointData = { type: "ok", stations: [station(1, "합정")] };
   render(<StationsScreen meeting={meeting} />);
   fireEvent.click(screen.getByRole("button", { name: "합정역으로 정하기" }));
   const dialog = screen.getByRole("dialog");
-  fireEvent.click(within(dialog).getByRole("button", { name: "정하기" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "확정하기" }));
   const options = confirmMutate.mock.calls[0]?.[1] as {
     onSuccess: () => void;
   };

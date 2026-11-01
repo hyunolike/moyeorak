@@ -121,7 +121,7 @@ function DrawerContent({
           data-snap-points={hasSnapPoints ? "" : undefined}
           className={cn(
             // Base.
-            "group/drawer-popup bg-popover text-b4 text-popover-foreground pointer-events-auto fixed z-50 m-(--drawer-inset,0px) flex h-(--drawer-content-height) max-h-(--drawer-content-max-height,none) min-h-0 w-(--drawer-content-width,auto) transform-[translate3d(var(--translate-x,0px),var(--translate-y,0px),0)_scale(var(--stack-scale))] flex-col transition-[transform,height,opacity,filter] duration-(--duration-open) ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform outline-none select-none [interpolate-size:allow-keywords] data-[swipe-direction=down]:rounded-t-[24px] data-[swipe-direction=down]:border-t data-[swipe-direction=left]:rounded-r-[24px] data-[swipe-direction=left]:border-r data-[swipe-direction=right]:rounded-l-[24px] data-[swipe-direction=right]:border-l data-[swipe-direction=up]:rounded-b-[24px] data-[swipe-direction=up]:border-b",
+            "group/drawer-popup bg-popover text-b4 text-popover-foreground pointer-events-auto absolute z-50 m-(--drawer-inset,0px) flex h-(--drawer-content-height) max-h-(--drawer-content-max-height,none) min-h-0 w-(--drawer-content-width,auto) transform-[translate3d(var(--translate-x,0px),var(--translate-y,0px),0)_scale(var(--stack-scale))] flex-col transition-[transform,opacity] duration-(--duration-open) ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-none data-[swipe-direction=down]:rounded-t-[24px] data-[swipe-direction=down]:border-t data-[swipe-direction=left]:rounded-r-[24px] data-[swipe-direction=left]:border-r data-[swipe-direction=right]:rounded-l-[24px] data-[swipe-direction=right]:border-l data-[swipe-direction=up]:rounded-b-[24px] data-[swipe-direction=up]:border-b",
             // Nested.
             "data-nested-drawer-open:overflow-hidden data-nested-drawer-open:brightness-95",
             // Bleed.
@@ -150,11 +150,21 @@ function DrawerContent({
           )}
           {...props}
         >
+          {/*
+           * 시트 바탕을 자식 층으로 한 번 더 칠한다. iOS 26 Safari에서 Popup 자신의 배경이
+           * 칠해지지 않고 글자만 보이는 사례가 있어(배경이 투명해 뒤 화면이 비침), Popup의
+           * bg-popover가 빠져도 이 층과 Content의 바탕이 남게 한다.
+           */}
+          <div
+            aria-hidden="true"
+            data-slot="drawer-surface"
+            className="bg-popover pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
+          />
           {showSwipeHandle && <DrawerSwipeHandle />}
           <DrawerPrimitive.Content
             data-slot="drawer-content"
             className={cn(
-              "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-contain rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-swiping/drawer-popup:select-none",
+              "bg-popover flex min-h-0 flex-1 flex-col overflow-hidden overscroll-contain rounded-[inherit] transition-opacity duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] select-text group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-swiping/drawer-popup:select-none",
             )}
           >
             {children}
@@ -192,7 +202,7 @@ function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn("text-b2 text-foreground font-medium", className)}
+      className={cn("text-b2 text-foreground", className)}
       {...props}
     />
   );

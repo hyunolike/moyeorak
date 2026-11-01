@@ -52,16 +52,33 @@ const H = 176;
 const PAD = 40;
 export const MAP_LABEL = "출발지와 후보 역 지도";
 
+/** 출발지 핀 반지름(12)에 라벨과 띄울 여유(4)를 더한 값. */
 const PIN_R = 12;
+const PIN_MARGIN = 4;
 const LABEL_H = 24;
+const EDGE = 4;
+/** 라벨을 옆으로 밀어도 역 중심 좌우로 이만큼은 덮는다. */
+const STATION_HOLD = 12;
 
-function overlaps(rect: { x: number; y: number; w: number }, pin: Pt) {
+/** 라벨 상자 안으로 핀(여유 포함)이 파고든 깊이. 0이면 겹치지 않는다. */
+function depth(rect: { x: number; y: number; w: number }, pin: Pt) {
   const nx = Math.min(Math.max(pin.x, rect.x), rect.x + rect.w);
   const ny = Math.min(Math.max(pin.y, rect.y), rect.y + LABEL_H);
-  return (pin.x - nx) ** 2 + (pin.y - ny) ** 2 < PIN_R ** 2;
+  const d = Math.hypot(pin.x - nx, pin.y - ny);
+  const inside =
+    pin.x > rect.x &&
+    pin.x < rect.x + rect.w &&
+    pin.y > rect.y &&
+    pin.y < rect.y + LABEL_H;
+  return inside ? PIN_R + PIN_MARGIN + 1 : Math.max(0, PIN_R + PIN_MARGIN - d);
 }
 
-/** 라벨을 고른 역 위나 아래에 둔다. 출발지 핀과 덜 겹치는 쪽을 고르고, 같으면 위쪽이다. */
+/**
+ * 라벨을 고른 역 위나 아래에 둔다. 출발지 핀과 가장 적게 겹치는 자리를 고른다.
+ * 위아래 가운데 자리가 둘 다 겹치면 상자 안에서 옆으로 밀어 본다. 밀어도 라벨이
+ * 역 표시 위에 걸쳐 있도록 역 중심 좌우 12 안쪽은 늘 덮는다.
+ * 겹치는 핀 수가 같으면 덜 파고든 자리, 덜 밀린 자리, 위쪽 순으로 고른다.
+ */
 export function placeLabel(
   pos: Pt,
   labelW: number,
@@ -69,12 +86,55 @@ export function placeLabel(
   w: number,
   h: number,
 ): { x: number; y: number } {
-  const x = Math.min(Math.max(pos.x - labelW / 2, 4), w - labelW - 4);
-  const above = { x, y: Math.max(pos.y - 48, 4), w: labelW };
-  const below = { x, y: Math.min(pos.y + 24, h - 28), w: labelW };
-  const count = (r: typeof above) => pins.filter((p) => overlaps(r, p)).length;
-  const pick = count(below) < count(above) ? below : above;
-  return { x: pick.x, y: pick.y };
+  const minX = EDGE;
+  const maxX = Math.max(EDGE, w - labelW - EDGE);
+  const clampX = (x: number) => Math.min(Math.max(x, minX), maxX);
+  const center = clampX(pos.x - labelW / 2);
+  const lo = clampX(pos.x + STATION_HOLD - labelW);
+  const hi = clampX(pos.x - STATION_HOLD);
+  const rows = [
+    Math.max(pos.y - 48, EDGE),
+    Math.min(pos.y + 24, h - LABEL_H - EDGE),
+  ];
+  const xs = [center, lo, hi];
+  for (let x = lo; x <= hi; x += 2) xs.push(x);
+
+  type Pick = { x: number; y: number; score: number[] };
+  let best: Pick | null = null;
+  rows.forEach((y, row) => {
+    for (const x of xs) {
+      const rect = { x, y, w: labelW };
+      const depths = pins.map((p) => depth(rect, p));
+      const score = [
+        depths.filter((d) => d > 0).length,
+        depths.reduce((a, b) => a + b, 0),
+        Math.abs(x - center),
+        row,
+      ];
+      if (!best || isLess(score, best.score)) best = { x, y, score };
+    }
+  });
+  const out = best as Pick | null;
+  return out ? { x: out.x, y: out.y } : { x: center, y: rows[0] };
+}
+
+function isLess(a: number[], b: number[]) {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return a[i] < b[i];
+  }
+  return false;
+}
+
+/** SVG 라벨 폭. 굵은 12px 기준으로 한글은 넓게, 숫자와 공백과 기호는 좁게 잰다. */
+export function labelWidth(text: string): number {
+  let w = 24;
+  for (const ch of text) {
+    if (/[\uac00-\ud7a3]/.test(ch)) w += 12.5;
+    else if (/\s/.test(ch)) w += 3.5;
+    else if (/[0-9]/.test(ch)) w += 7.5;
+    else w += 5;
+  }
+  return Math.ceil(w);
 }
 
 export function stationLabel(station: Station) {
@@ -96,7 +156,7 @@ export function SimpleMap({ departures, stations, selectedId }: MapProps) {
     : undefined;
 
   const label = selected ? stationLabel(selected) : "";
-  const labelW = Math.min(W - 8, 28 + [...label].length * 12);
+  const labelW = Math.min(W - 8, labelWidth(label));
   const labelPos = selectedPos
     ? placeLabel(selectedPos, labelW, dep, W, H)
     : { x: 0, y: 0 };

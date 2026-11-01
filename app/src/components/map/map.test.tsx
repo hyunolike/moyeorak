@@ -4,7 +4,11 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { lineColor } from "@/components/map/line-color";
 import { MeetMap } from "@/components/map/meet-map";
-import { placeLabel, projectPoints } from "@/components/map/simple-map";
+import {
+  labelWidth,
+  placeLabel,
+  projectPoints,
+} from "@/components/map/simple-map";
 import type { Departure, Station } from "@/lib/api-types";
 import { loadKakaoSdk } from "@/lib/kakao-sdk";
 
@@ -289,6 +293,66 @@ test("아래쪽 라벨은 상자 밖으로 나가지 않는다", () => {
     176,
   );
   expect(out.y).toBeLessThanOrEqual(176 - 28);
+});
+
+/** 라벨 상자(높이 24)가 핀(반지름 12 + 여유 4)과 겹치는지. */
+function hitsPin(
+  r: { x: number; y: number },
+  w: number,
+  p: { x: number; y: number },
+) {
+  const nx = Math.min(Math.max(p.x, r.x), r.x + w);
+  const ny = Math.min(Math.max(p.y, r.y), r.y + 24);
+  return (p.x - nx) ** 2 + (p.y - ny) ** 2 < 16 ** 2;
+}
+
+test("위아래 모두 핀과 겹치면 옆으로 밀어 겹치지 않는 자리를 찾는다", () => {
+  const pos = { x: 160, y: 100 };
+  // 가운데 정렬한 위쪽 자리(x 110~210, y 52~76)와 아래쪽 자리(y 124~148)에 핀이 하나씩 있다.
+  const pins = [
+    { x: 125, y: 64 },
+    { x: 125, y: 136 },
+  ];
+  expect(pins.some((p) => hitsPin({ x: 110, y: 52 }, 100, p))).toBe(true);
+  expect(pins.some((p) => hitsPin({ x: 110, y: 124 }, 100, p))).toBe(true);
+  const out = placeLabel(pos, 100, pins, 335, 176);
+  expect(pins.some((p) => hitsPin(out, 100, p))).toBe(false);
+  // 상자 밖으로 나가지 않고, 밀려도 역 중심 위에 걸쳐 있다.
+  expect(out.x).toBeGreaterThanOrEqual(4);
+  expect(out.x + 100).toBeLessThanOrEqual(335 - 4);
+  expect(out.x).toBeLessThanOrEqual(160 - 12);
+  expect(out.x + 100).toBeGreaterThanOrEqual(160 + 12);
+});
+
+test("어디에 두어도 핀 하나는 겹치면 덜 파고드는 자리를 고른다", () => {
+  const pos = { x: 160, y: 100 };
+  // 위쪽 줄 양옆에 핀이 있어 위쪽은 어디든 하나와 겹치고, 아래쪽은 가운데에 핀 둘이 막는다.
+  const pins = [
+    { x: 100, y: 64 },
+    { x: 215, y: 52 },
+    { x: 150, y: 136 },
+    { x: 170, y: 136 },
+  ];
+  const centered = placeLabel(pos, 100, [], 335, 176);
+  const out = placeLabel(pos, 100, pins, 335, 176);
+  const hits = (r: { x: number; y: number }) =>
+    pins.filter((p) => hitsPin(r, 100, p)).length;
+  expect(hits(out)).toBe(1);
+  expect(out).not.toEqual(centered);
+});
+
+test("핀 가장자리를 스치는 자리도 겹침으로 본다(핀 반지름에 여유를 더한다)", () => {
+  const pos = { x: 160, y: 100 };
+  // 위쪽 상자 아래 변(y 76)에서 14 떨어진 핀: 반지름 12로는 안 겹치지만 여유 4를 더하면 겹친다.
+  const pins = [{ x: 160, y: 90 }];
+  expect(placeLabel(pos, 100, pins, 335, 176).y).toBe(124);
+});
+
+test("라벨 폭은 글자 종류에 맞춰 잰다(한글은 넓고 숫자와 공백은 좁다)", () => {
+  const w = labelWidth("마포 · 평균 38분");
+  expect(w).toBeGreaterThan(90);
+  expect(w).toBeLessThan(130);
+  expect(labelWidth("가나다")).toBeGreaterThan(labelWidth("123"));
 });
 
 test("projectPoints는 위도에 따라 동서 폭을 줄인다", () => {

@@ -128,3 +128,23 @@ describe("BottomCta 높이 변수", () => {
     expect(document.documentElement.style.getPropertyValue("--cta-h")).toBe("");
   });
 });
+
+test("RouteProgress는 지난 정류장을 속까지 채우고 남은 정류장은 비워 둔다", () => {
+  const { container } = render(
+    <RouteProgress
+      stops={[
+        { label: "시간", state: "done" },
+        { label: "장소", state: "now" },
+        { label: "확정", state: "todo" },
+      ]}
+    />,
+  );
+  const dot = (label: string) =>
+    [...container.querySelectorAll("li[data-state]")]
+      .find((li) => li.textContent === label)
+      ?.querySelector("i")?.className ?? "";
+  expect(dot("시간")).toContain("bg-ink-900");
+  expect(dot("장소")).toContain("bg-action");
+  expect(dot("확정")).toContain("bg-bg");
+  expect(dot("확정")).not.toContain("bg-ink-900");
+});

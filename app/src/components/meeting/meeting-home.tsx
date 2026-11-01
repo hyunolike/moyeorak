@@ -19,27 +19,7 @@ import { ShareButton } from "@/components/share-button";
 import { buttonVariants } from "@/components/ui/button";
 import { useMe, useMeetingProgress } from "@/lib/api";
 import type { MeetingProgress } from "@/lib/api-types";
-import { type HomeState, homeState, joinWaitingNames } from "@/lib/home-state";
-
-const STAGE_LABEL: Record<HomeState["current"], string> = {
-  schedule: "시간",
-  location: "장소",
-  confirmed: "확정",
-};
-
-function routeStops({ stages, current }: HomeState) {
-  const now = stages.indexOf(current);
-  return stages.map((stage, i) => ({
-    label: STAGE_LABEL[stage],
-    // 확정이면 모든 정류장을 지난 것으로 본다.
-    state:
-      current === "confirmed" || i < now
-        ? ("done" as const)
-        : i === now
-          ? ("now" as const)
-          : ("todo" as const),
-  }));
-}
+import { homeState, joinWaitingNames, routeStops } from "@/lib/home-state";
 
 /**
  * 이전 렌더보다 새로 응답한 참여자 id. 첫 렌더에는 비어 있다.
@@ -130,12 +110,15 @@ export function MeetingHomeView({
             <div className="mt-6">
               <RouteProgress stops={routeStops(state)} />
             </div>
-            <Meter
-              className="mt-5"
-              label="응답"
-              value={respondedPeople.length}
-              max={progress.participantCount}
-            />
+            {/* 확정 뒤에는 응답을 더 모으지 않으므로 응답 미터를 숨긴다. */}
+            {progress.status !== "confirmed" && (
+              <Meter
+                className="mt-5"
+                label="응답"
+                value={respondedPeople.length}
+                max={progress.participantCount}
+              />
+            )}
             <div className="mt-5" role="status" aria-live="polite">
               <GuideLine expression={state.expression}>
                 {state.message}
