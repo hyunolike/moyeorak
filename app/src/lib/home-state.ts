@@ -1,12 +1,15 @@
-import type { Stage } from "@/components/mazu/stage-progress";
+import type { MajuExpression } from "@/components/brand/maju-sprites";
 import type { MeetingProgress } from "@/lib/api-types";
-import type { Expression } from "@/lib/brand";
 import { seoulParts } from "@/lib/seoul-time";
+
+export type Stage = "schedule" | "location" | "confirmed";
 
 export type HomeState = {
   stages: Stage[];
   current: Stage;
-  expression: Expression;
+  expression: MajuExpression;
+  /** 화면의 큰 제목. 지금 상태를 한 문장으로 쓴다. */
+  title: string;
   message: string;
   action: { label: string; href: string } | null;
   /** 호스트이고 확정 전이며 기다리는 사람이 있을 때만 true. */
@@ -57,6 +60,17 @@ export function confirmedSentence(p: MeetingProgress): string {
   return `${withDirectionalParticle(subject)} 정해졌어요.`;
 }
 
+/** 확정 화면의 큰 제목. `{M월 D일 요일}{, 장소}`, 시간 없이 날짜와 장소만 쓴다. */
+function confirmedTitle(p: MeetingProgress): string {
+  let day = "";
+  if (p.confirmedStart) {
+    const t = seoulParts(new Date(p.confirmedStart));
+    day = `${t.month}월 ${t.day}일 ${t.weekday}요일`;
+  }
+  const title = [day, p.confirmedPlace].filter(Boolean).join(", ");
+  return title || "약속이 정해졌어요";
+}
+
 /** 지금 단계에서 응답한 사람 수. 장소 단계는 출발지, 그 밖에는 가능한 시간을 본다. */
 export function respondedCount(p: MeetingProgress): number {
   return p.participants.filter(votedNow(p)).length;
@@ -104,6 +118,16 @@ function canNudge(p: MeetingProgress, meId: number | null): boolean {
   return p.status !== "confirmed" && isHost(p, meId) && hasWaiting(p);
 }
 
+/** 확정 전, 참여한 사람의 큰 제목. 장소를 막 모으기 시작했으면 단계를 알려 준다. */
+function progressTitle(p: MeetingProgress, n: number, m: number): string {
+  if (n >= m) return `${m}명 모두 응답했어요`;
+  if (n > 0) return `${m}명 중 ${n}명이 응답했어요`;
+  if (p.status === "locating" && p.scope === "both") {
+    return "시간은 정해졌어요. 이제 장소예요";
+  }
+  return "아직 아무도 응답하지 않았어요";
+}
+
 function baseState(
   p: MeetingProgress,
   meId: number | null,
@@ -126,7 +150,8 @@ function baseState(
   if (p.status === "confirmed") {
     return {
       ...base,
-      expression: "celebrate",
+      expression: "happy",
+      title: confirmedTitle(p),
       message: confirmedSentence(p),
       action: { label: "약속 카드 보기", href: `/meetings/${id}/summary` },
     };
@@ -135,7 +160,8 @@ function baseState(
   if (meId === null) {
     return {
       ...base,
-      expression: "guide",
+      expression: "default",
+      title: `${p.hostName}님이 약속을 잡고 있어요`,
       message: `${p.hostName}님이 약속을 잡고 있어요. 이름을 남기고 함께 정해요.`,
       action: {
         label: "참여하기",
@@ -156,6 +182,7 @@ function baseState(
     ? { label: "친구에게 링크 보내기", href: "#share" }
     : respondAction;
 
+  const title = progressTitle(p, n, m);
   const host = isHost(p, meId);
   const suggestAction: Action = {
     label: "제안 받기",
@@ -164,7 +191,8 @@ function baseState(
   if (host && n >= m) {
     return {
       ...base,
-      expression: "happy",
+      expression: "match",
+      title,
       message: "모두 응답했어요. 제안 받아볼까요?",
       action: suggestAction,
     };
@@ -174,7 +202,8 @@ function baseState(
     const who = names.length > 0 ? joinWaitingNames(names) : `${m - n}명`;
     return {
       ...base,
-      expression: "guide",
+      expression: "waiting",
+      title,
       message: `${n}명 응답했는데, 지금 결과로 제안 받아볼까요? 아니면 ${who} 기다릴까요?`,
       action: suggestAction,
     };
@@ -182,7 +211,8 @@ function baseState(
   if (n >= m) {
     return {
       ...base,
-      expression: "happy",
+      expression: "match",
+      title,
       message: "모두 응답했어요. 결과를 확인해 볼까요?",
       action: { label: "결과 보기", href: resultHref },
     };
@@ -190,7 +220,8 @@ function baseState(
   if (n === 0) {
     return {
       ...base,
-      expression: "sleepy",
+      expression: "default",
+      title,
       message: "아직 아무도 응답하지 않았어요. 첫 번째로 남겨 볼까요?",
       action: myAction,
     };
@@ -201,6 +232,7 @@ function baseState(
   return {
     ...base,
     expression: "waiting",
+    title,
     message: `${m}명 중 ${n}명이 응답했어요. ${waiting} 기다리는 중이에요.`,
     action: myAction,
   };

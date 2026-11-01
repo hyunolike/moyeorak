@@ -67,7 +67,7 @@ test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, brow
   );
 });
 
-test("호스트가 재촉하기를 누르면 메시지 두 개가 보인다", async ({
+test("호스트가 재촉하기를 누르면 메시지가 보이고 말투를 바꿀 수 있다", async ({
   page,
   browser,
 }) => {
@@ -89,6 +89,7 @@ test("호스트가 재촉하기를 누르면 메시지 두 개가 보인다", as
   await expect(page.getByTestId("nudge-friendly")).toBeVisible({
     timeout: 20_000,
   });
+  await page.getByRole("button", { name: "짧게" }).click();
   await expect(page.getByTestId("nudge-short")).toBeVisible();
 });
 
