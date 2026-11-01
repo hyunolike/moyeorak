@@ -29,7 +29,7 @@ test("앱 CSS에는 다크 블록이 없고 역할, 반지름, 움직임, 글꼴
   assert.match(css, /prefers-reduced-motion: reduce[^}]*--duration-open: 0ms/s);
 });
 
-test("기존 화면이 쓰는 색 클래스가 모두 정의된다 (Review Focus 2)", () => {
+test("화면이 쓰는 색 클래스가 모두 정의된다 (Review Focus 2)", () => {
   const css = buildCss();
   const defined = new Set([...css.matchAll(/--color-([\w-]+):/g)].map((m) => m[1]));
   const src = new URL("../../../app/src/", import.meta.url).pathname;
@@ -39,13 +39,22 @@ test("기존 화면이 쓰는 색 클래스가 모두 정의된다 (Review Focus
       const f = `${d}/${e.name}`;
       if (e.isDirectory()) walk(f);
       else if (f.endsWith(".tsx"))
-        for (const m of fs.readFileSync(f, "utf8").matchAll(/\b(?:bg|text|border|ring|fill|stroke|outline|from|to)-((?:k|p|primary|sub|action|hongsi|forest|signal|neutral)-[\w-]+|action|on-action|bg|paper|text|muted|border|selected|error|assistant|success|focus|input-border|surface-raised|disabled-bg|disabled-text|action-hover|on-error)\b/g))
+        for (const m of fs.readFileSync(f, "utf8").matchAll(/\b(?:bg|text|border|ring|fill|stroke|outline|from|to)-(action-[\w-]+|action|on-action|bg|paper|text|muted|border|selected|error|assistant|success|focus|input-border|surface-raised|disabled-bg|disabled-text|action-hover|on-error)\b/g))
           used.add(m[1]);
     }
   };
   walk(src);
   const missing = [...used].filter((u) => !defined.has(u));
   assert.deepEqual(missing, [], `정의되지 않은 색: ${missing.join(", ")}`);
+});
+
+test("0단계 별칭(LEGACY)이 없다", async () => {
+  const mod = await import("./build-tokens.mjs");
+  assert.equal("LEGACY" in mod, false);
+  const css = buildCss();
+  assert.doesNotMatch(css, /0단계 별칭/);
+  assert.doesNotMatch(css, /--color-(?:k|p|sb|neutral|forest|signal|hongsi)-\d+:/);
+  assert.doesNotMatch(css, /--color-(?:primary-main|p-main|sub-main|action-red|action-green|ink):/);
 });
 
 test("지하철 노선 색은 브랜드와 별도의 정보 색으로 들어 있다", () => {

@@ -33,7 +33,7 @@ async function png(svg, size, file) {
     .toFile(file);
 }
 
-function spritesTs() {
+export function spritesTs() {
   const entry = (e, small) => {
     const p = majuParts(e, { small });
     return `{ label: ${JSON.stringify(p.label)}, face: ${JSON.stringify(p.face)}, eyes: ${JSON.stringify(p.eyes)}, mouth: ${JSON.stringify(p.mouth)}, band: ${JSON.stringify(p.band)} }`;
@@ -102,7 +102,7 @@ export async function buildAppAssets() {
   const sprites = path.join(app, "src/components/brand/maju-sprites.ts");
   fs.writeFileSync(sprites, spritesTs());
   // 앱의 Biome 형식으로 맞춘다(pnpm check가 생성 파일도 검사한다).
-  execFileSync(path.join(app, "node_modules/.bin/biome"), ["format", "--write", sprites], { cwd: app, stdio: "ignore" });
+  execFileSync(path.join(app, "node_modules/.bin/biome"), ["format", "--write", sprites], { cwd: app, stdio: "inherit" });
   fs.writeFileSync(path.join(app, "src/lib/brand-colors.ts"), brandColorsTs());
   console.log("앱 에셋 생성: 아이콘 6개, 로고 2개, 마주 스프라이트, 브랜드 색 상수");
 }

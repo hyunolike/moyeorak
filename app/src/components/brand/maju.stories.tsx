@@ -32,7 +32,7 @@ export const Expressions: StoryObj = {
 
 export const GuideLine: StoryObj = {
   render: () => (
-    <div className="bg-assistant flex w-[343px] items-center gap-3 rounded-[14px] p-3">
+    <div className="bg-assistant flex w-[343px] items-center gap-3 rounded-md p-3">
       <Maju expression="thinking" size={32} />
       <p className="text-b3 text-text">두 가지를 골라 봤어요.</p>
     </div>

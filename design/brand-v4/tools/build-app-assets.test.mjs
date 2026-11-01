@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import sharp from "sharp";
 import { buildCss } from "./build-tokens.mjs";
-import { brandColorsTs } from "./build-app-assets.mjs";
+import { execFileSync } from "node:child_process";
+import { brandColorsTs, spritesTs } from "./build-app-assets.mjs";
 
 const pub = new URL("../../../app/public/brand/", import.meta.url).pathname;
 
@@ -54,4 +55,15 @@ test("brand-colors.ts의 모든 상수가 토큰 CSS의 값과 같다", () => {
   }
   for (const n of ["TANGERINE_500", "TANGERINE_100", "INK_900", "INK_500", "WHITE", "SUCCESS", "WARNING", "LINE_6", "LINE_GYEONGUI"])
     assert.ok(consts.some((c) => c[1] === n), n);
+});
+
+test("maju-sprites.ts는 생성기 출력(Biome 형식)과 같다", () => {
+  const app = new URL("../../../app/", import.meta.url).pathname;
+  const file = fs.readFileSync(`${app}src/components/brand/maju-sprites.ts`, "utf8");
+  const formatted = execFileSync(`${app}node_modules/.bin/biome`, ["format", "--stdin-file-path=src/components/brand/maju-sprites.ts"], {
+    cwd: app,
+    input: spritesTs(),
+    encoding: "utf8",
+  });
+  assert.equal(file, formatted, "생성기를 다시 돌려야 한다: node build-app-assets.mjs");
 });

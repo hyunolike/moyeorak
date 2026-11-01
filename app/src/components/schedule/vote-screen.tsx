@@ -196,6 +196,12 @@ function VoteForm({
               )}
               <Button
                 size="cta"
+                // 접근성 이름은 "저장, 6칸"으로 읽히게 한다.
+                aria-label={
+                  selected.length > 0
+                    ? `이 시간으로 저장, ${selected.length}칸`
+                    : undefined
+                }
                 disabled={selected.length === 0 || save.isPending}
                 onClick={handleSubmit}
               >

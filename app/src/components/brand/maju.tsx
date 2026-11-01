@@ -48,7 +48,7 @@ export function Maju({
         <motion.g
           data-blink=""
           style={{ originY: "40%" }}
-          animate={blink ? { scaleY: [1, 1, 0.1, 1] } : undefined}
+          animate={blink ? { scaleY: [1, 1, 0.1, 1] } : { scaleY: 1 }}
           transition={{
             duration: 2.4,
             times: [0, 0.9, 0.95, 1],

@@ -160,7 +160,7 @@ export function NudgeSheetView({
               </ToggleGroup>
               <p
                 data-testid={`nudge-${selected.tone}`}
-                className="bg-surface-sunken text-text text-b1 rounded-[14px] p-3.5 leading-[1.6] [overflow-wrap:anywhere] break-words whitespace-pre-line select-text"
+                className="bg-surface-sunken text-text text-b1 rounded-md p-3.5 leading-[1.6] [overflow-wrap:anywhere] break-words whitespace-pre-line select-text"
               >
                 {selected.text}
               </p>

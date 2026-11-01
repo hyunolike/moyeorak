@@ -11,7 +11,7 @@ test("primary 버튼은 탠저린 바탕에 잉크 글자, cta 크기는 52px �
   expect(b.className).toMatch(/bg-action/);
   expect(b.className).toMatch(/text-on-action/);
   expect(b.className).toMatch(/h-\[52px\]/);
-  expect(b.className).not.toMatch(/rounded-md\b/);
+  expect(b.className).toMatch(/rounded-md\b/);
 });
 
 test("danger 버튼은 오류 색을 쓴다", () => {

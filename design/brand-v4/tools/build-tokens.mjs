@@ -78,28 +78,6 @@ export const CONTRAST_PAIRS = Object.freeze([
   ["text", "selected"], ["text", "assistant"], ["disabled-text", "disabled-bg"], ["on-error", "error"],
 ]);
 
-// 0단계와 v3 이름. 기존 화면이 깨지지 않게 남기고 3부에서 지운다.
-const inkStep = { 50: 100, 100: 200, 200: 300, 300: 300, 400: 400, 500: 500, 600: 600, 700: 700, 750: 800, 800: 800 };
-export const LEGACY = Object.freeze({
-  "primary-main": "action",
-  "p-main": "action",
-  "sub-main": "tangerine-500",
-  ...Object.fromEntries([50, 100, 200, 300, 400, 450, 500, 600, 700, 800, 900].map((l) => [
-    `p-${l}`, l <= 100 ? "selected" : l === 450 || l === 500 ? "action" : `tangerine-${l}`,
-  ])),
-  "k-5": "paper",
-  "k-10": "paper",
-  ...Object.fromEntries(Object.entries(inkStep).map(([k, v]) => [`k-${k}`, `ink-${v}`])),
-  "k-900": "text",
-  "action-red": "error",
-  "action-green": "success",
-  ink: "ink-900",
-  ...Object.fromEntries(LEVELS.map((l) => [`neutral-${l}`, `ink-${l}`])),
-  ...Object.fromEntries(LEVELS.map((l) => [`forest-${l}`, l >= 500 ? "success" : "tangerine-100"])),
-  ...Object.fromEntries(LEVELS.map((l) => [`signal-${l}`, l >= 500 ? "warning" : "tangerine-50"])),
-  ...Object.fromEntries(LEVELS.map((l) => [`hongsi-${l}`, `tangerine-${l}`])),
-});
-
 const RADIUS = { sm: 8, md: 14, lg: 24, pill: 999 };
 const DURATION = { press: 120, open: 200, close: 140, count: 240 };
 const EASE = { standard: [0.2, 0, 0, 1], exit: [0.4, 0, 1, 1] };
@@ -158,7 +136,6 @@ export function buildCss() {
     ...Object.entries(MAP).map(([n, v]) => `  --color-${n}: ${v};`),
   ];
   const roles = Object.entries(ROLES).map(([r, p]) => `  --color-${r}: ${varName(p)};`);
-  const legacy = Object.entries(LEGACY).map(([n, target]) => `  --color-${n}: ${varName(target)};`);
   const type = Object.entries(TYPE).flatMap(([k, [size, line, ls, w]]) => [
     `  --text-${k}: ${size}rem;`,
     `  --text-${k}--line-height: ${line};`,
@@ -190,10 +167,6 @@ ${Object.entries(EASE).map(([k, v]) => `  --ease-${k}: cubic-bezier(${v.join(", 
 @theme inline {
 ${roles.join("\n")}
 ${type.join("\n")}
-}
-@theme inline {
-  /* 0단계 별칭. 3부에서 지운다 */
-${legacy.join("\n")}
 }
 @media (prefers-reduced-motion: reduce) {
   :root {

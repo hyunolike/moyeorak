@@ -15,9 +15,12 @@ test("다크 값이 없다 (밝은 화면 고정)", () => {
   expect(css).not.toMatch(/prefers-color-scheme: dark|data-theme="dark"/);
 });
 
-test("0단계 이름이 새 역할 토큰을 가리킨다", () => {
-  expect(css).toMatch(/--color-primary-main:\s*var\(--color-action\)/);
-  expect(css).toMatch(/--color-k-900:\s*var\(--color-text\)/);
+test("0단계 별칭이 없다", () => {
+  expect(css).not.toMatch(
+    /--color-(?:primary-main|sub-main|p-\d+|k-\d+|sb-\d+):/,
+  );
+  expect(css).not.toMatch(/--color-(?:neutral|forest|signal|hongsi)-\d+:/);
+  expect(css).not.toContain("0단계 별칭");
   expect(css).not.toContain("#4181ff");
 });
 
