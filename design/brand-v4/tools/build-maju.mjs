@@ -3,9 +3,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PALETTE } from "./palette.mjs";
 
-// A station-name panel: long straight edges, upright sides, four equal corners.
+// Shared with B's jongseong: a 9-unit line turning on a 5.5-unit centre radius.
+export const STATION_LINE = Object.freeze({ weight: 9, outerRadius: 10, innerRadius: 1 });
+
+// A station-name panel with an inset line stripe, not an unmarked smiley.
 // Keep the silhouette fixed when changing expression or switching to mono.
-const FACE = "M16 6 H48 A14 14 0 0 1 62 20 V44 A14 14 0 0 1 48 58 H16 A14 14 0 0 1 2 44 V20 A14 14 0 0 1 16 6 Z";
+const FACE = "M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z";
+const BAND = `M10 48 H48.5 A${STATION_LINE.innerRadius} ${STATION_LINE.innerRadius} 0 0 0 49.5 47 V39 H58.5 V47 A${STATION_LINE.outerRadius} ${STATION_LINE.outerRadius} 0 0 1 48.5 57 H10 Z`;
 
 function pill(x, y, width, height) {
   const r = Math.min(width, height) / 2;
@@ -18,13 +22,13 @@ const EXPRESSIONS = Object.freeze({
   default: {
     label: "기본",
     eyes: [pill(17, 19, 10, 14), pill(37, 19, 10, 14)],
-    mouth: "M23 40 C24 39 25 39 26 40 Q32 46 38 40 C39 39 40 39 41 40 C42 41 42 43 41 44 Q32 53 23 44 C22 43 22 41 23 40 Z",
+    mouth: "M23 35 C24 34 25 34 26 35 Q32 41 38 35 C39 34 40 34 41 35 C42 36 42 38 41 39 Q32 48 23 39 C22 38 22 36 23 35 Z",
     note: "기본(default): 세로로 열린 두 눈과 짧고 두꺼운 미소.",
   },
   thinking: {
     label: "생각 중",
     eyes: [pill(17, 16, 10, 16), pill(37, 25, 12, 6)],
-    mouth: pill(29, 39, 8, 10),
+    mouth: pill(29, 35, 8, 9),
     note: "생각 중(thinking): 한쪽은 높게 열린 세로 눈, 반대쪽은 낮은 가로 눈, 작게 벌린 타원 입.",
   },
   happy: {
@@ -33,23 +37,23 @@ const EXPRESSIONS = Object.freeze({
       "M14 27 Q21 10 28 27 Q29 30 26 31 Q24 32 23 29 Q21 24 19 29 Q18 32 15 31 Q13 30 14 27 Z",
       "M36 27 Q43 10 50 27 Q51 30 48 31 Q46 32 45 29 Q43 24 41 29 Q40 32 37 31 Q35 30 36 27 Z",
     ],
-    mouth: "M23 38 H41 Q43 38 43 40 Q43 51 32 51 Q21 51 21 40 Q21 38 23 38 Z",
+    mouth: "M23 34 H41 Q43 34 43 36 Q43 44 32 44 Q21 44 21 36 Q21 34 23 34 Z",
     note: "기쁨(happy): 위로 휘어 접힌 두 눈과 아래로 넓게 열린 입.",
   },
   sorry: {
     label: "미안함",
     eyes: [
-      "M16 24 L23 19 A3.5 3.5 0 0 1 27 25 L20 30 A3.5 3.5 0 0 1 16 24 Z",
-      "M41 19 L48 24 A3.5 3.5 0 0 1 44 30 L37 25 A3.5 3.5 0 0 1 41 19 Z",
+      "M17 24 C18 21 22 20 25 19 C27 19 28 22 27 25 C26 29 22 32 19 31 C16 31 15 28 17 24 Z",
+      "M47 24 C46 21 42 20 39 19 C37 19 36 22 37 25 C38 29 42 32 45 31 C48 31 49 28 47 24 Z",
     ],
-    mouth: "M23 43 Q32 34 41 43 C42 44 42 46 41 47 C40 48 39 48 38 47 Q32 41 26 47 C25 48 24 48 23 47 C22 46 22 44 23 43 Z",
-    note: "미안함(sorry): 바깥쪽으로 처진 대칭 사선 눈과 아래로 향한 두꺼운 입꼬리.",
+    mouth: "M26 39 Q32 33 38 39 C40 41 38 44 36 42 Q32 38 28 42 C26 44 24 41 26 39 Z",
+    note: "미안함(sorry): 바깥 끝이 낮게 처진 넓고 둥근 눈과 작은 아래쪽 입꼬리. 사선 눈썹 같은 가는 획을 쓰지 않았다.",
   },
   waiting: {
     label: "기다림",
-    eyes: [pill(15, 25, 12, 6), pill(37, 25, 12, 6)],
-    mouth: pill(26, 42, 12, 6),
-    note: "기다림(waiting): 낮고 납작한 두 가로 눈과 짧은 수평 입.",
+    eyes: [pill(17, 13, 10, 13), pill(37, 13, 10, 13)],
+    mouth: pill(27, 35, 10, 9),
+    note: "기다림(waiting): 위로 시선을 올린 두 세로 눈과 작고 둥근 열린 입. 납작한 눈과 수평 입을 없애 기대하는 표정으로 바꿨다.",
   },
 });
 
@@ -66,13 +70,13 @@ export function majuSvg(expression, { mono = false } = {}) {
   const { label, eyes, mouth } = EXPRESSIONS[expression];
   const features = [...eyes, mouth].join(" ");
   const artwork = mono
-    ? `<path fill="${PALETTE.ink}" fill-rule="evenodd" d="${FACE} ${features}"/>`
-    : `<path fill="${PALETTE.tangerine500}" d="${FACE}"/>\n  <path fill="${PALETTE.ink}" d="${features}"/>`;
+    ? `<path fill="${PALETTE.ink}" fill-rule="evenodd" d="${FACE} ${features} ${BAND}"/>`
+    : `<path fill="${PALETTE.tangerine500}" d="${FACE}"/>\n  <path fill="${PALETTE.ink}" d="${features} ${BAND}"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="마주 — ${label}">\n  ${artwork}\n</svg>\n`;
 }
 
-const NOTES = `역명판의 긴 수평선과 둥근 네 모서리를 64×64 격자의 얼굴로 압축했다. 탠저린 면 하나에 잉크색 눈 두 개와 입만 남겼다. 모든 표정은 같은 윤곽을 쓰며 눈 사이를 넓게 벌려 16px에서도 분리되게 했다. 몸, 볼, 하이라이트는 없다. 단색은 같은 윤곽을 잉크색으로 채우고 눈과 입을 투명하게 뚫는다. 안내 한 줄 옆 24~32px를 기본으로 쓰고 빈 화면과 오류 안내에서만 64px까지 쓴다.
+const NOTES = `역명판의 긴 수평선과 노선 띠를 64×64 격자의 얼굴로 만들었다. 탠저린 바탕에 잉크색 눈과 입을 놓고, 아래쪽 y=48~57에 9 두께의 잉크 띠를 넣었다. 띠는 오른쪽에서 위로 한 번 꺾인다. B의 받침 ㄱ과 두께 9, 중심 반지름 5.5, 바깥 반지름 10과 안쪽 반지름 1을 공유하며 STATION_LINE 상수로 함께 관리한다. 얼굴의 모서리는 반지름 14.5다. 띠를 외곽 안쪽에 넣어 단색에서는 바탕을 실제로 뚫은 노선이 되며, 아래쪽 잉크 테두리 5가 남아 잘린 얼굴처럼 보이지 않는다. 가장 낮은 입과 수평 띠 사이에는 4 이상의 바탕을 남겼다. 기본과 생각 중, 기쁨은 눈을 유지하고 입만 띠 위로 옮겼다. 모든 표정은 같은 외곽과 띠를 쓰며 눈 사이를 넓게 벌려 16px에서도 분리되게 했다. 몸과 볼, 하이라이트는 없다. 단색의 눈과 입, 노선 띠는 모두 투명한 구멍이다. 안내 한 줄 옆 24~32px를 기본으로 쓰고 빈 화면과 오류 안내에서만 64px까지 쓴다.
 
 ${Object.values(EXPRESSIONS).map(({ note }) => note).join("\n")}
 `;
