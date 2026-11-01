@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { GuideLine } from "@/components/layout/guide-line";
 import { Skeleton } from "@/components/layout/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -123,9 +122,9 @@ export function NudgeSheetView({
           )}
           {status === "error" && (
             <>
-              <GuideLine expression="sorry">
+              <p role="alert" className="text-error text-b2">
                 {errorMessage ?? "메시지를 만들지 못했어요"}
-              </GuideLine>
+              </p>
               {onRetry && (
                 <Button type="button" variant="ghost" onClick={onRetry}>
                   다시 만들기

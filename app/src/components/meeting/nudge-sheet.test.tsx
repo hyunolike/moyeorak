@@ -79,3 +79,18 @@ describe("공유하기", () => {
     expect(onShare).toHaveBeenCalledWith(messages[1].text);
   });
 });
+
+test("메시지를 만들지 못한 오류에는 마주를 두 번째로 그리지 않는다", () => {
+  render(
+    <NudgeSheetView
+      open
+      onClose={() => {}}
+      waitingLabel="민지님"
+      status="error"
+      messages={[]}
+      onCopy={vi.fn()}
+    />,
+  );
+  expect(screen.getByText("메시지를 만들지 못했어요")).toBeTruthy();
+  expect(document.querySelector("svg[data-expression]")).toBeNull();
+});

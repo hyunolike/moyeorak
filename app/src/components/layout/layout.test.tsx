@@ -89,3 +89,42 @@ test("AppBar는 뒤로 함수를 버튼으로, 문자열을 링크로 렌더한�
     "/m/abc",
   );
 });
+
+describe("BottomCta 높이 변수", () => {
+  const observers: { cb: () => void; disconnect: ReturnType<typeof vi.fn> }[] =
+    [];
+  beforeEach(() => {
+    observers.length = 0;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        cb: () => void;
+        disconnect = vi.fn();
+        constructor(cb: () => void) {
+          this.cb = cb;
+          observers.push(this);
+        }
+        observe() {}
+        unobserve() {}
+      },
+    );
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      height: 112,
+    } as DOMRect);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  test("실제 높이를 --cta-h로 올리고 사라지면 지운다", () => {
+    const { unmount } = render(
+      <BottomCta primary={<button type="button">정하기</button>} />,
+    );
+    expect(document.documentElement.style.getPropertyValue("--cta-h")).toBe(
+      "112px",
+    );
+    unmount();
+    expect(document.documentElement.style.getPropertyValue("--cta-h")).toBe("");
+  });
+});

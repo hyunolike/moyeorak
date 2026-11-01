@@ -1,3 +1,4 @@
+import { formatDuration } from "@/components/location/format";
 import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 
 export type MeetingSummary = {
@@ -20,10 +21,15 @@ export function stationLabel(name: string): string {
   return name.endsWith("역") ? name : `${name}역`;
 }
 
+/** 노선이 "6"처럼 숫자만 오면 "6호선"으로 맞춘다. 그 밖의 이름은 그대로 둔다. */
+export function lineName(line: string): string {
+  return /^[1-9]$/.test(line.trim()) ? `${line.trim()}호선` : line;
+}
+
 function travelLine(t: MeetingSummary["travel"][number]): string {
   const head = t.from ? `${t.name} ${t.from}에서` : t.name;
   if (t.minutes === null) return head;
-  return t.from ? `${head} ${t.minutes}분` : `${head} ${t.minutes}분`;
+  return `${head} ${formatDuration(t.minutes)}`;
 }
 
 /** 단톡방에 붙여 넣는 요약. 없는 줄은 뺀다. */

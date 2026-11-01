@@ -231,3 +231,18 @@ describe("복사와 공유", () => {
     expect(toast).toHaveBeenCalledWith("복사했어요");
   });
 });
+
+test("60분이 넘는 이동 시간은 시간과 분으로 보인다", () => {
+  render(
+    <SummaryCardView
+      summary={{
+        ...summary,
+        travel: [{ name: "현호", from: "홍대입구", minutes: 75 }],
+      }}
+      onShare={noop}
+      onCopy={noop}
+    />,
+  );
+  expect(screen.getByText("1시간 15분")).toBeTruthy();
+  expect(screen.queryByText("75분")).toBeNull();
+});

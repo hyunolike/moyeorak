@@ -49,8 +49,11 @@ test("팀장이 시간만 모임의 1순위 시간을 정하면 홈에 정해진
     .getByRole("dialog", { name: "이 시간으로 정할까요?" })
     .getByRole("button", { name: "정하기" })
     .click();
-  await expect(page).toHaveURL(new RegExp(`/meetings/${id}$`));
-  // 모임 홈은 정해진 날짜를 큰 제목으로 보여준다(v4 모임 홈).
+  // 시간만 모임은 확정과 함께 약속 카드 화면으로 간다(카드가 한 번 올라온 뒤 쿼리는 지워진다).
+  await expect(page).toHaveURL(
+    new RegExp(`/meetings/${id}/summary(\\?just=confirmed)?$`),
+  );
+  // 약속 카드는 정해진 날짜를 큰 제목으로 보여준다.
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     /\d+월 \d+일/,
   );

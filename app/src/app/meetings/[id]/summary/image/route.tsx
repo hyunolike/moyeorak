@@ -2,6 +2,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
+import { formatDuration } from "@/components/location/format";
 import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { INK_900, TANGERINE_500, WHITE } from "@/lib/brand-colors";
 import { drawable } from "@/lib/drawable-text";
@@ -205,7 +206,7 @@ export async function GET(
                     : drawable(t.name, 7)}
                 </div>
                 <div style={{ display: "flex", flexShrink: 0 }}>
-                  {t.minutes === null ? "" : `${t.minutes}분`}
+                  {t.minutes === null ? "" : formatDuration(t.minutes)}
                 </div>
               </div>
             ))}

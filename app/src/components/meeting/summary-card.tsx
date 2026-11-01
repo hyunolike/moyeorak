@@ -9,12 +9,14 @@ import { toast } from "sonner";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { GuideLine } from "@/components/layout/guide-line";
+import { formatDuration } from "@/components/location/format";
 import { lineColor } from "@/components/map/line-color";
 import { MobileLayout } from "@/components/mobile-layout";
 import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { Button } from "@/components/ui/button";
 import { useShareEvent } from "@/lib/api";
 import {
+  lineName,
   type MeetingSummary,
   stationLabel,
   summaryText,
@@ -54,10 +56,6 @@ function Stamped({
       {children}
     </motion.div>
   );
-}
-
-function lineName(line: string): string {
-  return /^[1-9]$/.test(line.trim()) ? `${line.trim()}호선` : line;
 }
 
 const actionTile =
@@ -143,7 +141,9 @@ export function SummaryCardView({
                         <span className="font-medium">
                           {t.from ? `${t.name} · ${t.from}` : t.name}
                         </span>{" "}
-                        <b>{t.minutes === null ? "" : `${t.minutes}분`}</b>
+                        <b>
+                          {t.minutes === null ? "" : formatDuration(t.minutes)}
+                        </b>
                       </li>
                     ))}
                   </ul>

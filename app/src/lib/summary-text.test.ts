@@ -1,4 +1,9 @@
-import { type MeetingSummary, summaryText } from "./summary-text";
+import {
+  lineName,
+  type MeetingSummary,
+  stationLabel,
+  summaryText,
+} from "./summary-text";
 
 const place = {
   name: "강남",
@@ -57,4 +62,24 @@ test("이름이 이미 역으로 끝나면 역을 또 붙이지 않는다", () =
     link,
   );
   expect(text).toContain("🚉 강남역\n");
+});
+
+test("stationLabel은 이미 역으로 끝나는 이름에 역을 또 붙이지 않는다", () => {
+  expect(stationLabel("서울역")).toBe("서울역");
+  expect(stationLabel("녹사평")).toBe("녹사평역");
+});
+
+test("lineName은 한 자리 숫자만 호선으로 바꾼다", () => {
+  expect(lineName("6")).toBe("6호선");
+  expect(lineName("6호선")).toBe("6호선");
+  expect(lineName("경의중앙선")).toBe("경의중앙선");
+});
+
+test("60분이 넘는 이동 시간은 시간과 분으로 적는다", () => {
+  const text = summaryText(
+    { ...base, travel: [{ name: "서연", from: "수원", minutes: 75 }] },
+    link,
+  );
+  expect(text).toContain("서연 수원에서 1시간 15분");
+  expect(text).not.toContain("75분");
 });

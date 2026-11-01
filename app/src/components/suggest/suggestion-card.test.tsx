@@ -173,3 +173,30 @@ test("확정하는 중에는 두 버튼이 잠긴다", () => {
   expect(screen.getByRole("button", { name: "이걸로 확정" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "다른 제안 보기" })).toBeDisabled();
 });
+
+test("이름이 이미 역으로 끝나면 역을 또 붙이지 않는다", () => {
+  render(<SuggestionCard suggestion={{ ...location, name: "서울역" }} />);
+  expect(screen.getByText("서울역")).toBeInTheDocument();
+  expect(screen.queryByText("서울역역")).toBeNull();
+});
+
+test("노선 이름은 호선 꼴로 맞춰 보인다", () => {
+  render(<SuggestionCard suggestion={{ ...location, line: "6" }} />);
+  expect(screen.getByText("6호선")).toBeInTheDocument();
+});
+
+test("60분이 넘는 평균 시간은 시간과 분으로 적는다", () => {
+  render(
+    <SuggestionCard
+      suggestion={{ ...location, averageMinutes: 75, maxMinutes: 90 }}
+    />,
+  );
+  expect(
+    screen.getByText("평균 1시간 15분 · 가장 먼 사람 1시간 30분"),
+  ).toBeInTheDocument();
+});
+
+test("마주 표시는 4.5:1 이상인 글자색을 쓴다", () => {
+  render(<SuggestionCard suggestion={location} />);
+  expect(screen.getByText("마주").className).toMatch(/text-tangerine-800/);
+});

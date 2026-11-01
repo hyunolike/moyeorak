@@ -10,10 +10,12 @@ import {
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 /**
- * v4 토스트. 화면 아래 고정 버튼(높이 52px) 위에 뜬다.
+ * v4 토스트. 아래 고정 버튼(BottomCta)이 `--cta-h`로 알려 준 실제 높이 위에 12px 띄워 뜬다.
+ * 버튼이 없는 화면은 변수가 없어 기본 24px이다.
  * 잉크 바탕에 흰 글자, 밝은 화면만 쓰므로 테마를 따라가지 않는다.
  */
-const CTA_OFFSET = 52 + 16 + 16;
+// 문자열 하나를 넘기면 좌우 여백까지 같은 값이 되어 토스트가 좁아지므로 아래쪽만 준다.
+const CTA_OFFSET = { bottom: "calc(var(--cta-h, 12px) + 12px)" };
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (

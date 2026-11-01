@@ -8,6 +8,7 @@ import {
   SimpleMap,
 } from "@/components/map/simple-map";
 import { cn } from "@/lib/cn";
+import { stationLabel } from "@/lib/summary-text";
 
 /** 카카오 지도가 이 시간 안에 그려지지 않으면 그림 지도로 내려간다. */
 const KAKAO_TIMEOUT_MS = 3000;
@@ -58,12 +59,18 @@ export function MeetMap(props: MapProps) {
       ) : null}
       {selected ? (
         <a
-          href={kakaoMapLink(`${selected.name}역`, selected.lat, selected.lng)}
+          href={kakaoMapLink(
+            stationLabel(selected.name),
+            selected.lat,
+            selected.lng,
+          )}
           target="_blank"
           rel="noopener noreferrer"
           className="absolute inset-0 z-10"
         >
-          <span className="sr-only">{selected.name}역을 카카오맵에서 보기</span>
+          <span className="sr-only">
+            {stationLabel(selected.name)}을 카카오맵에서 보기
+          </span>
         </a>
       ) : null}
     </figure>

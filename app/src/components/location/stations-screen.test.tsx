@@ -14,7 +14,8 @@ import type { Meeting, Midpoint, Station } from "@/lib/api-types";
 const confirmMutate = vi.fn();
 let midpointData: Midpoint = { type: "ok", stations: [] };
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("@/components/share-button", () => ({ ShareButton: () => null }));
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
@@ -54,6 +55,7 @@ vi.mock("@/lib/api", async () => {
 afterEach(() => {
   cleanup();
   confirmMutate.mockReset();
+  push.mockReset();
 });
 
 const station = (stationId: number, name: string): Station => ({
@@ -142,4 +144,48 @@ test("역이 없으면 출발지 수 설명을 보이지 않는다", () => {
   midpointData = { type: "insufficient" };
   render(<StationsScreen meeting={meeting} />);
   expect(screen.queryByText(/곳에서 가운데에 있는 역이에요/)).toBeNull();
+});
+
+test("이름이 이미 역으로 끝나면 역을 또 붙이지 않는다", () => {
+  midpointData = { type: "ok", stations: [station(1, "서울역")] };
+  render(<StationsScreen meeting={meeting} />);
+  fireEvent.click(screen.getByRole("button", { name: "서울역으로 정하기" }));
+  expect(
+    screen.getByRole("dialog", { name: "서울역으로 정할까요?" }),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/서울역역/)).toBeNull();
+});
+
+test("노선 이름은 호선 꼴로 맞춰 보인다", () => {
+  midpointData = {
+    type: "ok",
+    stations: [{ ...station(1, "녹사평"), line: "6" }],
+  };
+  render(<StationsScreen meeting={meeting} />);
+  expect(screen.getAllByText("6호선").length).toBeGreaterThan(0);
+  expect(screen.queryByText("6")).toBeNull();
+});
+
+test("확정 시트의 평균 시간도 60분이 넘으면 시간과 분으로 적는다", () => {
+  midpointData = {
+    type: "ok",
+    stations: [{ ...station(1, "합정"), averageMinutes: 75 }],
+  };
+  render(<StationsScreen meeting={meeting} />);
+  fireEvent.click(screen.getByRole("button", { name: "합정역으로 정하기" }));
+  const dialog = screen.getByRole("dialog");
+  expect(within(dialog).getByText("평균 1시간 15분")).toBeInTheDocument();
+});
+
+test("장소를 정하면 확정 카드 화면으로 간다", () => {
+  midpointData = { type: "ok", stations: [station(1, "합정")] };
+  render(<StationsScreen meeting={meeting} />);
+  fireEvent.click(screen.getByRole("button", { name: "합정역으로 정하기" }));
+  const dialog = screen.getByRole("dialog");
+  fireEvent.click(within(dialog).getByRole("button", { name: "정하기" }));
+  const options = confirmMutate.mock.calls[0]?.[1] as {
+    onSuccess: () => void;
+  };
+  options.onSuccess();
+  expect(push).toHaveBeenCalledWith("/meetings/m1/summary?just=confirmed");
 });

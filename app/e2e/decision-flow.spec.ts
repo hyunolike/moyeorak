@@ -106,7 +106,7 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   await expect(lines).toHaveCount(3);
   for (const name of ["현호", "서연", "민지"] as const) {
     await expect(card.locator("li", { hasText: name })).toContainText(
-      new RegExp(`${name} · ${PLACES[name].label} \\d+분`),
+      new RegExp(`${name} · ${PLACES[name].label} \\d+(시간 \\d+분|시간|분)`),
     );
   }
   await expect(page.getByRole("button", { name: "글로 복사" })).toBeVisible();

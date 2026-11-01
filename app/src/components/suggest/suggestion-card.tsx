@@ -5,9 +5,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { StatusChip } from "@/components/layout/status-chip";
+import { formatDuration } from "@/components/location/format";
 import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { lineName, stationLabel } from "@/lib/summary-text";
 import type { Suggestion } from "@/server/suggest/types";
 
 const AXIS_LABEL: Record<Suggestion["axis"], string> = {
@@ -29,8 +31,8 @@ function Summary({ suggestion }: { suggestion: Suggestion }) {
     return `${total}명 중 ${suggestion.available.length}명 가능`;
   }
   return suggestion.maxMinutes === null
-    ? `평균 ${suggestion.averageMinutes}분`
-    : `평균 ${suggestion.averageMinutes}분 · 가장 먼 사람 ${suggestion.maxMinutes}분`;
+    ? `평균 ${formatDuration(suggestion.averageMinutes)}`
+    : `평균 ${formatDuration(suggestion.averageMinutes)} · 가장 먼 사람 ${formatDuration(suggestion.maxMinutes)}`;
 }
 
 function People({
@@ -78,7 +80,7 @@ function Travel({
           <div className="text-b3 text-text mb-1 flex justify-between">
             <span>{p.name}</span>
             <span className="tabular-nums">
-              {p.minutes === null ? "경로 없음" : `${p.minutes}분`}
+              {p.minutes === null ? "경로 없음" : formatDuration(p.minutes)}
             </span>
           </div>
           <div
@@ -87,7 +89,9 @@ function Travel({
             aria-valuemin={0}
             aria-valuemax={longest}
             aria-valuenow={p.minutes ?? undefined}
-            aria-valuetext={p.minutes === null ? "경로 없음" : `${p.minutes}분`}
+            aria-valuetext={
+              p.minutes === null ? "경로 없음" : formatDuration(p.minutes)
+            }
             className="bg-surface-sunken h-2.5 overflow-hidden rounded-full"
           >
             <motion.i
@@ -138,9 +142,11 @@ export function SuggestionCard({
         </div>
       ) : (
         <div className="flex items-baseline gap-2">
-          <p className="text-h2 text-text">{suggestion.name}역</p>
+          <p className="text-h2 text-text">{stationLabel(suggestion.name)}</p>
           {suggestion.line && (
-            <span className="text-b3 text-muted">{suggestion.line}</span>
+            <span className="text-b3 text-muted">
+              {lineName(suggestion.line)}
+            </span>
           )}
         </div>
       )}
@@ -148,7 +154,7 @@ export function SuggestionCard({
         <Summary suggestion={suggestion} />
       </p>
       <div className="bg-surface-sunken text-b1 text-text flex flex-col gap-1 rounded-md px-3 py-2.5">
-        <span className="text-c1 text-action-text inline-flex items-center gap-1">
+        <span className="text-c1 text-tangerine-800 inline-flex items-center gap-1">
           <i className="bg-action block size-1.5 rounded-sm" />
           마주
         </span>
@@ -216,7 +222,7 @@ export function SuggestionCard({
 function confirmSummary(s: Suggestion) {
   return s.kind === "schedule"
     ? `${formatSlotDate(s.start)} ${formatSlotRange(s.start, s.end)}`
-    : `${s.name}역`;
+    : stationLabel(s.name);
 }
 
 /**

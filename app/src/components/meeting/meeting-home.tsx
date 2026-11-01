@@ -62,15 +62,19 @@ function ParticipantRow({
   name,
   responded,
   entering,
+  respondedKey,
 }: {
   name: string;
   responded: boolean;
   entering: boolean;
+  /** 응답한 사람 id를 이은 값. 이 값이 바뀔 때만 행이 자리를 옮긴다(첫 로드에는 움직이지 않는다). */
+  respondedKey: string;
 }) {
   const reduce = useReducedMotion();
   return (
     <motion.li
       layout={reduce ? false : "position"}
+      layoutDependency={respondedKey}
       initial={false}
       animate={{ opacity: reduce && entering ? [0, 1] : 1 }}
       transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
@@ -104,6 +108,7 @@ export function MeetingHomeView({
   const respondedPeople = progress.participants.filter(votedNow);
   const waitingPeople = progress.participants.filter((p) => !votedNow(p));
   const entering = useNewlyResponded(respondedPeople.map((p) => p.id));
+  const respondedKey = respondedPeople.map((p) => p.id).join(",");
   const action = state?.action;
   const sharePath = `/meetings/${progress.meetingId}`;
 
@@ -158,6 +163,7 @@ export function MeetingHomeView({
             name={p.name}
             responded={votedNow(p)}
             entering={entering.has(p.id)}
+            respondedKey={respondedKey}
           />
         ))}
       </ul>

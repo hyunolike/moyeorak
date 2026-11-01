@@ -9,13 +9,14 @@ import { isAlreadyConfirmed } from "@/components/schedule/natural-time-input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useConfirmSchedule } from "@/lib/api";
 import type { BestSlot, Meeting } from "@/lib/api-types";
+import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
 
 const ctaLink = buttonVariants({ variant: "primary", size: "cta" });
 
 /**
  * 아래 고정 주 버튼. 최적일정 탭의 팀장에게는 1순위 시간을 정하는 버튼을 보여준다.
  * 시간과 장소 모임은 "장소 정하러 가기"(확정 후 장소 단계로), 시간만 모임은
- * "이 시간으로 정하기"(확정 후 모임 홈으로)다. 공유하기는 앱 바로 옮겼다. 그 밖에는 "일정 추가하기"/"일정 수정하기"이고,
+ * "이 시간으로 정하기"(확정 후 약속 카드로)다. 공유하기는 앱 바로 옮겼다. 그 밖에는 "일정 추가하기"/"일정 수정하기"이고,
  * 시간이 이미 정해졌으면 투표를 고치는 버튼 대신 다음 단계나 모임 홈으로 보낸다.
  */
 export function ScheduleActions({
@@ -39,7 +40,7 @@ export function ScheduleActions({
   const closed = meeting.status !== "scheduling";
   const isBoth = meeting.scope === "both";
 
-  const confirmTopSlot = (nextPath: string) => {
+  const confirmTopSlot = (nextPath: string, conflictPath = nextPath) => {
     if (!topSlot || closed) {
       router.push(nextPath);
       return;
@@ -52,7 +53,7 @@ export function ScheduleActions({
             // 다른 기기에서 먼저 정했으면(409) 모임 홈에 결과가 있다.
             onSuccess: () => router.push(nextPath),
             onError: (error) => {
-              if (isAlreadyConfirmed(error)) router.push(nextPath);
+              if (isAlreadyConfirmed(error)) router.push(conflictPath);
               else setModalOpen(false);
             },
           },
@@ -120,7 +121,13 @@ export function ScheduleActions({
             caption="정한 뒤에는 일정을 추가하거나 수정할 수 없어요."
             confirmLabel="정하기"
             pending={confirm.isPending}
-            onConfirm={() => confirmTopSlot(homePath)}
+            // 방금 정했으면 약속 카드로, 다른 기기에서 먼저 정했으면(409) 모임 홈으로 간다.
+            onConfirm={() =>
+              confirmTopSlot(
+                `${homePath}/summary?${JUST_CONFIRMED_QUERY}`,
+                homePath,
+              )
+            }
             onClose={() => setModalOpen(false)}
           />
         ))}

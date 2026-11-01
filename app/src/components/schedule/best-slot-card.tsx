@@ -70,7 +70,7 @@ export function BestSlotCard({
       {expanded && (
         <dl id={detailsId} className="flex flex-col gap-2 pb-4 pl-8">
           <div className="flex gap-2">
-            <dt className="bg-selected text-action-text text-c1 h-fit shrink-0 rounded-full px-2 py-0.5">
+            <dt className="bg-selected text-tangerine-800 text-c1 h-fit shrink-0 rounded-full px-2 py-0.5">
               가능 {slot.available.length}
             </dt>
             <dd className="text-b4 text-text">{availableNames}</dd>

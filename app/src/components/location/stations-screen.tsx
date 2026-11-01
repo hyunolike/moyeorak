@@ -24,6 +24,8 @@ import {
 } from "@/lib/api";
 import type { Departure, Meeting, Station } from "@/lib/api-types";
 import { cn } from "@/lib/cn";
+import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
+import { lineName, stationLabel } from "@/lib/summary-text";
 
 function Message({
   title,
@@ -43,14 +45,9 @@ function Message({
 }
 
 function Average({ minutes }: { minutes: number }) {
-  const rounded = Math.round(minutes);
   return (
     <span className="text-muted text-b3 ml-auto whitespace-nowrap tabular-nums">
-      평균{" "}
-      <b className="text-text text-t2">
-        {rounded < 60 ? rounded : formatDuration(rounded)}
-      </b>
-      {rounded < 60 ? "분" : ""}
+      평균 <b className="text-text text-t2">{formatDuration(minutes)}</b>
     </span>
   );
 }
@@ -103,7 +100,7 @@ function StationRow({
               className="rounded-pill inline-block size-2.5"
               style={{ background: lineColor(station.line) }}
             />
-            {station.line}
+            {lineName(station.line)}
           </span>
         )}
         <Average minutes={station.averageMinutes} />
@@ -261,7 +258,7 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
               size="cta"
               onClick={() => setModalOpen(true)}
             >
-              {selected?.name}역으로 정하기
+              {selected ? stationLabel(selected.name) : ""}으로 정하기
             </Button>
           ) : (
             manageLink(true)
@@ -273,14 +270,17 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
       />
       {isModalOpen && selected && (
         <ConfirmModal
-          title={`${selected.name}역으로 정할까요?`}
-          summary={`평균 ${Math.round(selected.averageMinutes)}분`}
+          title={`${stationLabel(selected.name)}으로 정할까요?`}
+          summary={`평균 ${formatDuration(selected.averageMinutes)}`}
           caption="정한 뒤에는 장소를 바꿀 수 없어요."
           confirmLabel="정하기"
           pending={confirm.isPending}
           onConfirm={() =>
             confirm.mutate(selectedId, {
-              onSuccess: () => router.push(`/meetings/${meeting.id}`),
+              onSuccess: () =>
+                router.push(
+                  `/meetings/${meeting.id}/summary?${JUST_CONFIRMED_QUERY}`,
+                ),
               onSettled: () => setModalOpen(false),
             })
           }

@@ -277,7 +277,7 @@ function SuggestMain({
     <Body home={home}>
       <div className="px-5">
         <div className="flex items-center gap-2">
-          <Maju expression="thinking" size={24} />
+          <Maju expression="default" size={24} />
           <p className="text-b3 text-action-text">마주의 제안</p>
         </div>
         <PageTitle className="mt-2">{deckTitle(items.length)}</PageTitle>
