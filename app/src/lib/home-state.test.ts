@@ -1,5 +1,5 @@
 import type { MeetingProgress } from "@/lib/api-types";
-import { confirmedSentence, homeState } from "@/lib/home-state";
+import { confirmedSentence, homeState, routeStops } from "@/lib/home-state";
 
 type P = MeetingProgress["participants"][number];
 const person = (
@@ -441,4 +441,18 @@ describe("마주 안내 줄", () => {
       "출발지를 남기면 가운데 역을 찾아 드려요",
     );
   });
+});
+
+test("routeStops: 확정된 모임은 시간, 장소, 확정 모두 지난 정류장이다", () => {
+  const s = homeState(progress({ scope: "both", status: "confirmed" }), 1);
+  expect(routeStops(s)).toEqual([
+    { label: "시간", state: "done" },
+    { label: "장소", state: "done" },
+    { label: "확정", state: "done" },
+  ]);
+});
+
+test("routeStops: 장소를 모으는 중이면 시간은 지났고 장소가 지금, 확정은 남았다", () => {
+  const s = homeState(progress({ scope: "both", status: "locating" }), 1);
+  expect(routeStops(s).map((x) => x.state)).toEqual(["done", "now", "todo"]);
 });

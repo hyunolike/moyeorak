@@ -30,6 +30,30 @@ const CURRENT: Record<MeetingProgress["status"], Stage> = {
   confirmed: "confirmed",
 };
 
+const STAGE_LABEL: Record<Stage, string> = {
+  schedule: "시간",
+  location: "장소",
+  confirmed: "확정",
+};
+
+export type RouteStopState = "done" | "now" | "todo";
+
+/** 홈의 진행 단계 줄. 확정이면 마지막 "확정"까지 모든 정류장을 지난 것으로 본다. */
+export function routeStops({
+  stages,
+  current,
+}: Pick<HomeState, "stages" | "current">): {
+  label: string;
+  state: RouteStopState;
+}[] {
+  const now = stages.indexOf(current);
+  return stages.map((stage, i) => ({
+    label: STAGE_LABEL[stage],
+    state:
+      current === "confirmed" || i < now ? "done" : i === now ? "now" : "todo",
+  }));
+}
+
 /** 받침이 없거나 ㄹ이면 "로", 그 밖의 받침이면 "으로". 한글이 아니면 "로". */
 function withDirectionalParticle(word: string): string {
   const code = word.charCodeAt(word.length - 1) - 0xac00;

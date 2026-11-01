@@ -272,8 +272,8 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
         <ConfirmModal
           title={`${stationLabel(selected.name)}으로 정할까요?`}
           summary={`평균 ${formatDuration(selected.averageMinutes)}`}
-          caption="정한 뒤에는 장소를 바꿀 수 없어요."
-          confirmLabel="정하기"
+          caption="확정하면 장소 투표가 닫혀요"
+          confirmLabel="확정하기"
           pending={confirm.isPending}
           onConfirm={() =>
             confirm.mutate(selectedId, {

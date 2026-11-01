@@ -95,3 +95,25 @@ test("참여자 id를 모르면 확인 중이라 하고 버튼은 없다", () =>
   expect(screen.getByText("모임을 확인하고 있어요")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "제안 받기" })).toBeNull();
 });
+
+test("확정된 모임은 응답 미터를 숨기고 진행 단계는 모두 지난 정류장이다", () => {
+  const confirmed: MeetingProgress = {
+    ...progress([1, 2, 3]),
+    scope: "both",
+    status: "confirmed",
+    confirmedPlace: "마포",
+  };
+  const { container } = render(
+    <MeetingHomeView progress={confirmed} meId={1} />,
+  );
+  expect(screen.queryByText("응답")).toBeNull();
+  const states = [...container.querySelectorAll("li[data-state]")].map((li) =>
+    li.getAttribute("data-state"),
+  );
+  expect(states).toEqual(["done", "done", "done"]);
+});
+
+test("확정 전에는 응답 미터가 보인다", () => {
+  render(<MeetingHomeView progress={progress([1, 2])} meId={1} />);
+  expect(screen.getByText("응답")).toBeTruthy();
+});
