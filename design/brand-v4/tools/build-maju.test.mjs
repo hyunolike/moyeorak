@@ -3,7 +3,8 @@ import { test } from "node:test";
 import sharp from "sharp";
 import { checkSvg } from "./qa.mjs";
 
-const expressions = ["default", "thinking", "happy", "sorry", "waiting"];
+const expressions = ["default", "thinking", "happy", "sorry", "waiting", "ignored", "match"];
+const variants = [false, true].flatMap((small) => expressions.map((expression) => ({ expression, small })));
 
 async function render(svg, size) {
   return sharp(Buffer.from(svg)).resize(size, size).ensureAlpha().raw().toBuffer();
@@ -41,11 +42,11 @@ function eyeComponents(data, size) {
   return components.sort((a, b) => Math.min(...a) % size - Math.min(...b) % size);
 }
 
-test("마주 API는 다섯 표정과 단색 SVG를 생성하고 잘못된 표정은 거절한다", async () => {
+test("마주 API는 일곱 표정의 일반/소형과 단색 SVG를 생성하고 잘못된 표정은 거절한다", async () => {
   const { majuSvg } = await import("./build-maju.mjs");
-  for (const expression of expressions) {
+  for (const { expression, small } of variants) {
     for (const mono of [false, true]) {
-      const svg = majuSvg(expression, { mono });
+      const svg = majuSvg(expression, { mono, small });
       assert.match(svg, /viewBox="0 0 64 64"/);
       assert.deepEqual(checkSvg(svg, expression), []);
       if (mono) {
@@ -58,8 +59,8 @@ test("마주 API는 다섯 표정과 단색 SVG를 생성하고 잘못된 표정
 
 test("16px에서도 두 눈은 각각 남고 사이에 온전한 얼굴색 픽셀이 있다", async () => {
   const { majuSvg } = await import("./build-maju.mjs");
-  for (const expression of expressions) {
-    const data = await render(majuSvg(expression), 16);
+  for (const { expression, small } of variants) {
+    const data = await render(majuSvg(expression, { small }), 16);
     const eyes = eyeComponents(data, 16);
     assert.equal(eyes.length, 2, expression);
     assert.ok(eyes.every((eye) => eye.length >= 2), `${expression}: 눈 크기`);
@@ -75,27 +76,31 @@ test("16px에서도 두 눈은 각각 남고 사이에 온전한 얼굴색 픽�
 
 test("24px에서 모든 표정 쌍은 눈과 입의 실루엣이 분명히 다르다", async () => {
   const { majuSvg } = await import("./build-maju.mjs");
-  const rasters = await Promise.all(expressions.map((e) => render(majuSvg(e), 24)));
-  for (let a = 0; a < expressions.length; a++) {
-    for (let b = a + 1; b < expressions.length; b++) {
-      let changed = 0;
-      for (let p = 0; p < 24 * 24; p++) {
-        if (isInk(rasters[a], p) !== isInk(rasters[b], p)) changed++;
+  for (const small of [false, true]) {
+    const rasters = await Promise.all(expressions.map((e) => render(majuSvg(e, { small }), 24)));
+    for (let a = 0; a < expressions.length; a++) {
+      for (let b = a + 1; b < expressions.length; b++) {
+        let changed = 0;
+        for (let p = 0; p < 24 * 24; p++) {
+          if (isInk(rasters[a], p) !== isInk(rasters[b], p)) changed++;
+        }
+        assert.ok(changed >= 12, `${expressions[a]} / ${expressions[b]}: ${changed}px`);
       }
-      assert.ok(changed >= 12, `${expressions[a]} / ${expressions[b]}: ${changed}px`);
     }
   }
 });
 
 test("단색의 눈과 입은 배경을 가리지 않는 실제 투명 구멍이다", async () => {
   const { majuSvg } = await import("./build-maju.mjs");
-  for (const expression of expressions) {
-    const color = await render(majuSvg(expression), 64);
-    const mono = await render(majuSvg(expression, { mono: true }), 64);
+  for (const { expression, small } of variants) {
+    const color = await render(majuSvg(expression, { small }), 64);
+    const mono = await render(majuSvg(expression, { mono: true, small }), 64);
     let holes = 0;
     for (let p = 0; p < 64 * 64; p++) {
       const i = p * 4;
-      if (color[i] === 23 && color[i + 1] === 24 && color[i + 2] === 26 && color[i + 3] === 255) {
+      // The bottom stripe is now positive ink. Eye/mouth holes retain
+      // the same strict per-pixel check; all facial features are above 50.
+      if (p < 50 * 64 && color[i] === 23 && color[i + 1] === 24 && color[i + 2] === 26 && color[i + 3] === 255) {
         assert.ok(mono[i + 3] <= 1, `${expression}: 투명 구멍 ${p}`);
         holes++;
       }
@@ -104,5 +109,18 @@ test("단색의 눈과 입은 배경을 가리지 않는 실제 투명 구멍이
       }
     }
     assert.ok(holes > 50, expression);
+  }
+});
+
+test("일반형 띠는 하단 끝에 붙고 단색에서 투명 틈으로 나뉘며 소형에는 없다", async () => {
+  const { majuSvg } = await import("./build-maju.mjs");
+  for (const expression of expressions) {
+    const normal = await render(majuSvg(expression), 64);
+    const small = await render(majuSvg(expression, { small: true }), 64);
+    const mono = await render(majuSvg(expression, { mono: true }), 64);
+    assert.ok(isInk(normal, 57 * 64 + 32), expression);
+    assert.deepEqual([...small.subarray((57 * 64 + 32) * 4, (57 * 64 + 32) * 4 + 4)], [255, 106, 19, 255]);
+    assert.equal(mono[(52 * 64 + 32) * 4 + 3], 0, expression);
+    assert.ok(isInk(mono, 57 * 64 + 32), expression);
   }
 });
