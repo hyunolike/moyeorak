@@ -14,11 +14,15 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   page,
 }) => {
   await page.goto("/new/schedule");
-  await page.getByLabel("시간과 장소 둘 다").check();
+  await page.getByRole("button", { name: "둘 다" }).click();
+  await expect(page.getByRole("button", { name: "둘 다" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.getByLabel("팀장 이름").fill("현호");
   await page.getByRole("button", { name: "증가" }).click();
   await expect(page.getByTestId("participant-count")).toHaveText("3명");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   const hostKey = (await page.evaluate(() =>
@@ -52,7 +56,7 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   await page.goto(`/meetings/${id}`);
   await page.getByRole("link", { name: "제안 받기" }).click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${id}/suggest$`));
-  await expect(page.locator("article")).toBeVisible();
+  await expect(page.locator('article[aria-current="true"]')).toBeVisible();
   await page.getByRole("button", { name: "이걸로 확정" }).click();
   const confirmed = page.waitForResponse(
     (res) =>
@@ -83,7 +87,7 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   await page.goto(`/meetings/${id}`);
   await page.getByRole("link", { name: "제안 받기" }).click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${id}/suggest$`));
-  await expect(page.locator("article")).toBeVisible();
+  await expect(page.locator('article[aria-current="true"]')).toBeVisible();
   await page.getByRole("button", { name: "이걸로 확정" }).click();
   await page
     .getByRole("dialog", { name: "이걸로 확정할까요?" })
@@ -91,19 +95,21 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
     .click();
 
   // 요약 카드
-  await expect(page).toHaveURL(new RegExp(`/meetings/${id}/summary$`));
+  await expect(page).toHaveURL(
+    new RegExp(`/meetings/${id}/summary(\\?just=confirmed)?$`),
+  );
   const card = page.getByRole("article", { name: "약속 카드" });
   await expect(card).toContainText("현호님의 모임");
   await expect(card).toContainText(/09:00 ~ \d\d:\d\d/);
-  await expect(card.locator("p.font-semibold")).toContainText(/역$/);
+  await expect(card.getByTestId("summary-station")).toContainText(/역$/);
   const lines = card.locator("li");
   await expect(lines).toHaveCount(3);
   for (const name of ["현호", "서연", "민지"] as const) {
     await expect(card.locator("li", { hasText: name })).toContainText(
-      new RegExp(`${name} ${PLACES[name].label}에서 \\d+분`),
+      new RegExp(`${name} · ${PLACES[name].label} \\d+(시간 \\d+분|시간|분)`),
     );
   }
-  await expect(page.getByRole("button", { name: "텍스트 복사" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "글로 복사" })).toBeVisible();
 
   // 관리자 지표
   await page.goto("/admin/metrics?token=e2e-admin-token");

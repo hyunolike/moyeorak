@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { useShareEvent } from "@/lib/api";
 
 async function copyText(text: string) {
@@ -13,7 +14,7 @@ async function copyText(text: string) {
   }
 }
 
-/** 초대 링크를 복사하고 `shared` 이벤트를 남긴다. */
+/** 초대 링크를 복사하고 `shared` 이벤트를 남긴다. 결과는 토스트로 알린다. */
 export function ShareButton({
   meetingId,
   path,
@@ -25,58 +26,39 @@ export function ShareButton({
   label?: string;
 }) {
   const shareEvent = useShareEvent(meetingId);
-  const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!message) return;
-    const timer = window.setTimeout(() => setMessage(null), 2000);
-    return () => window.clearTimeout(timer);
-  }, [message]);
 
   const handleClick = async () => {
     shareEvent.mutate();
     const copied = await copyText(`${window.location.origin}${path}`);
-    setMessage(
-      copied ? "클립보드에 복사되었어요" : "클립보드 복사에 실패했어요",
-    );
+    if (copied) toast("복사했어요");
+    else toast("복사하지 못했어요. 주소창의 링크를 직접 복사해 주세요");
   };
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label={label ? undefined : "공유하기"}
-        data-testid="share-button"
-        onClick={handleClick}
-        className={
-          label
-            ? "bg-action text-on-action flex h-[54px] w-full cursor-pointer items-center justify-center rounded-lg px-5 font-semibold"
-            : "bg-p-50 text-primary-main hover:bg-p-100 flex size-[54px] shrink-0 cursor-pointer items-center justify-center rounded-lg"
-        }
-      >
-        {label ?? (
-          <svg
-            aria-hidden
-            viewBox="0 0 24 24"
-            className="size-6"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
-          </svg>
-        )}
-      </button>
-      {message && (
-        <p
-          role="status"
-          className="bg-k-800 text-b4 text-k-5 absolute inset-x-5 -top-12 rounded-lg px-4 py-3 text-center"
+    <Button
+      type="button"
+      variant={label ? "primary" : "ghost"}
+      size={label ? "cta" : "icon"}
+      aria-label={label ? undefined : "공유하기"}
+      data-testid="share-button"
+      onClick={handleClick}
+    >
+      {label ?? (
+        <svg
+          aria-hidden
+          viewBox="0 0 24 24"
+          className="size-6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          {message}
-        </p>
+          <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+          <path d="M16 6l-4-4-4 4" />
+          <path d="M12 2v13" />
+        </svg>
       )}
-    </>
+    </Button>
   );
 }

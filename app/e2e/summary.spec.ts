@@ -4,7 +4,7 @@ import { expect, type Page, test } from "@playwright/test";
 async function createConfirmedMeeting(page: Page, hostName: string) {
   await page.goto("/new/schedule");
   await page.getByLabel("팀장 이름").fill(hostName);
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   const deviceKey = (await page.evaluate(() =>
@@ -36,11 +36,16 @@ test("확정된 모임의 요약 카드에 날짜와 두 버튼이 나온다", a
   await page.goto(`/meetings/${id}/summary`);
   await expect(page.getByText("현호님의 모임").first()).toBeVisible();
   await expect(page.getByText(/09:00 ~ 10:00/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "텍스트 복사" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "이미지 저장" })).toHaveAttribute(
-    "href",
-    `/meetings/${id}/summary/image`,
-  );
+  await expect(page.getByRole("button", { name: "글로 복사" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "단톡방에 공유하기" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "모임 홈으로 가기" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "이미지로 저장" }),
+  ).toHaveAttribute("href", `/meetings/${id}/summary/image`);
 });
 
 test("이모지가 든 호스트 이름이어도 요약 이미지는 PNG로 나온다", async ({
@@ -55,7 +60,7 @@ test("이모지가 든 호스트 이름이어도 요약 이미지는 PNG로 나�
 test("확정 전 모임의 요약 주소는 모임 홈으로 돌려보낸다", async ({ page }) => {
   await page.goto("/new/schedule");
   await page.getByLabel("팀장 이름").fill("현호");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   await page.goto(`/meetings/${id}/summary`);

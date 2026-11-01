@@ -14,22 +14,23 @@
 
 `.env.example`을 `.env.local`로 복사해 채웁니다. `pnpm dev`는 `.env.local`을 읽고, 이 파일은 git에 올라가지 않습니다.
 
-| 이름                         | 용도                                                                                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`               | 앱이 쓰는 PostgreSQL 연결 문자열                                                                                                            |
-| `DATABASE_URL_TEST`          | 테스트용 DB. `.env.test`에 로컬 값이 들어 있어서 보통 따로 채우지 않습니다.                                                                 |
-| `ADMIN_TOKEN`                | 관리자 지표 페이지 접근 토큰. 비워 두면 접근이 항상 거부됩니다.                                                                             |
-| `GOOGLE_API_KEY`             | Google Routes 이동시간 계산                                                                                                                 |
-| `KAKAO_API_KEY`              | Kakao Local 장소 검색                                                                                                                       |
-| `SITE_URL`                   | 공유 미리보기에 쓰는 사이트 주소. `https://`를 포함한 전체 주소로 적습니다. 비우면 Vercel의 `VERCEL_URL`, 그것도 없으면 localhost를 씁니다. |
-| `NVIDIA_API_KEY`             | 말로 남기기에 쓰는 NVIDIA AI 키                                                                                                             |
-| `NVIDIA_MODEL_PARSE`         | 가능 시간 문장을 해석하는 모델 이름                                                                                                         |
-| `NVIDIA_MODEL_SUGGEST`       | 제안에 쓰는 모델 이름                                                                                                                       |
-| `NVIDIA_BASE_URL`            | (선택) AI 호출 주소. 비우면 `https://integrate.api.nvidia.com/v1`                                                                           |
-| `AI_CALL_CAP_PER_MEETING`    | (선택) 모임 하나의 AI 호출 상한. 비우면 40                                                                                                  |
-| `MIDPOINT_DAILY_CAP`         | 모임 하나가 하루에 새로 계산할 수 있는 중간지점 추천 수. 비우면 30                                                                          |
-| `GOOGLE_MONTHLY_ELEMENT_CAP` | (선택) 한 달 동안 모든 모임이 Google 이동 시간 계산에 쓸 수 있는 행렬 항목 수. 비우면 4000                                                  |
-| `LEGACY_DATABASE_URL`        | 옛 서비스 DB. 옛 DB가 없어 지금은 쓰지 않습니다. `pnpm migrate:legacy`에서만 씁니다.                                                        |
+| 이름                         | 용도                                                                                                                                                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`               | 앱이 쓰는 PostgreSQL 연결 문자열                                                                                                                                      |
+| `DATABASE_URL_TEST`          | 테스트용 DB. `.env.test`에 로컬 값이 들어 있어서 보통 따로 채우지 않습니다.                                                                                           |
+| `ADMIN_TOKEN`                | 관리자 지표 페이지 접근 토큰. 비워 두면 접근이 항상 거부됩니다.                                                                                                       |
+| `GOOGLE_API_KEY`             | Google Routes 이동시간 계산                                                                                                                                           |
+| `KAKAO_API_KEY`              | Kakao Local 장소 검색                                                                                                                                                 |
+| `NEXT_PUBLIC_KAKAO_MAP_KEY`  | (선택) 역 목록의 카카오 지도 JavaScript 키. 브라우저에 그대로 내려가는 값이라 `NEXT_PUBLIC_`이 붙습니다. 비우거나 SDK가 3초 안에 뜨지 않으면 그림 지도를 보여 줍니다. |
+| `SITE_URL`                   | 공유 미리보기에 쓰는 사이트 주소. `https://`를 포함한 전체 주소로 적습니다. 비우면 Vercel의 `VERCEL_URL`, 그것도 없으면 localhost를 씁니다.                           |
+| `NVIDIA_API_KEY`             | 말로 남기기에 쓰는 NVIDIA AI 키                                                                                                                                       |
+| `NVIDIA_MODEL_PARSE`         | 가능 시간 문장을 해석하는 모델 이름                                                                                                                                   |
+| `NVIDIA_MODEL_SUGGEST`       | 제안에 쓰는 모델 이름                                                                                                                                                 |
+| `NVIDIA_BASE_URL`            | (선택) AI 호출 주소. 비우면 `https://integrate.api.nvidia.com/v1`                                                                                                     |
+| `AI_CALL_CAP_PER_MEETING`    | (선택) 모임 하나의 AI 호출 상한. 비우면 40                                                                                                                            |
+| `MIDPOINT_DAILY_CAP`         | 모임 하나가 하루에 새로 계산할 수 있는 중간지점 추천 수. 비우면 30                                                                                                    |
+| `GOOGLE_MONTHLY_ELEMENT_CAP` | (선택) 한 달 동안 모든 모임이 Google 이동 시간 계산에 쓸 수 있는 행렬 항목 수. 비우면 4000                                                                            |
+| `LEGACY_DATABASE_URL`        | 옛 서비스 DB. 옛 DB가 없어 지금은 쓰지 않습니다. `pnpm migrate:legacy`에서만 씁니다.                                                                                  |
 
 외부 API 키가 없으면 `MOCK_EXTERNAL=1`을 붙여 실행합니다. Google Routes와 Kakao 클라이언트가 가짜 데이터를 돌려줘서 키 없이도 전체 흐름을 볼 수 있습니다.
 
@@ -173,7 +174,7 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
    끝나면 `select count(*) from stations`가 654인지 확인합니다.
 3. 운영 브랜치에서 `preview` 브랜치를 만들고 풀링 연결 문자열을 확인합니다. 사용자가 들어오기 전에 만들어야 사용자 데이터가 복사되지 않습니다. 다시 만들 때는 Neon의 "부모에서 초기화"를 쓰지 않습니다. 새 루트 브랜치를 만들고 PostGIS를 켠 뒤 마이그레이션을 적용합니다.
 4. Google Cloud 프로젝트를 만들고 결제 계정을 연결한 뒤 Routes API를 사용 설정합니다. API 키를 발급해 Routes API에만 쓰도록 제한합니다. Cloud Quotas에서 `ComputeRouteMatrixCellsPerDay`(행렬 항목 하루 할당량)를 160으로 낮춥니다. 31일을 다 써도 4,960건이라 월 무료 한도 5,000건을 넘지 않습니다. 기본값보다 크게 낮추는 변경이라 API로 할 때는 `ignoreSafetyChecks=QUOTA_DECREASE_PERCENTAGE_TOO_HIGH`를 붙여야 받아 줍니다. 예산 알림은 1,000원으로 걸어 둡니다. 실제로 비용을 막는 장치는 앱의 월 상한(`GOOGLE_MONTHLY_ELEMENT_CAP`)이고, 할당량과 예산 알림은 그 바깥에서 한 번 더 받쳐 주는 용도입니다.
-5. Kakao Developers 앱의 REST API 키를 확인합니다. NVIDIA 개발자 키를 발급하고 임시 모델을 `NVIDIA_MODEL_PARSE`와 `NVIDIA_MODEL_SUGGEST`에 지정합니다.
+5. Kakao Developers 앱의 REST API 키를 확인합니다. 같은 앱의 앱 설정에서 플랫폼, Web 사이트 도메인에 `https://moyeorak.hyunolike.dev`와 `http://localhost:3000`을 등록하고 JavaScript 키를 확인합니다. JavaScript 키는 6단계에서 Vercel의 Production 환경에만 `NEXT_PUBLIC_KAKAO_MAP_KEY`로 넣습니다. 미리보기 배포는 키 없이 그림 지도를 보여 주고, 등록하지 않은 도메인에서도 카카오 지도 대신 그림 지도가 나옵니다. NVIDIA 개발자 키를 발급하고 임시 모델을 `NVIDIA_MODEL_PARSE`와 `NVIDIA_MODEL_SUGGEST`에 지정합니다.
 6. Vercel에 GitHub 저장소를 연결합니다. Root Directory는 `app/`, Production Branch는 `develop`, Node는 24로 둡니다. 가져오기 화면에서는 환경 변수를 입력하지 않습니다. 이 화면에 넣은 값은 모든 환경에 한꺼번에 적용되어 운영 키가 미리보기와 개발 환경에 섞입니다. 첫 배포는 환경 변수가 없어 실패해도 괜찮으니 그대로 둡니다.
 
    배포가 만들어진 뒤 Settings의 Environment Variables에서 아래 [배포 환경 변수](#배포-환경-변수) 표대로 하나씩 추가합니다. 변수마다 Production만 또는 Preview만 체크하고, Development는 어떤 변수에도 체크하지 않습니다. 이 화면의 기본값이 모든 환경이라서 체크를 직접 풀어야 합니다. pnpm 버전은 `vercel.json`의 `installCommand`와 `buildCommand`가 `pnpm@10.17.0`으로 고정합니다. Vercel의 corepack은 저장소 루트의 `package.json`에서 `packageManager`를 찾는데, 이 저장소는 루트에 `package.json`이 없어서 `ENABLE_EXPERIMENTAL_COREPACK`만으로는 오래된 pnpm이 잡혀 설치가 실패합니다.
@@ -197,6 +198,7 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 | `SITE_URL`                                                     | `https://moyeorak.hyunolike.dev` | 넣지 않음(`VERCEL_URL` 사용)    |
 | `MOCK_EXTERNAL`                                                | 넣지 않음                        | `1`                             |
 | `GOOGLE_API_KEY`, `KAKAO_API_KEY`                              | 넣음                             | 넣지 않음                       |
+| `NEXT_PUBLIC_KAKAO_MAP_KEY`                                    | 카카오 JavaScript 키             | 넣지 않음(그림 지도)            |
 | `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST` | 넣음                             | 넣지 않음                       |
 | `ADMIN_TOKEN`                                                  | 긴 무작위 문자열                 | 다른 무작위 문자열              |
 | `GOOGLE_MONTHLY_ELEMENT_CAP`                                   | 기본값이면 생략                  | 생략                            |

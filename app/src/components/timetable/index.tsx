@@ -1,5 +1,6 @@
 "use client";
 
+import { useReducedMotion } from "motion/react";
 import {
   Fragment,
   type PointerEvent as ReactPointerEvent,
@@ -9,6 +10,8 @@ import {
   useMemo,
   useRef,
 } from "react";
+import { heatLevel } from "@/components/timetable/heat";
+import { vibratePaint } from "@/components/timetable/paint";
 import {
   isTapGesture,
   type PointerPosition,
@@ -26,26 +29,27 @@ export interface TimetableProps {
   selected?: Date[];
   onSelect?: (dates: Date[]) => void;
   disabled?: boolean;
+  /** 슬롯 시각(ms 문자열) -> 가능한 인원 수 */
   occupancy?: Record<string, number>;
+  /** 색 단계를 나눌 전체 인원. 0이면 모든 칸이 빈 칸이다. */
+  total?: number;
+  /**
+   * 내가 고른 칸을 가능 인원에 1명 더한다. 편집 화면에서 occupancy가 나를 뺀
+   * 다른 사람들의 수일 때 쓴다. 칠하는 대로 색이 바로 짙어진다.
+   */
+  countSelection?: boolean;
+  /** 고른 상태가 바뀌었지만 아직 화면에 드러내지 않은 칸(말로 칠하기 순서 재생). */
+  pending?: ReadonlySet<string>;
   stickyHeaderTop?: number;
   /** 읽기 전용 시간표를 탭했을 때. 넘기지 않으면 종전대로 무반응이다. */
   onDisabledTap?: () => void;
 }
 
-const getOpacityMap = (occupancy: Record<string, number>) => {
-  const uniqueCounts = Array.from(new Set(Object.values(occupancy)))
-    .filter((count) => count > 0)
-    .sort((a, b) => a - b);
+const TIME_COLUMN_PX = 40;
+const FIT_DATE_COUNT = 5;
+const SCROLL_COLUMN_PX = 56;
 
-  const N = uniqueCounts.length;
-  const map: Record<number, number> = {};
-
-  uniqueCounts.forEach((count, index) => {
-    map[count] = (index + 1) / N;
-  });
-
-  return map;
-};
+const pad = (n: number) => String(n).padStart(2, "0");
 
 export function Timetable({
   dates,
@@ -56,10 +60,30 @@ export function Timetable({
   onSelect,
   disabled = false,
   occupancy = {},
+  total = 0,
+  countSelection = false,
+  pending,
   stickyHeaderTop = 0,
   onDisabledTap,
 }: TimetableProps) {
   const totalSlots = Math.round((endTime - startTime) * 2);
+  const reduceMotion = useReducedMotion() ?? false;
+  const currentKeys = useMemo(
+    () => new Set(selected.map((date) => date.getTime().toString())),
+    [selected],
+  );
+
+  // 손으로 새 칸을 칠할 때마다 짧게 진동한다(지우는 동안은 없음).
+  const handleSelect = useMemo(() => {
+    if (!onSelect) return undefined;
+    return (next: Date[]) => {
+      const added = next.some(
+        (date) => !currentKeys.has(date.getTime().toString()),
+      );
+      if (added) vibratePaint(reduceMotion);
+      onSelect(next);
+    };
+  }, [onSelect, currentKeys, reduceMotion]);
 
   const {
     selectedSlots,
@@ -71,10 +95,9 @@ export function Timetable({
     dates,
     startTime,
     selected,
-    onSelect,
+    onSelect: handleSelect,
   });
 
-  const opacityMap = useMemo(() => getOpacityMap(occupancy), [occupancy]);
   const headerTrackRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
   const frameIdRef = useRef<number | null>(null);
@@ -82,28 +105,18 @@ export function Timetable({
   const disabledTapStartRef = useRef<PointerPosition | null>(null);
 
   // 날짜 머리글은 브라우저 시간대가 아니라 서울 기준으로 적는다.
-  const getDayName = (date: Date) => seoulParts(date).weekday;
+  const dateParts = useMemo(
+    () => dates.map((date) => seoulParts(date)),
+    [dates],
+  );
 
-  const getFormattedDate = (date: Date) => {
-    const { month, day } = seoulParts(date);
-    const mm = String(month).padStart(2, "0");
-    const dd = String(day).padStart(2, "0");
-    return `${mm}.${dd}`;
-  };
-
-  const bodyGridTemplateColumns = useMemo(() => {
-    if (dates.length <= 4) {
-      return `20px repeat(${dates.length}, 1fr)`;
-    }
-    return `20px repeat(${dates.length}, 62px)`;
-  }, [dates.length]);
-
-  const headerGridTemplateColumns = useMemo(() => {
-    if (dates.length <= 4) {
-      return `repeat(${dates.length}, minmax(0, 1fr))`;
-    }
-    return `repeat(${dates.length}, 62px)`;
-  }, [dates.length]);
+  // 다섯 날까지는 폭을 나눠 쓰고, 그보다 많으면 가로로 밀어 본다.
+  const fitsWidth = dates.length <= FIT_DATE_COUNT;
+  const columnTrack = fitsWidth
+    ? `repeat(${dates.length}, minmax(0, 1fr))`
+    : `repeat(${dates.length}, ${SCROLL_COLUMN_PX}px)`;
+  const bodyGridTemplateColumns = `${TIME_COLUMN_PX}px ${columnTrack}`;
+  const headerGridTemplateColumns = columnTrack;
 
   const syncHeaderTrack = useCallback(() => {
     if (!headerTrackRef.current) {
@@ -276,10 +289,16 @@ export function Timetable({
   }, []);
 
   return (
-    <div className={cn("relative w-full select-none", className)}>
-      <div className="bg-k-5 sticky z-25" style={{ top: stickyHeaderTop }}>
-        <div className="flex gap-1 pt-1 pb-1">
-          <div className="bg-k-5 sticky left-0 z-30 h-[58px] w-5 shrink-0" />
+    <div
+      className={cn("relative w-full select-none", className)}
+      data-painting={pending && pending.size > 0 ? "" : undefined}
+    >
+      <div className="bg-bg sticky z-25" style={{ top: stickyHeaderTop }}>
+        <div className="flex gap-[3px] pt-1 pb-1">
+          <div
+            className="bg-bg sticky left-0 z-30 shrink-0"
+            style={{ width: TIME_COLUMN_PX }}
+          />
 
           <div
             className="min-w-0 flex-1 overflow-hidden"
@@ -288,19 +307,21 @@ export function Timetable({
             <div
               ref={headerTrackRef}
               className={cn(
-                "grid gap-1 will-change-transform",
-                dates.length > 4 && "min-w-max",
+                "grid gap-[3px] will-change-transform",
+                !fitsWidth && "min-w-max",
               )}
               style={{ gridTemplateColumns: headerGridTemplateColumns }}
             >
-              {dates.map((date) => (
+              {dates.map((date, dateIdx) => (
                 <div
                   key={`header-${date.toISOString()}`}
-                  className="bg-k-5 flex h-[54px] flex-col items-center justify-center"
+                  className="bg-bg flex flex-col items-center"
                 >
-                  <span className="text-b3 text-k-500">{getDayName(date)}</span>
-                  <span className="text-b3 text-k-700">
-                    {getFormattedDate(date)}
+                  <span className="text-c1 text-muted">
+                    {dateParts[dateIdx].weekday}
+                  </span>
+                  <span className="text-t2 text-text font-bold tabular-nums">
+                    {dateParts[dateIdx].day}
                   </span>
                 </div>
               ))}
@@ -323,37 +344,19 @@ export function Timetable({
         data-timetable-scroll="body"
       >
         <div
-          className="grid min-w-max gap-1"
+          className="grid min-w-max gap-[3px]"
           style={{ gridTemplateColumns: bodyGridTemplateColumns }}
         >
           {Array.from({ length: totalSlots }).map((_, slotIdx) => {
-            const startMinutes = startTime * 60;
-            const slotMinutes = startMinutes + slotIdx * 30;
+            const slotMinutes = startTime * 60 + slotIdx * 30;
             const currentHour = Math.floor(slotMinutes / 60);
             const currentMinutes = slotMinutes % 60;
-            const isHourStart = currentMinutes === 0;
-            const isFirstSlot = slotIdx === 0;
-            const isLastSlot = slotIdx === totalSlots - 1;
+            const timeLabel = `${pad(currentHour)}:${pad(currentMinutes)}`;
 
             return (
               <Fragment key={`row-${currentHour}-${currentMinutes}`}>
-                <div className="bg-k-5 sticky left-0 z-20 -mr-2 h-[40px] w-5">
-                  {isHourStart && (
-                    <span
-                      className={cn(
-                        "bg-k-5 text-b3 text-k-500 absolute left-0 z-20 w-full",
-                        isFirstSlot ? "top-0" : "-top-2.5",
-                      )}
-                    >
-                      {String(currentHour)}
-                    </span>
-                  )}
-
-                  {isLastSlot && endTime % 1 === 0 && (
-                    <span className="bg-k-5 text-b3 text-k-500 absolute bottom-0 left-0 z-20 w-full">
-                      {String(endTime)}
-                    </span>
-                  )}
+                <div className="bg-bg text-c3 text-muted sticky left-0 z-20 h-7 pr-1.5 text-right leading-7 tabular-nums">
+                  {currentMinutes === 0 ? timeLabel : null}
                 </div>
 
                 {dates.map((date, dateIdx) => {
@@ -361,16 +364,21 @@ export function Timetable({
                     .getTime()
                     .toString();
 
-                  const isSelected = selectedSlots.has(timeKey);
-                  const userCount = occupancy[timeKey] || 0;
-                  const opacity = opacityMap[userCount] || 0;
+                  // 칠하는 중인 칸은 바뀌기 전 모습으로 그린다.
+                  const isSelected =
+                    selectedSlots.has(timeKey) !== !!pending?.has(timeKey);
+                  const count =
+                    (occupancy[timeKey] ?? 0) +
+                    (countSelection && isSelected ? 1 : 0);
+                  const { month, day, weekday } = dateParts[dateIdx];
 
                   return (
                     <TimetableSlot
                       key={timeKey}
                       isSelected={isSelected}
                       isDisabled={disabled}
-                      opacity={opacity}
+                      heat={heatLevel(count, total)}
+                      label={`${month}월 ${day}일 (${weekday}) ${timeLabel}`}
                       dataDateIdx={dateIdx}
                       dataSlotIdx={slotIdx}
                       onPointerDown={(event) => {
@@ -396,7 +404,6 @@ export function Timetable({
 
                         event.preventDefault();
                       }}
-                      className={cn(disabled && "cursor-default")}
                     />
                   );
                 })}

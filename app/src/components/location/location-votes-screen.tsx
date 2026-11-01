@@ -1,19 +1,26 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { BottomBar } from "@/components/bottom-bar";
 import { ConfirmModal } from "@/components/confirm-modal";
+import { AppBar } from "@/components/layout/app-bar";
+import { BottomCta } from "@/components/layout/bottom-cta";
+import { GuideLine } from "@/components/layout/guide-line";
+import { PageTitle } from "@/components/layout/page-title";
+import { SectionBand } from "@/components/layout/section-band";
+import { Skeleton } from "@/components/layout/skeleton";
 import { DepartureList } from "@/components/location/departure-list";
 import { PlaceSearch } from "@/components/location/place-search";
-import { MainButtonLink } from "@/components/main-button";
 import { MeetingGate } from "@/components/meeting/meeting-gate";
 import { MobileLayout } from "@/components/mobile-layout";
-import { PageHeader } from "@/components/page-header";
 import { ShareButton } from "@/components/share-button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useDeleteDeparture, useDepartures, useSaveDeparture } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 
-function DepartureManager({
+const MIN_DEPARTURES = 2;
+
+export function DepartureManager({
   meeting,
   me,
 }: {
@@ -27,19 +34,36 @@ function DepartureManager({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const mine = departures.data?.find((d) => d.participantId === me.id);
   const showSearch = departures.isSuccess && (!mine || isEditing);
+  const count = departures.data?.length ?? 0;
+  const enough = count >= MIN_DEPARTURES;
+  const stationsPath = `/meetings/${meeting.id}/location/stations`;
+  const votesPath = `/meetings/${meeting.id}/location/votes`;
+
+  const status = (text: string) => (
+    <p className="text-b4 text-muted px-5 py-6 text-center">{text}</p>
+  );
 
   return (
     <MobileLayout>
-      <section className="flex flex-1 flex-col px-5 pb-[106px]">
-        <PageHeader
-          title="출발지 관리"
-          backHref={
-            meeting.scope === "both" ? `/meetings/${meeting.id}/schedule` : "/"
-          }
-        />
+      <AppBar
+        back={
+          meeting.scope === "both" ? `/meetings/${meeting.id}/schedule` : "/"
+        }
+        title="출발지"
+        action={<ShareButton meetingId={meeting.id} path={votesPath} />}
+      />
+      <div className="px-5 pt-2">
+        <PageTitle eyebrow={`${meeting.hostName}님의 모임`}>
+          어디서 출발하세요?
+        </PageTitle>
+        <div className="mt-5">
+          <GuideLine expression="default">
+            출발지를 남기면 가운데 역을 찾아 드려요
+          </GuideLine>
+        </div>
         {showSearch && (
-          <div className="mt-3 mb-5 flex flex-col gap-2">
-            <p className="text-k-900 text-t2">
+          <div className="mt-6 flex flex-col gap-2">
+            <p className="text-text text-t2">
               {mine ? "내 출발지 수정하기" : "내 출발지 등록하기"}
             </p>
             <PlaceSearch
@@ -52,41 +76,57 @@ function DepartureManager({
               }
             />
             {save.isError && (
-              <p className="text-action-red text-b4">
+              <p className="text-error text-b4">
                 출발지를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.
               </p>
             )}
           </div>
         )}
-        {departures.isError ? (
-          <p className="text-b4 text-k-500 py-6 text-center">
-            출발지를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.
-          </p>
-        ) : departures.data ? (
-          <DepartureList
-            departures={departures.data}
-            myParticipantId={me.id}
-            onEdit={() => setEditing(true)}
-            onDelete={setDeletingId}
-          />
-        ) : (
-          <p className="text-b4 text-k-500 py-6 text-center">
-            출발지를 불러오는 중이에요
-          </p>
-        )}
-      </section>
-      <BottomBar>
-        <ShareButton
-          meetingId={meeting.id}
-          path={`/meetings/${meeting.id}/location/votes`}
+      </div>
+      <SectionBand />
+      <div className="text-text text-t2 flex items-baseline justify-between px-5 pb-1">
+        <span>등록된 출발지</span>
+        {departures.data ? (
+          <span className="text-muted text-b3">{count}곳</span>
+        ) : null}
+      </div>
+      {departures.isError ? (
+        status("출발지를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.")
+      ) : departures.data ? (
+        <DepartureList
+          departures={departures.data}
+          myParticipantId={me.id}
+          onEdit={() => setEditing(true)}
+          onDelete={setDeletingId}
         />
-        <MainButtonLink
-          href={`/meetings/${meeting.id}/location/stations`}
-          className="min-w-0 flex-1 px-4"
-        >
-          중간지점 결과 보러가기
-        </MainButtonLink>
-      </BottomBar>
+      ) : (
+        <div role="status" className="flex flex-col gap-3 px-5 py-3.5">
+          <p className="text-b4 text-muted">출발지를 불러오는 중이에요</p>
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+        </div>
+      )}
+      {departures.data && !enough ? (
+        <p role="status" className="text-b3 text-muted px-5 pt-2">
+          출발지를 2개 이상 등록해 주세요
+        </p>
+      ) : null}
+      <BottomCta
+        primary={
+          enough ? (
+            <Link
+              href={stationsPath}
+              className={buttonVariants({ variant: "primary", size: "cta" })}
+            >
+              가운데 역 찾기
+            </Link>
+          ) : (
+            <Button variant="primary" size="cta" disabled>
+              가운데 역 찾기
+            </Button>
+          )
+        }
+      />
       {deletingId !== null && (
         <ConfirmModal
           title="해당 출발지를 삭제할까요?"

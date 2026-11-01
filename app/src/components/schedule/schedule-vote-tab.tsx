@@ -3,55 +3,50 @@
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { pollDates, pollHours, toOccupancy } from "@/components/schedule/poll";
+import { SCHEDULE_TABS_HEIGHT } from "@/components/schedule/schedule-tabs";
 import { Timetable } from "@/components/timetable";
+import { HeatLegend } from "@/components/timetable/heat-legend";
 import type { Meeting, ScheduleSummary } from "@/lib/api-types";
 
+/** 모두의 가능 시간(읽기 전용). 칸을 누르면 내 시간을 고르는 화면으로 간다. */
 export function ScheduleVoteTab({
   meeting,
   summary,
+  meId,
 }: {
   meeting: Meeting;
   summary: ScheduleSummary;
+  meId: number;
 }) {
   const router = useRouter();
   const poll = summary.poll;
   const dates = useMemo(() => pollDates(poll), [poll]);
   const occupancy = useMemo(() => toOccupancy(summary.votes), [summary.votes]);
+  const mySlots = useMemo(
+    () =>
+      (summary.votes.find((v) => v.participantId === meId)?.slots ?? []).map(
+        (slot) => new Date(slot),
+      ),
+    [summary.votes, meId],
+  );
   const { startTime, endTime } = pollHours(poll);
 
   return (
-    <>
-      <section className="flex flex-col gap-3">
-        <p className="text-k-800 text-t2 flex items-center py-1">
-          <span className="mr-0.5">팀원</span>
-          <span className="text-primary-main">{summary.respondedCount}</span>
-          <span>/{meeting.participantCount}</span>
-        </p>
-        {summary.votes.length > 0 && (
-          <ul className="scrollbar-hide flex gap-1.5 overflow-x-auto">
-            {summary.votes.map((vote) => (
-              <li
-                key={vote.participantId}
-                className="bg-k-50 text-b4 text-k-700 shrink-0 rounded-full px-3 py-1.5"
-              >
-                {vote.name}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+    <div className="px-5 pt-3.5">
       <Timetable
-        className="mt-3"
         dates={dates}
         startTime={startTime}
         endTime={endTime}
         occupancy={occupancy}
+        total={meeting.participantCount}
+        selected={mySlots}
         disabled
         onDisabledTap={() =>
           router.push(`/meetings/${meeting.id}/schedule/votes`)
         }
-        stickyHeaderTop={48}
+        stickyHeaderTop={SCHEDULE_TABS_HEIGHT}
       />
-    </>
+      <HeatLegend className="mt-3" total={meeting.participantCount} />
+    </div>
   );
 }

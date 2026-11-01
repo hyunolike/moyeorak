@@ -6,7 +6,7 @@ const CONFIRMED_COPY = "이미 시간이 정해졌어요. 모임 홈에서 확�
 async function createVotedScheduleMeeting(page: Page) {
   await page.goto("/new/schedule");
   await page.getByLabel("팀장 이름").fill("현호");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   await page.getByRole("link", { name: "가능한 시간 남기기" }).click();
@@ -49,8 +49,14 @@ test("팀장이 시간만 모임의 1순위 시간을 정하면 홈에 정해진
     .getByRole("dialog", { name: "이 시간으로 정할까요?" })
     .getByRole("button", { name: "정하기" })
     .click();
-  await expect(page).toHaveURL(new RegExp(`/meetings/${id}$`));
-  await expect(page.getByText(/로 정해졌어요\.$/)).toBeVisible();
+  // 시간만 모임은 확정과 함께 약속 카드 화면으로 간다(카드가 한 번 올라온 뒤 쿼리는 지워진다).
+  await expect(page).toHaveURL(
+    new RegExp(`/meetings/${id}/summary(\\?just=confirmed)?$`),
+  );
+  // 약속 카드는 정해진 날짜를 큰 제목으로 보여준다.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    /\d+월 \d+일/,
+  );
 
   await page.goto(`/meetings/${id}/schedule`);
   await expect(

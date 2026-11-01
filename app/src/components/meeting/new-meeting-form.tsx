@@ -2,21 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MainButton } from "@/components/main-button";
+import { AppBar } from "@/components/layout/app-bar";
+import { BottomCta } from "@/components/layout/bottom-cta";
+import { PageTitle } from "@/components/layout/page-title";
 import { NAME_MAX_LENGTH } from "@/components/meeting/join-invite";
 import { MobileLayout } from "@/components/mobile-layout";
-import { PageHeader } from "@/components/page-header";
 import { Stepper } from "@/components/stepper";
 import { TextField } from "@/components/text-field";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreateMeeting } from "@/lib/api";
 import type { Scope } from "@/lib/api-types";
 
 export type Flow = "both" | "schedule" | "location";
 
 const SCOPES: { value: Scope; label: string }[] = [
-  { value: "both", label: "시간과 장소 둘 다" },
   { value: "schedule", label: "시간만" },
   { value: "location", label: "장소만" },
+  { value: "both", label: "둘 다" },
 ];
 
 export function NewMeetingForm({ flow }: { flow: Flow }) {
@@ -43,61 +46,68 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
   return (
     <MobileLayout>
       <form
-        className="flex min-h-dvh flex-col px-5 pb-5"
+        className="flex flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();
           if (trimmed) handleSubmit();
         }}
       >
-        <PageHeader title="모임정보 입력" backHref="/" />
-        <TextField
-          className="mt-3"
-          label="팀장 이름"
-          placeholder="이름을 입력해주세요"
-          value={name}
-          maxLength={NAME_MAX_LENGTH}
-          onChange={(event) => setName(event.target.value)}
-          error={create.isError}
-          helperText={
-            create.isError
-              ? "모임을 만들지 못했어요. 잠시 후 다시 시도해 주세요"
-              : `최대 ${NAME_MAX_LENGTH}자까지 입력할 수 있어요`
+        <AppBar back="/" />
+        <div className="flex-1 px-5 pt-2">
+          <PageTitle>어떤 약속을 정할까요?</PageTitle>
+          {/* 값이 하나뿐인 단일 선택: 눌린 항목을 다시 눌러도 해제되지 않게 막는다 */}
+          <ToggleGroup
+            aria-label="정할 것"
+            value={[scope]}
+            onValueChange={(next) => {
+              const picked = next[0] as Scope | undefined;
+              if (picked) setScope(picked);
+            }}
+            className="bg-surface-sunken mt-6 w-full p-1"
+            spacing={1}
+          >
+            {SCOPES.map(({ value, label }) => (
+              <ToggleGroupItem
+                key={value}
+                value={value}
+                className="text-b3 h-11 flex-1"
+              >
+                {label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <TextField
+            className="mt-6"
+            label="팀장 이름"
+            placeholder="이름을 입력해주세요"
+            value={name}
+            maxLength={NAME_MAX_LENGTH}
+            onChange={(event) => setName(event.target.value)}
+            error={create.isError}
+            helperText={
+              create.isError
+                ? "모임을 만들지 못했어요. 잠시 후 다시 시도해 주세요"
+                : `최대 ${NAME_MAX_LENGTH}자까지 입력할 수 있어요`
+            }
+          />
+          <Stepper
+            className="mt-6"
+            label="인원 수"
+            value={count}
+            onChange={setCount}
+          />
+        </div>
+        <BottomCta
+          primary={
+            <Button
+              type="submit"
+              size="cta"
+              disabled={!trimmed || create.isPending}
+            >
+              링크 만들기
+            </Button>
           }
         />
-        <Stepper
-          className="mt-6"
-          label="인원 수"
-          value={count}
-          onChange={setCount}
-        />
-        <fieldset className="mt-6 flex flex-col gap-2">
-          <legend className="text-t2 mb-2">무엇을 정할까요?</legend>
-          {SCOPES.map(({ value, label }) => (
-            <label
-              key={value}
-              className={`flex h-12 cursor-pointer items-center gap-3 rounded-lg border px-4 ${
-                scope === value
-                  ? "border-action bg-selected font-semibold"
-                  : "border-border bg-paper"
-              }`}
-            >
-              <input
-                type="radio"
-                name="scope"
-                value={value}
-                checked={scope === value}
-                onChange={() => setScope(value)}
-                className="accent-action size-4"
-              />
-              {label}
-            </label>
-          ))}
-        </fieldset>
-        <div className="mt-auto pt-10">
-          <MainButton type="submit" disabled={!trimmed || create.isPending}>
-            모임 생성하기
-          </MainButton>
-        </div>
       </form>
     </MobileLayout>
   );

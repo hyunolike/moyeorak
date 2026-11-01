@@ -1,15 +1,9 @@
 import { headers } from "next/headers";
 import { Suspense } from "react";
+import { Skeleton } from "@/components/layout/skeleton";
 import { adminTokenFrom, isAdminToken } from "@/server/admin-auth";
 import { computeAiUsage } from "@/server/metrics/ai-usage";
 import { computeMetrics, type Metrics } from "@/server/metrics/compute-metrics";
-
-const wrap = {
-  maxWidth: 480,
-  margin: "0 auto",
-  padding: "24px 16px",
-  color: "var(--color-k-900)",
-} as const;
 
 const pct = (n: number | null) =>
   n === null ? "–" : `${(n * 100).toFixed(1)}%`;
@@ -29,10 +23,8 @@ const rows: { label: string; value: (m: Metrics) => string }[] = [
   { label: "제안 수락률", value: (m) => pct(m.suggestionAcceptRate) },
 ];
 
-const cell = {
-  padding: "10px 8px",
-  borderBottom: "1px solid var(--color-k-100)",
-} as const;
+const cell = "border-border border-b px-2 py-2.5";
+const num = `${cell} text-right`;
 
 async function MetricsTable() {
   const to = new Date();
@@ -41,20 +33,20 @@ async function MetricsTable() {
     computeMetrics({ from: new Date(0), to }),
   ]);
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <table className="w-full border-collapse">
       <thead>
-        <tr style={{ color: "var(--color-k-600)", textAlign: "right" }}>
-          <th style={{ ...cell, textAlign: "left" }}>지표</th>
-          <th style={cell}>최근 30일</th>
-          <th style={cell}>전체</th>
+        <tr className="text-muted text-right">
+          <th className={`${cell} text-left`}>지표</th>
+          <th className={cell}>최근 30일</th>
+          <th className={cell}>전체</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <tr key={r.label}>
-            <td style={cell}>{r.label}</td>
-            <td style={{ ...cell, textAlign: "right" }}>{r.value(recent)}</td>
-            <td style={{ ...cell, textAlign: "right" }}>{r.value(all)}</td>
+            <td className={cell}>{r.label}</td>
+            <td className={num}>{r.value(recent)}</td>
+            <td className={num}>{r.value(all)}</td>
           </tr>
         ))}
       </tbody>
@@ -77,13 +69,13 @@ async function AiUsageTable() {
     "출력 토큰",
   ];
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <table className="w-full border-collapse">
       <thead>
-        <tr style={{ color: "var(--color-k-600)", textAlign: "right" }}>
+        <tr className="text-muted text-right">
           {heads.map((h, i) => (
             <th
               key={h}
-              style={{ ...cell, textAlign: i === 0 ? "left" : "right" }}
+              className={`${cell} ${i === 0 ? "text-left" : "text-right"}`}
             >
               {h}
             </th>
@@ -93,14 +85,14 @@ async function AiUsageTable() {
       <tbody>
         {usage.length === 0 && (
           <tr>
-            <td style={cell} colSpan={heads.length}>
+            <td className={cell} colSpan={heads.length}>
               아직 호출이 없어요
             </td>
           </tr>
         )}
         {usage.map((u) => (
           <tr key={u.purpose}>
-            <td style={cell}>{u.purpose}</td>
+            <td className={cell}>{u.purpose}</td>
             {[
               u.calls,
               u.failed,
@@ -108,7 +100,7 @@ async function AiUsageTable() {
               u.inputTokens,
               u.outputTokens,
             ].map((n, i) => (
-              <td key={heads[i + 1]} style={{ ...cell, textAlign: "right" }}>
+              <td key={heads[i + 1]} className={num}>
                 {n.toLocaleString("ko-KR")}
               </td>
             ))}
@@ -130,14 +122,12 @@ async function Content({
     return <p>접근 권한이 없어요</p>;
   return (
     <>
-      <h1 style={{ fontSize: 20, marginBottom: 16 }}>모임 지표</h1>
-      <Suspense fallback={<p>불러오는 중이에요</p>}>
+      <h1 className="text-h2 text-text mb-4">모임 지표</h1>
+      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <MetricsTable />
       </Suspense>
-      <h2 style={{ fontSize: 16, margin: "24px 0 8px" }}>
-        AI 사용량(최근 30일)
-      </h2>
-      <Suspense fallback={<p>불러오는 중이에요</p>}>
+      <h2 className="text-t2 text-text mt-6 mb-2">AI 사용량(최근 30일)</h2>
+      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <AiUsageTable />
       </Suspense>
     </>
@@ -150,8 +140,8 @@ export default function Page({
   searchParams: Promise<{ token?: string }>;
 }) {
   return (
-    <main style={wrap}>
-      <Suspense fallback={<p>불러오는 중이에요</p>}>
+    <main className="text-text mx-auto max-w-[480px] px-4 py-6">
+      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <Content searchParams={searchParams} />
       </Suspense>
     </main>

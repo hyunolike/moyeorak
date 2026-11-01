@@ -1,21 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BottomBar } from "@/components/bottom-bar";
 import { ConfirmModal } from "@/components/confirm-modal";
-import { MainButton, MainButtonLink } from "@/components/main-button";
+import { BottomCta } from "@/components/layout/bottom-cta";
 import { isAlreadyConfirmed } from "@/components/schedule/natural-time-input";
-import { ShareButton } from "@/components/share-button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useConfirmSchedule } from "@/lib/api";
 import type { BestSlot, Meeting } from "@/lib/api-types";
+import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
 
-const buttonClass = "min-w-0 flex-1 px-4";
+const ctaLink = buttonVariants({ variant: "primary", size: "cta" });
 
 /**
- * 하단 버튼. 최적일정 탭의 팀장에게는 1순위 시간을 정하는 버튼을 보여준다.
+ * 아래 고정 주 버튼. 최적일정 탭의 팀장에게는 1순위 시간을 정하는 버튼을 보여준다.
  * 시간과 장소 모임은 "장소 정하러 가기"(확정 후 장소 단계로), 시간만 모임은
- * "이 시간으로 정하기"(확정 후 모임 홈으로)다. 그 밖에는 "일정 추가하기"/"일정 수정하기"이고,
+ * "이 시간으로 정하기"(확정 후 약속 카드로)다. 공유하기는 앱 바로 옮겼다. 그 밖에는 "일정 추가하기"/"일정 수정하기"이고,
  * 시간이 이미 정해졌으면 투표를 고치는 버튼 대신 다음 단계나 모임 홈으로 보낸다.
  */
 export function ScheduleActions({
@@ -39,7 +40,7 @@ export function ScheduleActions({
   const closed = meeting.status !== "scheduling";
   const isBoth = meeting.scope === "both";
 
-  const confirmTopSlot = (nextPath: string) => {
+  const confirmTopSlot = (nextPath: string, conflictPath = nextPath) => {
     if (!topSlot || closed) {
       router.push(nextPath);
       return;
@@ -52,7 +53,7 @@ export function ScheduleActions({
             // 다른 기기에서 먼저 정했으면(409) 모임 홈에 결과가 있다.
             onSuccess: () => router.push(nextPath),
             onError: (error) => {
-              if (isAlreadyConfirmed(error)) router.push(nextPath);
+              if (isAlreadyConfirmed(error)) router.push(conflictPath);
               else setModalOpen(false);
             },
           },
@@ -65,53 +66,45 @@ export function ScheduleActions({
   const canLockTime = meeting.scope === "schedule" && canConfirm;
 
   return (
-    <BottomBar className="flex-col items-stretch">
-      {confirm.isError && !isAlreadyConfirmed(confirm.error) && !isBoth && (
-        <p className="text-action-red text-b4 text-center">
-          시간을 정하지 못했어요. 잠시 후 다시 시도해 주세요.
-        </p>
-      )}
-      <div className="flex gap-2">
-        <ShareButton
-          meetingId={meeting.id}
-          path={`/meetings/${meeting.id}/schedule`}
-        />
-        {canGoToLocation ? (
-          <MainButton
-            variant="white"
-            className={buttonClass}
-            onClick={() =>
-              closed ? confirmTopSlot(locationPath) : setModalOpen(true)
-            }
-          >
-            장소 정하러 가기
-          </MainButton>
-        ) : canLockTime ? (
-          <MainButton
-            variant="white"
-            className={buttonClass}
-            onClick={() => setModalOpen(true)}
-          >
-            이 시간으로 정하기
-          </MainButton>
-        ) : closed ? (
-          <MainButtonLink
-            href={homePath}
-            variant="white"
-            className={buttonClass}
-          >
-            모임 홈으로 가기
-          </MainButtonLink>
-        ) : (
-          <MainButtonLink
-            href={`/meetings/${meeting.id}/schedule/votes`}
-            variant="white"
-            className={buttonClass}
-          >
-            {hasMyVote ? "일정 수정하기" : "일정 추가하기"}
-          </MainButtonLink>
-        )}
-      </div>
+    <>
+      <BottomCta
+        primary={
+          <>
+            {confirm.isError &&
+              !isAlreadyConfirmed(confirm.error) &&
+              !isBoth && (
+                <p className="text-error text-b4 text-center">
+                  시간을 정하지 못했어요. 잠시 후 다시 시도해 주세요.
+                </p>
+              )}
+            {canGoToLocation ? (
+              <Button
+                size="cta"
+                onClick={() =>
+                  closed ? confirmTopSlot(locationPath) : setModalOpen(true)
+                }
+              >
+                장소 정하러 가기
+              </Button>
+            ) : canLockTime ? (
+              <Button size="cta" onClick={() => setModalOpen(true)}>
+                이 시간으로 정하기
+              </Button>
+            ) : closed ? (
+              <Link href={homePath} className={ctaLink}>
+                모임 홈으로 가기
+              </Link>
+            ) : (
+              <Link
+                href={`/meetings/${meeting.id}/schedule/votes`}
+                className={ctaLink}
+              >
+                {hasMyVote ? "일정 수정하기" : "일정 추가하기"}
+              </Link>
+            )}
+          </>
+        }
+      />
       {isModalOpen &&
         (isBoth ? (
           <ConfirmModal
@@ -128,10 +121,16 @@ export function ScheduleActions({
             caption="정한 뒤에는 일정을 추가하거나 수정할 수 없어요."
             confirmLabel="정하기"
             pending={confirm.isPending}
-            onConfirm={() => confirmTopSlot(homePath)}
+            // 방금 정했으면 약속 카드로, 다른 기기에서 먼저 정했으면(409) 모임 홈으로 간다.
+            onConfirm={() =>
+              confirmTopSlot(
+                `${homePath}/summary?${JUST_CONFIRMED_QUERY}`,
+                homePath,
+              )
+            }
             onClose={() => setModalOpen(false)}
           />
         ))}
-    </BottomBar>
+    </>
   );
 }

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 body {
   background: var(--color-bg);
@@ -12,5 +14,41 @@ body {
 
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/*
+ * shadcn/ui 컴포넌트가 기대하는 이름을 v4 역할로 잇는다.
+ * 색과 반지름의 정본은 tokens.css다. 여기서는 v4 역할 이름(bg, text, muted,
+ * border, radius-sm/md/lg)을 다시 정의하지 않는다. muted는 v4에서 "보조 글자색"이라
+ * shadcn의 muted(옅은 바탕)와 뜻이 다르므로, 컴포넌트에는 bg-surface-sunken과
+ * text-muted를 직접 쓴다.
+ */
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-paper);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-paper);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-action);
+  --color-primary-foreground: var(--color-on-action);
+  --color-secondary: var(--color-surface-sunken);
+  --color-secondary-foreground: var(--color-text);
+  --color-muted-foreground: var(--color-muted);
+  --color-accent: var(--color-selected);
+  --color-accent-foreground: var(--color-text);
+  --color-destructive: var(--color-error);
+  --color-input: var(--color-input-border);
+  --color-ring: var(--color-focus);
+  --radius: var(--radius-md);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-focus;
+  }
+  html {
+    @apply font-sans;
   }
 }

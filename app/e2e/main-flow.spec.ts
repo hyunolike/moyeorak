@@ -44,9 +44,12 @@ async function createMeeting(
   await page.goto("/");
   await page.getByRole("link", { name: "모임 만들기" }).click();
   await page.getByLabel("팀장 이름").fill(name);
-  await page.getByLabel(scope).check();
+  await page.getByRole("button", { name: scope, exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: scope, exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("participant-count")).toHaveText("2명");
-  await page.getByRole("button", { name: "모임 생성하기" }).click();
+  await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   await page.goto(`${new URL(page.url()).pathname}/${stage}`);
 }
@@ -100,7 +103,7 @@ async function expectSeoulSlots(page: Page, id: string) {
 }
 
 test("모임을 만들고 투표하면 최적일정에 내 이름이 나온다", async ({ page }) => {
-  await createMeeting(page, "시간과 장소 둘 다", "현호", "schedule");
+  await createMeeting(page, "둘 다", "현호", "schedule");
   await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
   scheduleMeetingId = meetingIdFrom(page);
 
@@ -168,7 +171,7 @@ test("출발지 2개를 넣으면 중간지점 결과에 역 이름이 나온다
 
   await page.reload();
   await expect(page.getByTestId("departure-item")).toHaveCount(2);
-  await page.getByRole("link", { name: "중간지점 결과 보러가기" }).click();
+  await page.getByRole("link", { name: "가운데 역 찾기" }).click();
   await expect(page).toHaveURL(/\/location\/stations$/);
   await expect(page.getByTestId("station-name")).toBeVisible();
   await expect(page.getByTestId("per-participant")).toHaveCount(2);
@@ -177,7 +180,7 @@ test("출발지 2개를 넣으면 중간지점 결과에 역 이름이 나온다
 test("확정된 모임에 투표를 보내면 409이고, 헤더가 없으면 401", async ({
   page,
 }) => {
-  await createMeeting(page, "시간과 장소 둘 다", "현호", "schedule");
+  await createMeeting(page, "둘 다", "현호", "schedule");
   await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
   const id = meetingIdFrom(page);
   await voteThreeSlots(page);
@@ -231,7 +234,7 @@ test.describe("서울 밖 브라우저", () => {
   test("뉴욕 시간대에서 투표해도 서울 슬롯에 저장되고 같은 시각으로 보인다", async ({
     page,
   }) => {
-    await createMeeting(page, "시간과 장소 둘 다", "현호", "schedule");
+    await createMeeting(page, "둘 다", "현호", "schedule");
     await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
     const id = meetingIdFrom(page);
     expect(

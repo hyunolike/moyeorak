@@ -11,7 +11,7 @@ export function MobileLayout({
   return (
     <main
       className={cn(
-        "bg-k-5 mx-auto flex min-h-dvh w-full max-w-[480px] flex-col",
+        "bg-bg mx-auto flex min-h-dvh w-full max-w-[480px] flex-col",
         className,
       )}
     >
