@@ -1,3 +1,4 @@
+import { formatDuration } from "@/components/location/format";
 import type { Departure, Station } from "@/lib/api-types";
 
 export type MapProps = {
@@ -77,7 +78,7 @@ export function placeLabel(
 }
 
 export function stationLabel(station: Station) {
-  return `${station.name} · 평균 ${Math.round(station.averageMinutes)}분`;
+  return `${station.name} · 평균 ${formatDuration(station.averageMinutes)}`;
 }
 
 /** 키가 없거나 SDK가 실패했을 때 쓰는 그림 지도. 시안 #stations의 지도와 같은 그림이다. */

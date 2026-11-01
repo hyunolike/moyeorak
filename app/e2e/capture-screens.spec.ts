@@ -15,11 +15,12 @@ const KEYS = {
   민지: "capshotminji000000001",
   준호: "capshotjunho000000001",
 };
+// 이동 시간이 20~45분쯤 나오도록 마포, 서대문, 용산에 모여 있는 출발지를 쓴다(목 이동 시간은 거리로 계산한다).
 const PLACES = {
   현호: { label: "합정역", lat: 37.5497, lng: 126.9137 },
   서연: { label: "신촌역", lat: 37.5551, lng: 126.9368 },
-  민지: { label: "강남역", lat: 37.4979, lng: 127.0276 },
-  준호: { label: "건대입구역", lat: 37.5404, lng: 127.0693 },
+  민지: { label: "공덕역", lat: 37.544, lng: 126.9516 },
+  준호: { label: "이태원역", lat: 37.5345, lng: 126.9945 },
 } as const;
 type Name = keyof typeof PLACES;
 

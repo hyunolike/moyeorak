@@ -117,6 +117,17 @@ test("키가 없으면 MeetMap은 바로 그림 지도를 그린다", () => {
   expect(screen.getByText("녹사평 · 평균 30분")).toBeInTheDocument();
 });
 
+test("지도 라벨의 평균 시간도 목록처럼 시간과 분으로 쓴다", () => {
+  render(
+    <MeetMap
+      departures={departures}
+      stations={[{ ...stations[0], averageMinutes: 76 }]}
+      selectedId={1}
+    />,
+  );
+  expect(screen.getByText("녹사평 · 평균 1시간 16분")).toBeInTheDocument();
+});
+
 test("카카오 SDK가 3초 안에 그리지 못하면 그림 지도로 바뀐다", () => {
   vi.useFakeTimers();
   vi.stubEnv("NEXT_PUBLIC_KAKAO_MAP_KEY", "test-key");
