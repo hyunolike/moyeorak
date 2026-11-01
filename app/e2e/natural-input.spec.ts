@@ -14,6 +14,11 @@ async function openVoteScreen(page: Page) {
 }
 
 const pressed = (page: Page) => page.locator('button[aria-pressed="true"]');
+/** 말로 칠한 칸은 한 칸씩 드러난다. 다 칠한 뒤의 눌린 칸 수를 센다. */
+async function paintedCount(page: Page) {
+  await expect(page.locator("[data-painting]")).toHaveCount(0);
+  return pressed(page).count();
+}
 const pickSlot = (page: Page, slot: number) =>
   page.locator(`button[data-date-idx="1"][data-slot-idx="${slot}"]`).click();
 
@@ -27,7 +32,7 @@ test("말로 입력하면 저장 전에 시간표가 칠해진다", async ({ pag
   await page.getByLabel("말로 남기기").fill("평일 저녁 다 돼");
   await page.getByRole("button", { name: "칠해 보기" }).click();
   await expect(page.getByRole("status")).toContainText("평일 저녁을 칠했어요");
-  expect(await pressed(page).count()).toBeGreaterThan(0);
+  expect(await paintedCount(page)).toBeGreaterThan(0);
   expect(await savedVotes(page, id)).toHaveLength(0);
   await page.getByRole("button", { name: "이 시간으로 저장" }).click();
   await expect(page).toHaveURL(/\/schedule$/);
@@ -43,7 +48,7 @@ test("되돌리기는 칠하기 전 선택으로 돌아간다", async ({ page })
   await page.getByLabel("말로 남기기").fill("평일 저녁 다 돼");
   await page.getByRole("button", { name: "칠해 보기" }).click();
   await expect(page.getByRole("status")).toContainText("평일 저녁을 칠했어요");
-  expect(await pressed(page).count()).toBeGreaterThan(1);
+  expect(await paintedCount(page)).toBeGreaterThan(1);
   await page.getByRole("button", { name: "되돌리기" }).click();
   await expect(pressed(page)).toHaveCount(1);
   await expect(page.getByRole("button", { name: "되돌리기" })).toHaveCount(0);
@@ -124,7 +129,7 @@ test("칠한 뒤 다음 입력이 실패하거나 비면 되돌리기가 사라�
   await page.getByLabel("말로 남기기").fill("평일 저녁 다 돼");
   await page.getByRole("button", { name: "칠해 보기" }).click();
   await expect(page.getByRole("status")).toContainText("평일 저녁을 칠했어요");
-  const painted = await pressed(page).count();
+  const painted = await paintedCount(page);
 
   // 빈 결과
   await page.getByLabel("말로 남기기").fill("아무 때나");

@@ -1,11 +1,21 @@
-import type { PointerEvent } from "react";
+"use client";
+
+import { animate, useReducedMotion } from "motion/react";
+import { type PointerEvent, useEffect, useRef } from "react";
+import { HEAT_BG, type HeatLevel } from "@/components/timetable/heat";
 import { cn } from "@/lib/cn";
 
+/** 칠한 칸이 자리 잡는 스프링(MOTION.md "손으로 끄는 것"). */
+const SETTLE_SPRING = { type: "spring", stiffness: 420, damping: 36 } as const;
+
 export interface TimetableSlotProps {
+  /** 내가 고른 칸. 잉크 테두리로 그린다. */
   isSelected?: boolean;
   isDisabled?: boolean;
-  opacity?: number;
-  onClick?: () => void;
+  /** 가능 인원 비율 단계(0~4). */
+  heat?: HeatLevel;
+  /** 화면 읽기용 칸 이름(날짜와 시각). */
+  label?: string;
   onPointerDown?: (event: PointerEvent<HTMLButtonElement>) => void;
   className?: string;
   dataDateIdx?: number;
@@ -13,31 +23,36 @@ export interface TimetableSlotProps {
 }
 
 export function TimetableSlot({
-  isSelected,
+  isSelected = false,
   isDisabled,
-  opacity = 0,
-  onClick,
+  heat = 0,
+  label,
   onPointerDown,
   className,
   dataDateIdx,
   dataSlotIdx,
 }: TimetableSlotProps) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLButtonElement & HTMLDivElement>(null);
+  const wasSelectedRef = useRef(isSelected);
+
+  // 칠해지는 순간(고르지 않음 → 고름) 1.06배로 커졌다 스프링으로 자리를 잡는다.
+  // 처음 그릴 때와 움직임 줄이기 설정에서는 색만 바뀐다.
+  useEffect(() => {
+    const painted = isSelected && !wasSelectedRef.current;
+    wasSelectedRef.current = isSelected;
+    if (!painted || reduce || !ref.current) return;
+    const controls = animate(ref.current, { scale: [1.06, 1] }, SETTLE_SPRING);
+    return () => controls.stop();
+  }, [isSelected, reduce]);
+
   const slotClassName = cn(
-    "h-10 w-full rounded-md border transition-all",
-    "border-k-50 bg-k-10",
+    "h-7 w-full rounded-sm transition-colors duration-(--duration-press)",
+    HEAT_BG[heat],
+    isSelected && "ring-ink-900 ring-2 ring-inset",
     isDisabled ? "cursor-default" : "cursor-pointer",
-    isSelected && "border-primary-main bg-primary-main",
     className,
   );
-
-  const slotStyle = {
-    backgroundColor:
-      !isSelected && opacity > 0
-        ? `color-mix(in srgb, var(--color-p-main) ${opacity * 100}%, transparent)`
-        : undefined,
-    borderColor:
-      !isSelected && opacity === 1 ? "var(--color-p-main)" : undefined,
-  };
 
   /**
    * 읽기 전용 슬롯은 button으로 그리지 않는다. 네이티브 disabled 버튼은 포인터
@@ -47,24 +62,28 @@ export function TimetableSlot({
   if (isDisabled) {
     return (
       <div
+        ref={ref}
         data-date-idx={dataDateIdx}
         data-slot-idx={dataSlotIdx}
+        data-heat={heat}
+        data-mine={isSelected || undefined}
         className={slotClassName}
-        style={slotStyle}
       />
     );
   }
 
   return (
     <button
+      ref={ref}
       type="button"
-      onClick={onClick}
       onPointerDown={onPointerDown}
       data-date-idx={dataDateIdx}
       data-slot-idx={dataSlotIdx}
-      className={slotClassName}
-      style={slotStyle}
+      data-heat={heat}
+      data-mine={isSelected || undefined}
+      aria-label={label}
       aria-pressed={isSelected}
+      className={slotClassName}
     />
   );
 }
