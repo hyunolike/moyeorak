@@ -28,7 +28,7 @@ function components(data, width, height) {
 
 test("심볼과 받침의 역 점은 32px에서도 선에 붙어 있고 단색 중심은 실제 구멍이다", async () => {
   const consonant = (mono) => arrival({ left: 0, top: 41, turnX: 32, stationY: 57.5, radius: 6.5, mono });
-  for (const [draw, cx, cy] of [[(mono) => logoSymbol({ mono }), 32, 46], [consonant, 38, 57.5]]) {
+  for (const [draw, cx, cy] of [[(mono) => logoSymbol({ mono }), 32, 44], [consonant, 38, 57.5]]) {
     for (const size of [32, 64]) {
       const color = await render(draw(false), size);
       assert.equal(components(color.data, size, size), 1, "station is attached, never a floating period");
@@ -80,13 +80,13 @@ test("16px 심볼의 좌표는 온전한 픽셀에 맞고 두께 2px의 선이 �
     }
   }
   const { data } = await sharp(Buffer.from(src)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  // 왼쪽 노선(위)과 오른쪽 노선(아래)이 각각 2px 두께로 남는다
+  // 양쪽 노선(같은 높이)과 줄기가 2px 두께로 남는다
   for (const [x, y] of [[4, 2], [4, 3], [14, 2], [14, 3], [8, 8]]) {
     assert.deepEqual([...data.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4)], [23, 24, 26, 255], `${x},${y}`);
   }
 });
 
-test("여의 ㅇ은 정원이라 24px에서 ㅁ과 구분된다", async () => {
+test("여의 ㅇ은 정원이라 ㅁ과 구분된다", async () => {
   // ㅇ 상단 좌우 모서리 자리가 비어 있으면 둥근 것이다 (네모면 잉크)
   const { data, info } = await render(finalWordmark(), 64, WORDMARK.width);
   const ink = (x, y) => data[(y * info.width + x) * 4 + 3] > 127;

@@ -29,3 +29,27 @@ test("style 속성 안의 색도 검사한다", () => {
   const svg = '<svg><rect style="fill:#000;stroke:#FF6A13"/></svg>';
   assert.match(checkSvg(svg, "s.svg").join("\n"), /#000000/);
 });
+
+test("따옴표, 대소문자, style 요소, 금지 요소를 우회하지 못한다", () => {
+  const cases = [
+    ["작은따옴표 속성", "<svg><rect fill='#FF0000'/></svg>", /#FF0000/],
+    ["style 요소", "<svg><style>rect{fill:#F00}</style><rect fill=\"#FF6A13\"/></svg>", /style/],
+    ["대문자 속성 이름", '<svg><rect style="FILL:#F00"/></svg>', /#FF0000/],
+    ["소문자 그라데이션 태그", '<svg><lineargradient id="g"/><rect fill="#FF6A13"/></svg>', /lineargradient/],
+    ["pattern, mask, animate, tspan", '<svg><pattern id="p"/><mask id="m"/><animate to="#F00"/><tspan>x</tspan></svg>', /pattern[\s\S]*mask[\s\S]*animate[\s\S]*tspan/],
+    ["stop-opacity, flood-color", '<svg><rect fill="#FF6A13" stop-opacity="0.5" flood-color="#00FF00"/></svg>', /stop-opacity[\s\S]*#00FF00/],
+    ["fill 없는 도형은 기본 검정", '<svg><rect width="1" height="1"/></svg>', /fill 없음/],
+    ["currentColor", '<svg><path fill="currentColor" d="M0 0"/></svg>', /currentColor/],
+    ["url 참조", '<svg><rect fill="url(#g)"/></svg>', /url\(/],
+  ];
+  for (const [name, svg, pattern] of cases) {
+    const found = checkSvg(svg, `${name}.svg`).join("\n");
+    assert.match(found, pattern, name);
+  }
+});
+
+test("생성기가 쓰는 요소만 허용한다", () => {
+  const ok = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="x"><title>t</title><g transform="matrix(-1 0 0 1 64 0)"><path fill="#17181A" fill-rule="evenodd" d="M0 0"/><circle cx="1" cy="1" r="1" fill="#FF6A13"/><rect width="1" height="1" fill="#FFFFFF"/></g></svg>';
+  assert.deepEqual(checkSvg(ok, "ok.svg"), []);
+  assert.match(checkSvg('<svg><foreignObject/></svg>', "f.svg").join(""), /foreignObject/);
+});

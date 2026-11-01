@@ -134,3 +134,14 @@ test("띠 오른쪽 끝에는 심볼과 같은 역 고리가 뚫려 있다", asy
   const mono = await sharp(Buffer.from(majuSvg("default", { mono: true }))).ensureAlpha().raw().toBuffer();
   assert.equal(mono[(57 * 64 + 50) * 4 + 3], 0, "단색에서는 투명 구멍");
 });
+
+test("단색에서도 얼굴 몸통은 잉크로 남아 눈과 입이 보인다", async () => {
+  for (const { expression, small } of variants) {
+    const mono = await sharp(Buffer.from(majuSvg(expression, { mono: true, small }))).ensureAlpha().raw().toBuffer();
+    const isInk = (x, y) => mono[(y * 64 + x) * 4 + 3] > 200 && mono[(y * 64 + x) * 4] < 60;
+    // 눈 바깥 왼쪽 가장자리, 이마, 눈 사이
+    for (const [x, y] of [[6, 32], [32, 7], [32, 24]]) {
+      assert.ok(isInk(x, y), `${expression}${small ? " small" : ""}: (${x},${y})는 잉크여야 한다`);
+    }
+  }
+});

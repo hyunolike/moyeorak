@@ -88,40 +88,82 @@ async function conceptPreviews(root, concept, out) {
     .toFile(path.join(out, `${concept}-og.png`));
 }
 
-async function majuSheet(root, out) {
-  const names = ["default", "thinking", "happy", "sorry", "waiting"];
-  const sizes = [24, 32, 64];
-  const comps = [];
-  const rows = [
-    { y: 0, bg: PALETTE.white },
-    { y: 180, bg: PALETTE.tangerine100 },
-  ];
-  const rowBg = Buffer.from(
-    `<svg width="1000" height="360"><rect y="180" width="1000" height="180" fill="${PALETTE.tangerine100}"/></svg>`,
+/** 승인된 최종 로고(logo/final)를 실제 자리에 놓은 미리보기. */
+async function finalPreviews(root, out) {
+  const dir = path.join(root, "logo", "final");
+  const small16 = await renderPng(path.join(dir, "symbol-16.svg"), 16);
+  fs.writeFileSync(path.join(out, "final-favicon-16.png"), small16);
+  fs.writeFileSync(path.join(out, "final-favicon-16-x8.png"), await magnify(small16, 16, 8));
+  const small32 = await renderPng(path.join(dir, "symbol.svg"), 32);
+  fs.writeFileSync(path.join(out, "final-favicon-32.png"), small32);
+  fs.writeFileSync(path.join(out, "final-favicon-32-x8.png"), await magnify(small32, 32, 8));
+  fs.writeFileSync(path.join(out, "final-app-icon.png"), await renderPng(path.join(dir, "app-icon.svg"), 180));
+  const head = await renderHeight(path.join(dir, "horizontal.svg"), 28);
+  await canvas(375, 56, PALETTE.white)
+    .composite([{ input: head.buf, left: 16, top: 14 }])
+    .png()
+    .toFile(path.join(out, "final-header.png"));
+  const og = await renderHeight(path.join(dir, "horizontal.svg"), 48);
+  const bars = Buffer.from(
+    `<svg width="1200" height="630"><rect x="72" y="250" width="820" height="72" rx="10" fill="${PALETTE.ink}"/><rect x="72" y="346" width="560" height="72" rx="10" fill="${PALETTE.ink}"/></svg>`,
   );
-  comps.push({ input: rowBg, left: 0, top: 0 });
+  await canvas(1200, 630, PALETTE.white)
+    .composite([{ input: og.buf, left: 72, top: 64 }, { input: bars, left: 0, top: 0 }])
+    .png()
+    .toFile(path.join(out, "final-og.png"));
+}
+
+/** 마주 일곱 표정을 세 줄로: 일반(흰 바탕), 소형(연한 탠저린 바탕), 단색(흰 바탕). 각 24, 32, 64px. */
+async function majuSheet(root, out) {
+  const names = ["default", "thinking", "happy", "sorry", "waiting", "ignored", "match"];
+  const sizes = [24, 32, 64];
+  const colW = 190;
+  const rowH = 180;
+  const width = 30 + names.length * colW;
+  const height = rowH * 3;
+  const rows = [
+    { y: 0, dir: "", bg: PALETTE.white },
+    { y: rowH, dir: "small", bg: PALETTE.tangerine100 },
+    { y: rowH * 2, dir: "mono", bg: PALETTE.white },
+  ];
+  const comps = [
+    {
+      input: Buffer.from(
+        `<svg width="${width}" height="${height}"><rect y="${rowH}" width="${width}" height="${rowH}" fill="${PALETTE.tangerine100}"/></svg>`,
+      ),
+      left: 0,
+      top: 0,
+    },
+  ];
   for (const row of rows) {
-    names.forEach((name, i) => {
-      let x = 30 + i * 195;
+    for (const [i, name] of names.entries()) {
+      let x = 30 + i * colW;
       for (const s of sizes) {
-        comps.push({ name, s, x, y: row.y + 90 - s / 2 });
+        const svgPath = path.join(root, "maju", row.dir === "small" ? "small" : "", `${name}.svg`);
+        const buf = row.dir === "mono"
+          ? await renderMono(svgPath, s)
+          : await renderPng(svgPath, s);
+        comps.push({ input: buf, left: Math.round(x), top: Math.round(row.y + rowH / 2 - s / 2) });
         x += s + 16;
       }
-    });
-  }
-  const rendered = [];
-  for (const c of comps) {
-    if (!c.name) {
-      rendered.push(c);
-      continue;
     }
-    const buf = await renderPng(path.join(root, "maju", `${c.name}.svg`), c.s);
-    rendered.push({ input: buf, left: Math.round(c.x), top: Math.round(c.y) });
   }
-  await canvas(1000, 360, PALETTE.white)
-    .composite(rendered)
+  await canvas(width, height, PALETTE.white)
+    .composite(comps)
     .png()
     .toFile(path.join(out, "maju-sheet.png"));
+}
+
+/** 단색 마주: 생성기를 직접 불러 mono SVG를 렌더한다. */
+async function renderMono(svgPath, size) {
+  const { majuSvg } = await import("./build-maju.mjs");
+  const name = path.basename(svgPath, ".svg");
+  const svg = majuSvg(name, { mono: true });
+  const density = Math.max(72, Math.ceil(((72 * size) / 64) * 4));
+  return sharp(Buffer.from(svg), { density })
+    .resize(size, size, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -134,6 +176,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     .map((e) => e.name)
     .sort();
   for (const c of concepts) await conceptPreviews(root, c, out);
+  if (fs.existsSync(path.join(root, "logo", "final"))) await finalPreviews(root, out);
   await majuSheet(root, out);
   console.log(`미리보기: 안 ${concepts.length}개, PNG ${fs.readdirSync(out).length}개`);
 }
