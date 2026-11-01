@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
-import { SuggestionCard } from "@/components/suggest/suggestion-card";
+import {
+  SuggestionCard,
+  SuggestionDeck,
+} from "@/components/suggest/suggestion-card";
 import type { Suggestion } from "@/server/suggest/types";
 
 const schedule = (
@@ -23,7 +26,7 @@ const schedule = (
 const meta = {
   title: "제안/SuggestionCard",
   component: SuggestionCard,
-  args: { onAccept: fn(), onNext: fn(), busy: false },
+  args: { selected: true },
 } satisfies Meta<typeof SuggestionCard>;
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -72,6 +75,27 @@ export const Location: Story = {
   },
 };
 
-export const Busy: Story = {
-  args: { suggestion: schedule({}), busy: true },
+/** 카드 두 장을 옆으로 넘기는 덱. 아래 고정 버튼과 확정 시트까지 포함한다. */
+export const Deck: StoryObj<typeof SuggestionDeck> = {
+  render: () => (
+    <SuggestionDeck
+      suggestions={[
+        schedule({}),
+        schedule({ id: 2, axis: "soonest", source: "rule" }),
+      ]}
+      onAccept={fn()}
+      onNext={fn()}
+    />
+  ),
+};
+
+export const DeckBusy: StoryObj<typeof SuggestionDeck> = {
+  render: () => (
+    <SuggestionDeck
+      suggestions={[schedule({})]}
+      onAccept={fn()}
+      onNext={fn()}
+      busy
+    />
+  ),
 };

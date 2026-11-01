@@ -56,7 +56,7 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   await page.goto(`/meetings/${id}`);
   await page.getByRole("link", { name: "제안 받기" }).click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${id}/suggest$`));
-  await expect(page.locator("article")).toBeVisible();
+  await expect(page.locator('article[aria-current="true"]')).toBeVisible();
   await page.getByRole("button", { name: "이걸로 확정" }).click();
   const confirmed = page.waitForResponse(
     (res) =>
@@ -87,7 +87,7 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   await page.goto(`/meetings/${id}`);
   await page.getByRole("link", { name: "제안 받기" }).click();
   await expect(page).toHaveURL(new RegExp(`/meetings/${id}/suggest$`));
-  await expect(page.locator("article")).toBeVisible();
+  await expect(page.locator('article[aria-current="true"]')).toBeVisible();
   await page.getByRole("button", { name: "이걸로 확정" }).click();
   await page
     .getByRole("dialog", { name: "이걸로 확정할까요?" })
