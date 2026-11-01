@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import sharp from "sharp";
+import { majuSvg } from "./build-maju.mjs";
 import { checkSvg } from "./qa.mjs";
 
 const expressions = ["default", "thinking", "happy", "sorry", "waiting", "ignored", "match"];
@@ -120,7 +121,16 @@ test("일반형 띠는 하단 끝에 붙고 단색에서 투명 틈으로 나뉘
     const mono = await render(majuSvg(expression, { mono: true }), 64);
     assert.ok(isInk(normal, 57 * 64 + 32), expression);
     assert.deepEqual([...small.subarray((57 * 64 + 32) * 4, (57 * 64 + 32) * 4 + 4)], [255, 106, 19, 255]);
-    assert.equal(mono[(52 * 64 + 32) * 4 + 3], 0, expression);
+    assert.equal(mono[(50 * 64 + 32) * 4 + 3], 0, expression);
     assert.ok(isInk(mono, 57 * 64 + 32), expression);
   }
+});
+
+test("띠 오른쪽 끝에는 심볼과 같은 역 고리가 뚫려 있다", async () => {
+  const { data } = await sharp(Buffer.from(majuSvg("default"))).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const px = (x, y) => [...data.subarray((y * 64 + x) * 4, (y * 64 + x) * 4 + 4)];
+  assert.deepEqual(px(50, 57), [255, 106, 19, 255], "고리 안은 탠저린");
+  assert.deepEqual(px(44, 57).slice(0, 3), [23, 24, 26], "고리 왼쪽은 잉크 띠");
+  const mono = await sharp(Buffer.from(majuSvg("default", { mono: true }))).ensureAlpha().raw().toBuffer();
+  assert.equal(mono[(57 * 64 + 50) * 4 + 3], 0, "단색에서는 투명 구멍");
 });

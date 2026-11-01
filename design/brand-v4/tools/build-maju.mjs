@@ -6,10 +6,13 @@ import { PALETTE } from "./palette.mjs";
 // Independent character: the station stripe sits at the bottom edge.
 // Keep the silhouette fixed when changing expression or switching to mono.
 const FACE = "M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z";
-const stripeLeft = 16.5 - Math.sqrt(14.5 ** 2 - 6.5 ** 2);
-const BAND = `M${stripeLeft} 54 H${64 - stripeLeft} A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 ${stripeLeft} 54 Z`;
-const monoEdge = 16.5 - Math.sqrt(14.5 ** 2 - 3.5 ** 2);
-const MONO_BODY = `M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 ${64 - monoEdge} 51 H${monoEdge} A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z`;
+// 띠는 역명판의 노선 띠다. 오른쪽 끝에 로고 심볼과 같은 역 고리(구멍)를
+// 뚫어, 심볼이 마주 얼굴 안에 산다는 관계를 만든다.
+const stripeLeft = 16.5 - Math.sqrt(14.5 ** 2 - 4.5 ** 2);
+const STATION = "M47 57 A3 3 0 1 0 53 57 A3 3 0 1 0 47 57 Z";
+const BAND = `M${stripeLeft} 52 H${64 - stripeLeft} A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 ${stripeLeft} 52 Z ${STATION}`;
+const monoEdge = 16.5 - Math.sqrt(14.5 ** 2 - 1.5 ** 2);
+const MONO_BODY = `M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 ${64 - monoEdge} 49 H${monoEdge} A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z`;
 
 function pill(x, y, width, height) {
   const r = Math.min(width, height) / 2;
@@ -21,14 +24,14 @@ function pill(x, y, width, height) {
 const EXPRESSIONS = Object.freeze({
   default: {
     label: "기본",
-    eyes: [pill(17, 19, 10, 14), pill(37, 19, 10, 14)],
-    mouth: "M23 35 C24 34 25 34 26 35 Q32 41 38 35 C39 34 40 34 41 35 C42 36 42 38 41 39 Q32 48 23 39 C22 38 22 36 23 35 Z",
+    eyes: [pill(15, 18, 12, 16), pill(37, 18, 12, 16)],
+    mouth: "M23 37 C24 36 25 36 26 37 Q32 43 38 37 C39 36 40 36 41 37 C42 38 42 40 41 41 Q32 50 23 41 C22 40 22 38 23 37 Z",
     note: "기본(default): 세로로 열린 두 눈과 짧고 두꺼운 미소.",
   },
   thinking: {
     label: "생각 중",
-    eyes: [pill(17, 16, 10, 16), pill(37, 25, 12, 6)],
-    mouth: pill(29, 35, 8, 9),
+    eyes: [pill(15, 15, 12, 18), pill(37, 25, 14, 7)],
+    mouth: pill(29, 37, 8, 9),
     note: "생각 중(thinking): 한쪽은 높게 열린 세로 눈, 반대쪽은 낮은 가로 눈, 작게 벌린 타원 입.",
   },
   happy: {
@@ -51,14 +54,14 @@ const EXPRESSIONS = Object.freeze({
   },
   waiting: {
     label: "기다림",
-    eyes: [pill(17, 13, 10, 13), pill(37, 13, 10, 13)],
-    mouth: pill(27, 35, 10, 9),
+    eyes: [pill(15, 12, 12, 15), pill(37, 12, 12, 15)],
+    mouth: pill(27, 36, 10, 9),
     note: "기다림(waiting): 위로 시선을 올린 두 세로 눈과 작고 둥근 열린 입. 납작한 눈과 수평 입을 없애 기대하는 표정으로 바꿨다.",
   },
   ignored: {
     label: "읽씹당함",
-    eyes: [pill(20, 22, 10, 9), pill(40, 22, 10, 9)],
-    mouth: pill(26, 38, 12, 5),
+    eyes: [pill(19, 21, 12, 10), pill(39, 21, 12, 10)],
+    mouth: pill(26, 39, 12, 5),
     note: "읽씹당함(ignored): 오른쪽으로 시선을 옮긴 낮고 둥근 눈과 짧은 무표정 입. 초대가 읽힌 뒤 응답이 없을 때 가볍게 한 번만 알린다. 상대를 탓하거나 화난 눈썹을 쓰지 않는다.",
   },
   match: {
@@ -84,8 +87,8 @@ export function majuSvg(expression, { mono = false, small = false } = {}) {
   // Split the positive mono stripe from the face with an actual transparent
   // gap. Its endpoints follow the silhouette, so nothing protrudes outside.
   const artwork = mono
-    ? `<path fill="${PALETTE.ink}" fill-rule="evenodd" d="${small ? FACE : MONO_BODY} ${features}"/>${small ? "" : `\n  <path fill="${PALETTE.ink}" d="${BAND}"/>`}`
-    : `<path fill="${PALETTE.tangerine500}" d="${FACE}"/>\n  <path fill="${PALETTE.ink}" d="${features}${small ? "" : ` ${BAND}`}"/>`;
+    ? `<path fill="${PALETTE.ink}" fill-rule="evenodd" d="${small ? FACE : MONO_BODY} ${features}"/>${small ? "" : `\n  <path fill="${PALETTE.ink}" fill-rule="evenodd" d="${BAND}"/>`}`
+    : `<path fill="${PALETTE.tangerine500}" d="${FACE}"/>\n  <path fill="${PALETTE.ink}" fill-rule="evenodd" d="${features}${small ? "" : ` ${BAND}`}"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="마주 — ${label}${small ? " 소형" : ""}">\n  ${artwork}\n</svg>\n`;
 }
@@ -94,7 +97,7 @@ const NOTES = `# 마주 — 독립 캐릭터
 
 모임 총무를 맡은 눈치 빠른 친구. 확인한 사실만 짧게 말하고, 재촉은 하되 누구도 탓하지 않는다.
 
-마주는 로고 심볼이 아니다. 로고 자리에 얼굴을 넣지 않는다. 역명판에서 가져온 띠는 얼굴 가장 아래 y=54~62의 끝에 붙이고 꺾임을 없앴다. 입과 떨어진 바닥 줄이므로 턱이나 두 번째 입으로 읽히지 않는다. 컬러는 탠저린 바탕에 잉크색 눈과 입, 잉크색 하단 띠다. 단색은 눈과 입을 투명하게 뚫고 y=51~54의 투명한 틈으로 얼굴과 양각 띠를 나눈다. 모든 표정은 같은 윤곽을 쓰며 몸과 볼, 하이라이트는 없다. small/의 일곱 표정은 띠를 생략한 24~32px 안내용이다. 일반형은 48~64px 빈 화면이나 상태 안내에 쓴다. 16px에서도 두 눈은 각각 분리되지만 로고나 파비콘으로 사용하지 않는다.
+마주는 로고 심볼이 아니다. 로고 자리에 얼굴을 넣지 않는다. 역명판에서 가져온 띠는 얼굴 가장 아래 y=52~62의 끝에 붙인 직선이다. 입과 떨어진 바닥 줄이므로 턱이나 두 번째 입으로 읽히지 않는다. 띠 오른쪽 끝(50, 57)에는 로고 심볼의 역과 같은 지름 6의 고리를 뚫어 탠저린이 비친다. 로고와 캐릭터를 묶는 고리는 이것 하나다. 눈은 폭 12에 높이 16으로 키우고 얼굴 가운데보다 조금 아래에 두어 어리고 친근하게 보이게 했다. 컬러는 탠저린 바탕에 잉크색 눈과 입, 잉크색 하단 띠다. 단색은 눈과 입을 투명하게 뚫고 y=49~52의 투명한 틈으로 얼굴과 양각 띠를 나눈다. 모든 표정은 같은 윤곽을 쓰며 몸과 볼, 하이라이트는 없다. small/의 일곱 표정은 띠를 생략한 24~32px 안내용이다. 일반형은 48~64px 빈 화면이나 상태 안내에 쓴다. 16px에서도 두 눈은 각각 분리되지만 로고나 파비콘으로 사용하지 않는다.
 
 기본은 일반 안내, 생각 중은 후보를 계산하는 동안, 기쁨은 약속이 확정됐을 때, 미안함은 처리 실패나 가능한 후보가 없을 때, 기다림은 응답을 기다리는 동안 쓴다. 읽씹당함은 읽음 상태를 확인할 수 있을 때만, 시간 겹침은 전원 가능 시간이 실제로 확인됐을 때만 쓴다.
 

@@ -27,8 +27,8 @@ function components(data, width, height) {
 }
 
 test("심볼과 받침의 역 점은 32px에서도 선에 붙어 있고 단색 중심은 실제 구멍이다", async () => {
-  const consonant = (mono) => arrival({ left: 0, top: 42, turnX: 32, stationY: 57.25, radius: 6.5, mono });
-  for (const [draw, cx, cy] of [[(mono) => logoSymbol({ mono }), 47, 45], [consonant, 38, 57.25]]) {
+  const consonant = (mono) => arrival({ left: 0, top: 41, turnX: 32, stationY: 57.5, radius: 6.5, mono });
+  for (const [draw, cx, cy] of [[(mono) => logoSymbol({ mono }), 32, 46], [consonant, 38, 57.5]]) {
     for (const size of [32, 64]) {
       const color = await render(draw(false), size);
       assert.equal(components(color.data, size, size), 1, "station is attached, never a floating period");
@@ -40,9 +40,28 @@ test("심볼과 받침의 역 점은 32px에서도 선에 붙어 있고 단색 �
   assert.equal(LOGO_LINE.horizontal, LOGO_LINE.vertical * 0.93);
 });
 
+test("심볼은 노선 두 개가 서로 다른 높이에서 들어와 한 역에서 만난다", async () => {
+  const { data } = await render(logoSymbol(), 64);
+  const ink = (x, y) => data[(y * 64 + x) * 4 + 3] > 127 && data[(y * 64 + x) * 4] < 60;
+  assert.ok(ink(8, 9), "왼쪽 노선 위쪽");
+  assert.ok(ink(56, 22), "오른쪽 노선 아래쪽");
+  assert.ok(!ink(56, 9), "오른쪽 위는 비어 있다 (T자가 아니다)");
+  assert.ok(!ink(8, 22), "왼쪽 아래는 비어 있다");
+  assert.ok(ink(32, 36), "두 노선이 만나는 줄기");
+  assert.ok(data[(46 * 64 + 32) * 4] > 200, "역 점은 탠저린");
+});
+
+test("세 음절의 위끝이 같고 역 점만 기준선 아래로 내려간다", async () => {
+  const { data, info } = await render(finalWordmark({ mono: false }), 64, 194);
+  const ink = (x, y) => data[(y * info.width + x) * 4 + 3] > 127;
+  assert.ok(ink(20, 4) && ink(120, 4) && ink(140, 4), "모, 여, 락의 위끝이 같다");
+  assert.ok(!ink(20, 60) && !ink(80, 60), "모와 여는 기준선(58)에서 끝난다");
+  assert.ok(data[(61 * info.width + 173) * 4] > 200, "역 점은 기준선 아래 탠저린");
+});
+
 test("32px 워드마크의 ㄹ 두 틈은 열려 있다", async () => {
   const { data, info } = await render(finalWordmark(), 32, 194);
-  for (const [x, y] of [[72, 7], [77, 14]]) {
+  for (const [x, y] of [[72, 7], [77, 13]]) {
     assert.ok(data[(y * info.width + x) * 4 + 3] < 40, `counter at ${x}, ${y}`);
   }
 });
@@ -62,7 +81,8 @@ test("16px 심볼의 좌표는 온전한 픽셀에 맞고 두께 2px의 선이 �
     }
   }
   const { data } = await sharp(Buffer.from(src)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  for (const y of [3, 4]) {
-    assert.deepEqual([...data.subarray((y * 16 + 4) * 4, (y * 16 + 4) * 4 + 4)], [23, 24, 26, 255]);
+  // 왼쪽 노선(위)과 오른쪽 노선(아래)이 각각 2px 두께로 남는다
+  for (const [x, y] of [[4, 2], [4, 3], [14, 5], [14, 6]]) {
+    assert.deepEqual([...data.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4)], [23, 24, 26, 255], `${x},${y}`);
   }
 });
