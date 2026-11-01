@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import sharp from "sharp";
-import { arrival, finalWordmark, logoSymbol, LOGO_LINE } from "./build-logo.mjs";
+import { arrival, finalWordmark, logoSymbol, LOGO_LINE, WORDMARK } from "./build-logo.mjs";
 import { checkSvg } from "./qa.mjs";
 
 const wrap = (body, width = 64) => `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="64" viewBox="0 0 ${width} 64">${body}</svg>`;
@@ -52,16 +52,16 @@ test("심볼은 노선 두 개가 서로 다른 높이에서 들어와 한 역�
 });
 
 test("세 음절의 위끝이 같고 역 점만 기준선 아래로 내려간다", async () => {
-  const { data, info } = await render(finalWordmark({ mono: false }), 64, 194);
+  const { data, info } = await render(finalWordmark({ mono: false }), 64, WORDMARK.width);
   const ink = (x, y) => data[(y * info.width + x) * 4 + 3] > 127;
-  assert.ok(ink(20, 4) && ink(120, 4) && ink(140, 4), "모, 여, 락의 위끝이 같다");
+  assert.ok(ink(20, 4) && ink(100, 4) && ink(130, 4), "모, 여, 락의 위끝이 같다");
   assert.ok(!ink(20, 60) && !ink(80, 60), "모와 여는 기준선(58)에서 끝난다");
-  assert.ok(data[(61 * info.width + 173) * 4] > 200, "역 점은 기준선 아래 탠저린");
+  assert.ok(data[(61 * info.width + 154) * 4] > 200, "역 점은 기준선 아래 탠저린");
 });
 
 test("32px 워드마크의 ㄹ 두 틈은 열려 있다", async () => {
-  const { data, info } = await render(finalWordmark(), 32, 194);
-  for (const [x, y] of [[72, 7], [77, 13]]) {
+  const { data, info } = await render(finalWordmark(), 32, WORDMARK.width);
+  for (const [x, y] of [[62, 7], [68, 13]]) {
     assert.ok(data[(y * info.width + x) * 4 + 3] < 40, `counter at ${x}, ${y}`);
   }
 });
@@ -85,4 +85,13 @@ test("16px 심볼의 좌표는 온전한 픽셀에 맞고 두께 2px의 선이 �
   for (const [x, y] of [[4, 2], [4, 3], [14, 5], [14, 6]]) {
     assert.deepEqual([...data.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4)], [23, 24, 26, 255], `${x},${y}`);
   }
+});
+
+test("여의 ㅇ은 정원이라 24px에서 ㅁ과 구분된다", async () => {
+  // ㅇ 상단 좌우 모서리 자리가 비어 있으면 둥근 것이다 (네모면 잉크)
+  const { data, info } = await render(finalWordmark(), 64, WORDMARK.width);
+  const ink = (x, y) => data[(y * info.width + x) * 4 + 3] > 127;
+  assert.ok(!ink(46, 14) && !ink(80, 14), "ㅇ 모서리는 비어 있다");
+  assert.ok(ink(63, 14), "ㅇ 꼭대기는 잉크");
+  assert.ok(ink(1, 5) && ink(34, 5), "ㅁ 모서리는 잉크");
 });

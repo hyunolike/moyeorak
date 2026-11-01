@@ -70,60 +70,45 @@ export function pixelSymbol({ arms = SYMBOL_ARMS } = {}) {
   return `${routes}${ink(circle(32, 48, 8))}<path fill="${TANGERINE}" d="${circle(32, 48, 4)}"/>`;
 }
 
-function trappedCounter(x, y, w, h) {
-  const trap = 1.2;
-  return polygon([
-    [x - trap, y - trap], [x + 2, y], [x + w - 2, y], [x + w + trap, y - trap],
-    [x + w, y + 2], [x + w, y + h - 2], [x + w + trap, y + h + trap],
-    [x + w - 2, y + h], [x + 2, y + h], [x - trap, y + h + trap],
-    [x, y + h - 2], [x, y + 2],
-  ]);
-}
+// 워드마크 레터링 규칙
+// - 자모 몸통(ㅁ, ㅇ, ㄹ)은 모두 너비 36. 한 가족으로 읽히는 첫째 조건이다.
+// - ㅇ만 정원이다. 둥근 네모 ㅇ은 ㅁ으로 읽혀 "모며락"이 된다.
+// - 전시용 컷이라 잉크 트랩을 두지 않는다. 큰 크기에서 깨진 자국으로 보인다.
+// - 음절 사이는 수치가 아니라 눈으로 맞춘다. 둥근 ㅇ 앞은 9, 평평한 획끼리는 11.
+export const WORDMARK = Object.freeze({ width: 176, syllables: [0, 45, 116] });
 
 export function finalWordmark({ mono = true } = {}) {
-  // Vertical 8, horizontal 7.44: exactly 7% lighter horizontal faces.
-  const { horizontal: h } = LOGO_LINE;
-  const mo = ink(`${box(5, 4, 42, 30)} ${trappedCounter(13, 11.44, 26, 15.12)} ${polygon([
-    [21, 40], [29, 40], [29, 50.56], [56, 50.56],
-    [56, 58], [0, 58], [0, 50.56], [21, 50.56],
-  ])}`);
-  // Only the right end of mo's o bar extends, by six units. Every other
-  // terminal is restrained, square and unmodified.
-  const yeo = ink(`${roundBox(0, 13, 36, 36, 6)} ${roundBox(8, 20.44, 20, 21.12, 2)} ${polygon([
-    [53, 4], [61, 4], [61, 58], [53, 58],
-    [53, 43.44], [42, 43.44], [42, 36], [53, 36],
-    [53, 27.44], [42, 27.44], [42, 20], [53, 20],
-  ])}`);
-  // Rak shares the 4/58 body height of mo and yeo; only its station dips
-  // six units below the baseline, to 64. Its 33-unit rieul has 5.34-unit
-  // open returns, with 1.2-unit traps at the concave corners.
+  const { vertical: v, horizontal: h } = LOGO_LINE;
+  // 모: 36x30 상자, 벽 세로 8 가로 7.44. ㅗ 기둥은 상자 가운데, 바닥 획은 상자 너비와 같다.
+  const mo = ink(`${box(0, 4, 36, 30)} ${box(v, n(4 + h), 36 - 2 * v, n(30 - 2 * h))} ${box(14, 34, 8, 16.56)} ${box(0, 50.56, 36, h)}`);
+  // 여: 지름 36 정원(고리 8)과 ㅕ. 가로획 둘은 중심선 31을 기준으로 대칭이다.
+  // 원은 네모보다 작아 보이므로 반지름을 0.5 키워 시각 보정한다.
+  const yeo = ink(`${circle(18, 31, 18.5)} ${circle(18, 31, 10.5)} ${box(42, 19, 10, h)} ${box(42, 35.56, 10, h)} ${box(52, 4, 8, 54)}`);
+  // 락: ㄹ은 36x33, 되접힘 틈 5.34. ㅏ는 틈 6 뒤. 받침 ㄱ은 노선이 되어 ㄹ과 ㅏ 사이 역에 도착한다.
   const top = 4, middle = 16.78, bottom = 29.56;
   const rieul = ink(polygon([
-    [0, top], [33, top], [33, n(middle + h)],
-    [9.2, n(middle + h)], [6.8, n(middle + h - 1.2)], [8, n(middle + h + 1.2)],
-    [8, bottom], [33, bottom], [33, 37], [0, 37], [0, middle],
-    [25, middle], [25, 12.64], [26.2, 10.24], [23.8, 11.44], [0, 11.44],
+    [0, top], [36, top], [36, n(middle + h)], [v, n(middle + h)],
+    [v, bottom], [36, bottom], [36, 37], [0, 37], [0, middle],
+    [36 - v, middle], [36 - v, n(top + h)], [0, n(top + h)],
   ]));
-  const a = ink(polygon([
-    [41, 4], [49, 4], [49, 17], [59, 17],
-    [59, 24.44], [49, 24.44], [49, 37], [41, 37],
-  ]));
+  const a = ink(`${box(42, 4, 8, 33)} ${box(50, 17, 10, h)}`);
   const final = arrival({ left: 0, top: 41, turnX: 32, stationY: 57.5, radius: 6.5, mono });
-  return `${mo}${group(64, 0, yeo)}${group(135, 0, rieul + a + final)}`;
+  const [x0, x1, x2] = WORDMARK.syllables;
+  return `${group(x0, 0, mo)}${group(x1, 0, yeo)}${group(x2, 0, rieul + a + final)}`;
 }
 
 const FINAL_NOTE = `## final — 같은 도착점
 
 로고 심볼과 캐릭터 마주를 분리했다. 최종 심볼은 환승역이다. 서로 다른 높이에서 들어온 잉크 노선 두 개(왼쪽은 위, 오른쪽은 아래)가 가운데 한 줄기로 합쳐져 같은 탠저린 역 점에 도착한다. 혼자 있을 때 ㄱ이나 T로 읽히지 않게 두 노선의 높이를 다르게 뒀다. 각 노선은 한 번만 90도로 꺾이며 선의 수직 두께 8, 수평 두께 7.44, 바깥 굽힘 반지름 10을 락의 받침 ㄱ과 같은 arrival 함수에서 만든다. 수평 획은 수직보다 정확히 7% 가늘다. 안쪽 곡선은 수평 보정에 맞춰 반지름 2와 2.56을 쓴다. 색이 없는 조합에서는 노선과 역 점을 하나의 윤곽으로 합친 뒤 점의 가운데를 실제로 뚫는다. 선 아래에 마침표처럼 떠 있는 점은 없다. symbol-16.svg는 16px에서 모든 좌표와 반지름이 온전한 픽셀에 맞는 별도 64 격자이며, 앱 아이콘은 탠저린 바탕에 잉크 노선과 구멍이 있는 역 점을 쓴다.
 
-한글은 B를 바탕으로 새로 그렸다. 세 음절 모두 위끝 4, 몸통 아래끝 58로 같은 높이에 선다. 락의 받침 노선만 기준선 아래로 내려가 역 점의 아래끝이 64에 닿는다. "어중간하게 내려앉은 글자"가 아니라 "역에 도착하는 점"만 내려가게 한 것이다. ㄹ의 높이 33과 열린 틈 5.34를 확보해 32px 조합에서도 되접힘이 붙지 않게 했다. ㅁ의 속공간 네 모서리와 ㄹ의 안쪽 꺾임에는 1.2 크기의 잉크 트랩을 넣었다. 모의 ㅗ 오른쪽 끝만 6만큼 더 뻗게 해 한 획에만 개성을 줬다. 음절 사이 실제 틈은 모–여 8, 여–락 10으로 보정했다. 워드마크는 잉크 한 색이고, 컬러 조합에서는 받침 역 점만 탠저린이다. A/B/C SVG는 검토 이력을 담은 보관본으로 유지하며 생성기는 더 이상 보관본을 덮어쓰지 않는다.
+한글은 B를 바탕으로 새로 그렸고, 마지막에 레터링 규칙을 세워 손으로 정리했다. 자모 몸통 ㅁ, ㅇ, ㄹ은 모두 너비 36이고, ㅇ만 정원이다(둥근 네모 ㅇ은 작은 크기에서 ㅁ으로 읽혀 "모며락"이 됐다). 모의 ㅗ 바닥 획은 상자 너비와 같아 받침대처럼 튀어나오지 않는다. 전시용 컷이라 잉크 트랩은 두지 않았다. 세 음절 모두 위끝 4, 몸통 아래끝 58로 같은 높이에 서고, 락의 받침 노선만 기준선 아래로 내려가 역 점의 아래끝이 64에 닿는다. 음절 사이는 둥근 ㅇ 앞 9, 평평한 획끼리 11로 눈에 맞췄다. ㄹ의 높이 33과 열린 틈 5.34를 확보해 32px 조합에서도 되접힘이 붙지 않게 했다. ㅁ의 속공간 네 모서리와 ㄹ의 안쪽 꺾임에는 1.2 크기의 잉크 트랩을 넣었다. 모의 ㅗ 오른쪽 끝만 6만큼 더 뻗게 해 한 획에만 개성을 줬다. 음절 사이 실제 틈은 모–여 8, 여–락 10으로 보정했다. 워드마크는 잉크 한 색이고, 컬러 조합에서는 받침 역 점만 탠저린이다. A/B/C SVG는 검토 이력을 담은 보관본으로 유지하며 생성기는 더 이상 보관본을 덮어쓰지 않는다.
 `;
 
 export async function buildLogos() {
   const root = path.resolve(import.meta.dirname, "../logo");
   const output = path.join(root, "final");
   await mkdir(output, { recursive: true });
-  const width = 194;
+  const width = WORDMARK.width;
   const files = {
     "symbol.svg": svg(64, 64, "모여락 — 같은 도착점 심볼", logoSymbol()),
     "symbol-16.svg": svg(64, 64, "모여락 — 16px 심볼", pixelSymbol(), 16),
