@@ -40,15 +40,14 @@ test("심볼과 받침의 역 점은 32px에서도 선에 붙어 있고 단색 �
   assert.equal(LOGO_LINE.horizontal, LOGO_LINE.vertical * 0.93);
 });
 
-test("심볼은 노선 두 개가 서로 다른 높이에서 들어와 한 역에서 만난다", async () => {
+test("심볼은 양쪽 노선이 같은 높이에서 들어와 한 역에서 만난다", async () => {
   const { data } = await render(logoSymbol(), 64);
   const ink = (x, y) => data[(y * 64 + x) * 4 + 3] > 127 && data[(y * 64 + x) * 4] < 60;
-  assert.ok(ink(8, 9), "왼쪽 노선 위쪽");
-  assert.ok(ink(56, 22), "오른쪽 노선 아래쪽");
-  assert.ok(!ink(56, 9), "오른쪽 위는 비어 있다 (T자가 아니다)");
-  assert.ok(!ink(8, 22), "왼쪽 아래는 비어 있다");
-  assert.ok(ink(32, 36), "두 노선이 만나는 줄기");
-  assert.ok(data[(46 * 64 + 32) * 4] > 200, "역 점은 탠저린");
+  assert.ok(ink(8, 11) && ink(56, 11), "양쪽 노선");
+  assert.ok(!ink(8, 30) && !ink(56, 30), "노선 아래는 비어 있다");
+  assert.ok(ink(32, 34), "합쳐진 줄기");
+  assert.ok(ink(32, 34) && data[(44 * 64 + 32) * 4] > 200, "역 심은 탠저린");
+  assert.ok(ink(32, 53), "역 고리는 잉크");
 });
 
 test("세 음절의 위끝이 같고 역 점만 기준선 아래로 내려간다", async () => {
@@ -82,7 +81,7 @@ test("16px 심볼의 좌표는 온전한 픽셀에 맞고 두께 2px의 선이 �
   }
   const { data } = await sharp(Buffer.from(src)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   // 왼쪽 노선(위)과 오른쪽 노선(아래)이 각각 2px 두께로 남는다
-  for (const [x, y] of [[4, 2], [4, 3], [14, 5], [14, 6]]) {
+  for (const [x, y] of [[4, 2], [4, 3], [14, 2], [14, 3], [8, 8]]) {
     assert.deepEqual([...data.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4)], [23, 24, 26, 255], `${x},${y}`);
   }
 });
