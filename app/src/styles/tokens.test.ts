@@ -3,11 +3,16 @@ import { resolve } from "node:path";
 
 const css = readFileSync(resolve(__dirname, "tokens.css"), "utf8");
 
-test("brand-v3 원색이 그대로 들어 있다", () => {
-  expect(css).toContain("--color-hongsi-500: #F45B3F");
-  expect(css).toContain("--color-forest-500: #176B5B");
-  expect(css).toContain("--color-signal-500: #F3CF58");
-  expect(css).toContain("--color-ink: #202923");
+test("brand-v4 원색과 역할이 들어 있다", () => {
+  expect(css).toContain("--color-tangerine-500: #FF6A13");
+  expect(css).toContain("--color-ink-900: #17181A");
+  expect(css).toMatch(/--color-action:\s*var\(--color-tangerine-500\)/);
+  expect(css).toMatch(/--color-on-action:\s*var\(--color-ink-900\)/);
+  expect(css).not.toContain("#F45B3F");
+});
+
+test("다크 값이 없다 (밝은 화면 고정)", () => {
+  expect(css).not.toMatch(/prefers-color-scheme: dark|data-theme="dark"/);
 });
 
 test("0단계 이름이 새 역할 토큰을 가리킨다", () => {
