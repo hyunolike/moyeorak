@@ -73,3 +73,34 @@ test("BottomCta는 키보드 높이만큼 위로 올라가고 본문 여백도 �
   expect(spacer?.style.marginBottom).toBe("300px");
   expect(screen.getByText("링크 만들기")).toBeTruthy();
 });
+
+test("입력칸 가운데 맞춤은 키보드가 열릴 때 한 번만, 스크롤에는 하지 않는다", () => {
+  Object.defineProperty(window, "innerHeight", {
+    configurable: true,
+    value: 800,
+  });
+  const vv = mockVisualViewport(800);
+  const input = document.createElement("input");
+  document.body.appendChild(input);
+  const scrollIntoView = vi.fn();
+  input.scrollIntoView = scrollIntoView;
+  input.focus();
+  renderHook(() => useKeyboardInset());
+  expect(scrollIntoView).not.toHaveBeenCalled();
+  act(() => {
+    vv.height = 500;
+    vv.dispatchEvent(new Event("resize"));
+  });
+  expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  act(() => {
+    vv.offsetTop = 20;
+    vv.dispatchEvent(new Event("scroll"));
+    vv.dispatchEvent(new Event("scroll"));
+  });
+  expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  act(() => {
+    input.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+  });
+  expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  input.remove();
+});

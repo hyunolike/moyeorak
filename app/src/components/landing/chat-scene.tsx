@@ -58,9 +58,9 @@ export function ChatScene() {
     style: instant ? undefined : { transitionDelay: `${order * STEP_MS}ms` },
   });
 
-  const bubble = "bg-bg text-b4 rounded-md px-3 py-2";
+  const bubble = "bg-bg text-b4 rounded-md rounded-tl-sm px-3 py-2";
   const avatar =
-    "bg-ink-200 text-c1 grid size-8 flex-none place-items-center rounded-sm font-bold";
+    "bg-ink-200 text-c1 grid size-[30px] flex-none place-items-center rounded-sm font-bold";
 
   const head = reveal(0);
   const text = reveal(1);
@@ -75,7 +75,7 @@ export function ChatScene() {
       data-scene
       data-reveal={instant ? "instant" : "stagger"}
       aria-label="단톡방에서 링크로 약속을 정하는 장면"
-      className="bg-surface-sunken mt-6 flex flex-col gap-2.5 rounded-lg px-3.5 py-4"
+      className="bg-surface-sunken mt-[22px] flex flex-col gap-2.5 rounded-lg px-3.5 py-4"
     >
       <div className="flex items-start gap-2">
         <span
@@ -103,7 +103,7 @@ export function ChatScene() {
             )}
             style={card.style}
           >
-            <Maju expression="default" size={32} />
+            <Maju expression="default" size={40} />
             <div className="flex flex-col">
               <b className="text-b4 font-bold">현호님의 모임</b>
               <span className="text-muted text-c1">

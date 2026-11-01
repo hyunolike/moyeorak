@@ -46,3 +46,11 @@ test("기본 설정이면 위에서부터 한 줄씩 나타난다", () => {
     container.querySelector("[data-scene]")?.getAttribute("data-reveal"),
   ).toBe("stagger");
 });
+
+test("링크 카드의 마주는 40px이다", () => {
+  mockReducedMotion(false);
+  const { container } = render(<ChatScene />);
+  expect(
+    container.querySelector("[data-link-card] svg")?.getAttribute("width"),
+  ).toBe("40");
+});

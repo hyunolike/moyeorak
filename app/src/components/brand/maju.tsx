@@ -22,7 +22,7 @@ export function Maju({
   className,
 }: {
   expression: MajuExpression;
-  size?: 24 | 32 | 48 | 64;
+  size?: 24 | 32 | 40 | 48 | 64;
   className?: string;
 }) {
   const variant = size <= 32 ? "small" : "normal";

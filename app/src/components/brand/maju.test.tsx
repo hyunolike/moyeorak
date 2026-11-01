@@ -37,3 +37,10 @@ test("생각 중 표정만 눈 깜빡임 표시를 단다", () => {
   expect(thinking.querySelector("[data-blink]")).not.toBeNull();
   expect(plain.querySelector("[data-blink]")).toBeNull();
 });
+
+test("40px는 노선 띠가 있는 일반 판으로 그려진다", () => {
+  const { container } = render(<Maju expression="default" size={40} />);
+  const svg = container.querySelector("svg");
+  expect(svg?.getAttribute("width")).toBe("40");
+  expect(svg?.getAttribute("data-variant")).toBe("normal");
+});

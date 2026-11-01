@@ -21,7 +21,7 @@ export default function LandingPage() {
           단톡방에 링크만 보내면 돼요. 앱 설치도, 가입도 없어요.
         </p>
         <ChatScene />
-        <footer className="text-muted text-c1 mt-8 text-center">
+        <footer className="text-muted text-c1 mt-8 text-center break-keep">
           서비스 이용 중 문의나 오류가 있다면{" "}
           <a
             href="mailto:moyeorak.team@gmail.com"

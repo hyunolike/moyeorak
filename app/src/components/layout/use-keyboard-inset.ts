@@ -25,24 +25,35 @@ export function useKeyboardInset(): number {
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;
-    const update = () => {
-      const next = computeKeyboardInset(window.innerHeight, viewport);
-      setInset(next);
+    let previous = 0;
+    // 입력칸을 보이는 영역 가운데로. 사용자가 스크롤 중일 때는 부르지 않는다
+    const centerFocused = () => {
       const active = document.activeElement;
       if (
-        next > 0 &&
-        (active instanceof HTMLInputElement ||
-          active instanceof HTMLTextAreaElement)
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement
       ) {
         active.scrollIntoView?.({ block: "center" });
       }
     };
+    const update = () => {
+      const next = computeKeyboardInset(window.innerHeight, viewport);
+      setInset(next);
+      // 키보드가 닫힘에서 열림으로 바뀔 때만 맞춘다
+      if (previous === 0 && next > 0) centerFocused();
+      previous = next;
+    };
+    const onFocusIn = () => {
+      if (previous > 0) centerFocused();
+    };
     update();
     viewport.addEventListener("resize", update);
     viewport.addEventListener("scroll", update);
+    document.addEventListener("focusin", onFocusIn);
     return () => {
       viewport.removeEventListener("resize", update);
       viewport.removeEventListener("scroll", update);
+      document.removeEventListener("focusin", onFocusIn);
     };
   }, []);
 
