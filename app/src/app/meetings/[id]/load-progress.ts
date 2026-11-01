@@ -14,7 +14,10 @@ export const loadProgress = cache(
   },
 );
 
-/** 모임 하위 모든 페이지가 쓰는 링크 미리보기 메타데이터. */
+/**
+ * 모임 하위 모든 페이지가 쓰는 링크 미리보기 메타데이터.
+ * 어느 하위 페이지를 공유해도 og:url은 모임 홈을 가리킨다.
+ */
 export async function meetingMetadata(
   params: Promise<{ id: string }>,
 ): Promise<Metadata> {
@@ -27,6 +30,7 @@ export async function meetingMetadata(
     openGraph: {
       title,
       description,
+      url: `/meetings/${id}`,
       images: [{ url: image, width: 1200, height: 630 }],
     },
     twitter: {

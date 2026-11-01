@@ -21,10 +21,17 @@ test("모임 링크에 모임별 미리보기 태그가 있다", async ({ reques
   expect(html).toMatch(
     /og:image" content="[^"]+\/meetings\/[^/]+\/opengraph-image/,
   );
+  expect(html).toContain(
+    `property="og:url" content="http://localhost:3000/meetings/${id}"`,
+  );
   const sub = await (
     await request.get(`/meetings/${id}/schedule/votes`)
   ).text();
   expect(sub).toMatch(/property="og:title" content="현호님의 모임"/);
+  // 하위 페이지를 공유해도 미리보기 링크는 모임 홈을 가리킨다.
+  expect(sub).toContain(
+    `property="og:url" content="http://localhost:3000/meetings/${id}"`,
+  );
 });
 
 test("미리보기 이미지는 PNG다", async ({ request }) => {

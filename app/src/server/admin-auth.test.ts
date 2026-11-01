@@ -1,4 +1,5 @@
 import {
+  adminTokenFrom,
   isAdminToken,
   requireAdmin,
   UnauthorizedError,
@@ -38,4 +39,14 @@ test("틀린 토큰은 401로 응답된다", async () => {
   );
   expect(res.status).toBe(401);
   expect((await res.json()).error.code).toBe("UNAUTHORIZED");
+});
+
+test("adminTokenFrom은 Bearer 헤더를 주소의 token보다 먼저 쓴다", () => {
+  expect(adminTokenFrom("Bearer from-header", "from-query")).toBe(
+    "from-header",
+  );
+  expect(adminTokenFrom("bearer  spaced", undefined)).toBe("spaced");
+  expect(adminTokenFrom(null, "from-query")).toBe("from-query");
+  expect(adminTokenFrom("Basic abc", "from-query")).toBe("from-query");
+  expect(adminTokenFrom(null, undefined)).toBeUndefined();
 });

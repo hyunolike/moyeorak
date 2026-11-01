@@ -109,7 +109,7 @@ e2e는 개발 서버를 `MOCK_EXTERNAL=1`로 직접 띄우기 때문에 외부 A
 /admin/metrics?token=<ADMIN_TOKEN>
 ```
 
-`Authorization: Bearer <ADMIN_TOKEN>` 헤더로도 접근할 수 있습니다. `ADMIN_TOKEN`이 설정되지 않았으면 어떤 토큰으로도 열리지 않습니다. 최근 30일과 전체 기간의 지표를 보여줍니다.
+`Authorization: Bearer <ADMIN_TOKEN>` 헤더로도 열 수 있고, 둘 다 있으면 헤더를 씁니다. 주소에 넣은 토큰은 브라우저 기록과 서버 로그에 남으니 공용 기기에서는 헤더를 쓰는 편이 안전합니다. `ADMIN_TOKEN`이 설정되지 않았으면 어떤 토큰으로도 열리지 않습니다. 최근 30일과 전체 기간의 지표를 보여줍니다.
 
 기존 서비스의 기준선 지표는 `../docs/metrics/baseline-queries.sql`로 뽑고, 결과는 `../docs/metrics/2026-10-baseline.md`에 기록합니다. 운영 DB 값은 아직 비어 있습니다. 평가용 문장 세트는 `../docs/eval/`에 있습니다.
 
@@ -172,14 +172,14 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 
    끝나면 `select count(*) from stations`가 654인지 확인합니다.
 3. 운영 브랜치에서 `preview` 브랜치를 만들고 풀링 연결 문자열을 확인합니다. 사용자가 들어오기 전에 만들어야 사용자 데이터가 복사되지 않습니다. 다시 만들 때는 Neon의 "부모에서 초기화"를 쓰지 않습니다. 새 루트 브랜치를 만들고 PostGIS를 켠 뒤 마이그레이션을 적용합니다.
-4. Google Cloud 프로젝트를 만들고 결제 계정을 연결한 뒤 Routes API를 사용 설정합니다. API 키를 발급해 Routes API에만 쓰도록 제한합니다. 요청 할당량은 하루 300요청으로 두고(분당 할당량만 있으면 분당 10요청), 예산 알림은 1,000원으로 걸어 둡니다. 실제로 비용을 막는 장치는 앱의 월 상한(`GOOGLE_MONTHLY_ELEMENT_CAP`)이고, 할당량과 예산 알림은 그 바깥에서 한 번 더 받쳐 주는 용도입니다.
+4. Google Cloud 프로젝트를 만들고 결제 계정을 연결한 뒤 Routes API를 사용 설정합니다. API 키를 발급해 Routes API에만 쓰도록 제한합니다. Cloud Quotas에서 `ComputeRouteMatrixCellsPerDay`(행렬 항목 하루 할당량)를 160으로 낮춥니다. 31일을 다 써도 4,960건이라 월 무료 한도 5,000건을 넘지 않습니다. 기본값보다 크게 낮추는 변경이라 API로 할 때는 `ignoreSafetyChecks=QUOTA_DECREASE_PERCENTAGE_TOO_HIGH`를 붙여야 받아 줍니다. 예산 알림은 1,000원으로 걸어 둡니다. 실제로 비용을 막는 장치는 앱의 월 상한(`GOOGLE_MONTHLY_ELEMENT_CAP`)이고, 할당량과 예산 알림은 그 바깥에서 한 번 더 받쳐 주는 용도입니다.
 5. Kakao Developers 앱의 REST API 키를 확인합니다. NVIDIA 개발자 키를 발급하고 임시 모델을 `NVIDIA_MODEL_PARSE`와 `NVIDIA_MODEL_SUGGEST`에 지정합니다.
 6. Vercel에 GitHub 저장소를 연결합니다. Root Directory는 `app/`, Production Branch는 `develop`, Node는 24로 둡니다. 가져오기 화면에서는 환경 변수를 입력하지 않습니다. 이 화면에 넣은 값은 모든 환경에 한꺼번에 적용되어 운영 키가 미리보기와 개발 환경에 섞입니다. 첫 배포는 환경 변수가 없어 실패해도 괜찮으니 그대로 둡니다.
 
-   배포가 만들어진 뒤 Settings의 Environment Variables에서 아래 [배포 환경 변수](#배포-환경-변수) 표대로 하나씩 추가합니다. 변수마다 Production만 또는 Preview만 체크하고, Development는 어떤 변수에도 체크하지 않습니다. 이 화면의 기본값이 모든 환경이라서 체크를 직접 풀어야 합니다. 이와 별개로 `ENABLE_EXPERIMENTAL_COREPACK=1`을 Production과 Preview 둘 다에 추가합니다. `packageManager`가 `pnpm@10.17.0`인데 Vercel은 이 값을 이 변수가 있을 때만 따릅니다.
+   배포가 만들어진 뒤 Settings의 Environment Variables에서 아래 [배포 환경 변수](#배포-환경-변수) 표대로 하나씩 추가합니다. 변수마다 Production만 또는 Preview만 체크하고, Development는 어떤 변수에도 체크하지 않습니다. 이 화면의 기본값이 모든 환경이라서 체크를 직접 풀어야 합니다. pnpm 버전은 `vercel.json`의 `installCommand`와 `buildCommand`가 `pnpm@10.17.0`으로 고정합니다. Vercel의 corepack은 저장소 루트의 `package.json`에서 `packageManager`를 찾는데, 이 저장소는 루트에 `package.json`이 없어서 `ENABLE_EXPERIMENTAL_COREPACK`만으로는 오래된 pnpm이 잡혀 설치가 실패합니다.
 
    변수를 다 넣고 나면 다시 배포(Redeploy)합니다. 첫 빌드 로그에서 pnpm 버전이 10.17.0인지, 함수 리전이 `sin1`인지 확인합니다. 첫 PR을 열기 전에 Preview 환경에 `MOCK_EXTERNAL=1`이 들어 있고 Google, Kakao, NVIDIA 키가 없는지 한 번 더 봅니다. 앱도 `VERCEL_ENV`가 `preview`이면 Google을 부르지 않지만, 다른 서비스는 이 변수 설정에만 기대기 때문입니다.
-7. Vercel에 `moyeorak.hyunolike.dev`를 추가하고, 가비아 DNS에 Vercel이 알려 주는 CNAME을 넣어 인증서가 발급되는지 확인합니다.
+7. Vercel에 `moyeorak.hyunolike.dev`를 추가하고 인증서가 발급되는지 확인합니다. `hyunolike.dev`는 가비아에서 샀지만 네임서버가 Vercel DNS(`ns1.vercel-dns.com`)라서 레코드가 자동으로 잡힙니다. 네임서버를 가비아로 되돌린 경우에만 가비아 DNS에 Vercel이 알려 주는 CNAME을 넣습니다.
 8. 운영 주소에서 모임 하나를 끝까지 진행합니다. 만들기, 투표, 말로 입력, 제안, 확정, 출발지, 장소 제안, 요약 카드와 이미지를 확인하고, `ADMIN_TOKEN`으로 관리자 지표를 열어 AI 사용량을 봅니다. 카카오톡 공유 디버거로 미리보기도 확인하고, 공유 링크의 og:url이 `moyeorak.hyunolike.dev`인지 확인합니다. Vercel의 미리보기 보호가 카카오 스크래퍼를 막기 때문에 링크 미리보기는 운영 주소에서만 확인합니다.
 9. 확인용 모임을 2단계와 같은 직접 연결로 지웁니다. 모임 행을 지우면 연결된 행이 함께 지워집니다. 지표에 섞이지 않게 하려는 작업입니다.
 
@@ -200,7 +200,6 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 | `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST` | 넣음                             | 넣지 않음                       |
 | `ADMIN_TOKEN`                                                  | 긴 무작위 문자열                 | 다른 무작위 문자열              |
 | `GOOGLE_MONTHLY_ELEMENT_CAP`                                   | 기본값이면 생략                  | 생략                            |
-| `ENABLE_EXPERIMENTAL_COREPACK`                                 | `1`                              | `1`                             |
 
 `DATABASE_URL_TEST`는 테스트에서만, `LEGACY_DATABASE_URL`은 이전 도구를 돌릴 때 셸에서만 쓰므로 Vercel에는 넣지 않습니다. `MIDPOINT_DAILY_CAP`, `NVIDIA_BASE_URL`, `AI_CALL_CAP_PER_MEETING`도 기본값을 바꿀 때만 넣습니다.
 

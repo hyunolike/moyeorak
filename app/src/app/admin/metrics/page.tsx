@@ -1,5 +1,6 @@
+import { headers } from "next/headers";
 import { Suspense } from "react";
-import { isAdminToken } from "@/server/admin-auth";
+import { adminTokenFrom, isAdminToken } from "@/server/admin-auth";
 import { computeAiUsage } from "@/server/metrics/ai-usage";
 import { computeMetrics, type Metrics } from "@/server/metrics/compute-metrics";
 
@@ -124,7 +125,9 @@ async function Content({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  if (!isAdminToken(token)) return <p>접근 권한이 없어요</p>;
+  const auth = (await headers()).get("authorization");
+  if (!isAdminToken(adminTokenFrom(auth, token)))
+    return <p>접근 권한이 없어요</p>;
   return (
     <>
       <h1 style={{ fontSize: 20, marginBottom: 16 }}>모임 지표</h1>

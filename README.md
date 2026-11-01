@@ -1,37 +1,38 @@
 <div align="center">
 
-<a href="https://moyeorak.site">
-  <img src="docs/assets/moyeorak-logo.svg" width="320" alt="모여락" />
+<a href="https://moyeorak.hyunolike.dev">
+  <img src="design/brand-v3/logo/lockup-horizontal.svg" width="320" alt="모여락" />
 </a>
 
-### 모임 일정과 장소를 쉽고 빠르게 정하는 모여락
+### 서로의 시간을, 하나의 약속으로
 
-[![](https://img.shields.io/badge/-moyeorak.site-4181FF?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.site)
-[![](https://img.shields.io/badge/-Backend-16161A?style=flat&logo=github&logoColor=white)](https://github.com/dnd-side-project/dnd-14th-8-backend)
-[![](https://img.shields.io/badge/-Frontend-16161A?style=flat&logo=github&logoColor=white)](https://github.com/dnd-side-project/dnd-14th-8-frontend)
+[![](https://img.shields.io/badge/-moyeorak.hyunolike.dev-F45B3F?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.hyunolike.dev)
+[![](https://img.shields.io/badge/-첫_버전_소개-16161A?style=flat&logo=github&logoColor=white)](./docs/legacy/README.md)
 
 </div>
-
-https://github.com/user-attachments/assets/20fe12d7-7468-4f3e-8d01-ffe997f986dc
 
 <br/>
 
 ## 🗓️ 소개
 
-"넷이 언제, 어디서 만나?" 단톡방에서 이 질문이 오가기 시작하면 약속은 쉽게 정해지지 않습니다. 모여락은 그 과정을 링크 하나로 끝내는 모임 조율 서비스입니다.
+"넷이 언제, 어디서 만나?" 단톡방에서 이 질문이 오가기 시작하면 약속은 쉽게 정해지지 않습니다. 모여락은 링크 하나로 친구들의 가능한 시간과 출발지를 모으고, 받아들일 만한 약속 하나로 정리해 주는 조율 서비스입니다.
 
-모임을 만든 사람이 링크를 공유하면, 참여자는 로그인 없이 들어와 가능한 시간을 시간표에 쓸어내려 표시합니다. 모두의 응답이 모이면 겹치는 시간대가 참여 인원 순으로 정렬되어 가장 많은 사람이 만날 수 있는 일정이 맨 위에 올라옵니다.
+첫 버전은 겹치는 시간과 가까운 역을 목록으로 보여 주는 데서 멈췄습니다. 정보는 충분했지만 누가 마지막에 정하느냐는 여전히 단톡방의 몫이었습니다. 리뉴얼한 모여락에서는 캐릭터 **마주**가 응답을 보고 시간이나 장소를 한두 개 제안하고, 모임을 만든 사람이 "이걸로 확정"을 누르면 끝납니다. 마지막 결정은 언제나 사람이 합니다.
 
-장소도 같은 방식으로 정합니다. 각자 출발지를 등록하면 출발지들의 지리적 중심 근처 지하철역 가운데 모두의 이동시간 합이 가장 짧은 역을 추천하고, 참여자별 대중교통과 자동차 경로, 역 주변 음식점과 카페까지 보여줍니다.
+<div align="center">
+  <img src="design/brand-v3/character/3d/guide-256.png" width="140" alt="마주" />
+</div>
 
 <br/>
 
-## 🖥️ 서비스 화면
+## 🖥️ 화면
 
-| 홈 | 링크로 초대 | 일정 투표 | 최적일정 | 출발지 등록 |
+| 시작 | 모임 홈 | 말로 입력하기 | 마주의 제안 | 확정 |
 | :---: | :---: | :---: | :---: | :---: |
-| <img src="docs/assets/screens/01-landing.png" width="180" /> | <img src="docs/assets/screens/02-invite.png" width="180" /> | <img src="docs/assets/screens/03-schedule-vote.png" width="180" /> | <img src="docs/assets/screens/04-best-schedule.png" width="180" /> | <img src="docs/assets/screens/05-departures.png" width="180" /> |
-| 일정 조율과 중간지점 찾기 중 하나로 시작 | 링크를 받은 참여자는 바로 참여 | 가능한 시간을 쓸어내려 선택 | 모두 되는 시간이 1순위 | 출발지를 모아 중간지점 추천 |
+| <img src="design/brand-v3/mockups/01-landing.png" width="150" /> | <img src="design/brand-v3/mockups/02-meeting-home.png" width="150" /> | <img src="design/brand-v3/mockups/03-time-input.png" width="150" /> | <img src="design/brand-v3/mockups/04-suggestion.png" width="150" /> | <img src="design/brand-v3/mockups/05-confirmed.png" width="150" /> |
+| 버튼 하나로 모임 만들기 | 진행 단계와 응답 현황 | "평일 저녁 다 돼"를 시간표에 칠하기 | 제안 한두 개와 이유 | 단톡방에 붙일 요약 카드 |
+
+화면은 brand-v3 시안입니다.
 
 <br/>
 
@@ -39,73 +40,66 @@ https://github.com/user-attachments/assets/20fe12d7-7468-4f3e-8d01-ffe997f986dc
 
 | 기능 | 설명 |
 | --- | --- |
-| 모임 생성과 초대 | 일정 조율 또는 중간지점 찾기로 모임을 만들고 링크로 참여자를 초대합니다. 회원가입은 필요 없습니다. |
-| 일정 투표 | 참여자가 30분 단위 시간표에서 가능한 시간을 클릭하거나 쓸어내려 선택합니다. |
-| 최적일정 | 투표 결과를 겹치는 인원 순으로 정렬하고, 시간대별로 참여 가능한 사람과 불가능한 사람을 보여줍니다. |
-| 출발지 등록 | 참여자마다 출발지를 검색해 등록하고 수정할 수 있습니다. |
-| 중간지점 추천 | 출발지 중심점 반경 5km 안의 지하철역 가운데 이동시간 합이 가장 짧은 역 3곳을 추천합니다. |
-| 개인 경로와 주변 장소 | 추천 역까지의 대중교통과 자동차 경로, 역 주변 음식점과 카페 정보를 제공합니다. |
+| 모임 만들기 | 시간만, 장소만, 둘 다 중에서 고르고 링크를 공유합니다. 참여자는 로그인 없이 들어오고, 같은 브라우저면 같은 사람으로 알아봅니다. |
+| 말로 입력하기 | "토요일 오후 2시부터 6시까지 돼"처럼 쓰면 AI가 시간표에 칠해 줍니다. 저장은 사용자가 확인하고 눌러야 합니다. |
+| 마주의 제안 | 가장 많이 되는 시간과 가장 빨리 모일 수 있는 다른 날, 평균 이동이 가장 짧은 역과 가장 오래 걸리는 사람이 가장 덜 걸리는 역을 골라 이유와 함께 보여 줍니다. |
+| 확정 | 모임을 만든 사람만 확정할 수 있습니다. 제안을 고르거나 목록에서 직접 정합니다. |
+| 재촉 메시지 | 아직 응답하지 않은 사람에게 보낼 메시지를 써 주고, 복사하거나 공유 시트로 넘깁니다. 서비스가 직접 보내지는 않습니다. |
+| 요약 카드 | 날짜, 역, 사람별 출발지와 이동 시간, 카카오맵 링크를 담은 카드를 텍스트나 이미지로 저장합니다. |
+
+### AI를 믿지 않는 장치
+
+제안 후보는 코드가 고르고 모델은 이유 문장 하나만 씁니다. 문장 속 숫자가 카드의 데이터와 다르거나, 어려운 사람이 있는데 "모두 가능"이라고 쓰면 그 문장을 버리고 정해 둔 문장 틀로 바꿉니다. 모델 호출이 실패하거나 모임당 호출 한도(40회)를 넘어도 같은 문장 틀로 내려가서 기능은 멈추지 않습니다. 모델에는 닉네임, 후보 시간, 역 이름, 이동 시간만 보내고 출발지 이름과 좌표는 보내지 않습니다.
 
 <br/>
 
 ## 🛠️ 기술 스택
 
-### Frontend
-
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite_7-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=reactquery&logoColor=white)
-![React Router](https://img.shields.io/badge/React_Router_7-CA4245?style=for-the-badge&logo=reactrouter&logoColor=white)
-![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
-![Storybook](https://img.shields.io/badge/Storybook-FF4785?style=for-the-badge&logo=storybook&logoColor=white)
-![Biome](https://img.shields.io/badge/Biome-60A5FA?style=for-the-badge&logo=biome&logoColor=white)
-
-### Backend
-
-![Java](https://img.shields.io/badge/Java_25-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot_4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Drizzle](https://img.shields.io/badge/Drizzle_ORM-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL_+_PostGIS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-![Flyway](https://img.shields.io/badge/Flyway-CC0200?style=for-the-badge&logo=flyway&logoColor=white)
-![Testcontainers](https://img.shields.io/badge/Testcontainers-291A3F?style=for-the-badge&logo=testcontainers&logoColor=white)
-![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
-
-### Infra
-
-![AWS](https://img.shields.io/badge/AWS_EC2_+_ECR-232F3E?style=for-the-badge&logo=amazonwebservices&logoColor=white)
-![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=for-the-badge&logo=terraform&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Caddy](https://img.shields.io/badge/Caddy-1F88C0?style=for-the-badge&logo=caddy&logoColor=white)
-![Cloudflare Pages](https://img.shields.io/badge/Cloudflare_Pages-F38020?style=for-the-badge&logo=cloudflarepages&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
-![Grafana](https://img.shields.io/badge/Prometheus_+_Loki_+_Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white)
+![Vercel AI SDK](https://img.shields.io/badge/AI_SDK_7-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![NVIDIA](https://img.shields.io/badge/NVIDIA_NIM-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+![Storybook](https://img.shields.io/badge/Storybook_10-FF4785?style=for-the-badge&logo=storybook&logoColor=white)
+![Biome](https://img.shields.io/badge/Biome-60A5FA?style=for-the-badge&logo=biome&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=neon&logoColor=black)
 
 <br/>
 
-## 🏗️ 아키텍처
+## 🏗️ 구조
 
 ```mermaid
 flowchart LR
-    User(["사용자"]) --> FE["Frontend<br/>React SPA<br/>Cloudflare Pages"]
-    FE -->|HTTPS| Caddy
+    User(["사용자"]) -->|HTTPS| Edge["Vercel 엣지<br/>서울"]
 
-    subgraph EC2["AWS EC2 (Docker Compose)"]
-        Caddy["Caddy<br/>리버스 프록시"] --> API["Spring Boot API"]
-        API --> DB[("PostgreSQL + PostGIS<br/>도메인 데이터와 역 공간 데이터")]
-        API -.-> MON["Prometheus, Loki, Grafana"]
+    subgraph Vercel["Vercel Hobby"]
+        Edge --> App["Next.js 앱<br/>화면과 API<br/>함수 리전 sin1"]
     end
 
-    API --> Google["Google Routes<br/>Google Places"]
-    API --> Odsay["ODsay<br/>대중교통 경로"]
-    API --> Kakao["Kakao Local<br/>Kakao Directions"]
-    API -.-> Slack["Slack 알림"]
+    App --> DB[("Neon Free<br/>PostgreSQL + PostGIS<br/>싱가포르")]
+    App --> NV["NVIDIA<br/>시간 해석, 제안 문장"]
+    App --> Google["Google Routes<br/>대중교통 이동 시간"]
+    App --> Kakao["Kakao Local<br/>장소 검색"]
 ```
 
-- **단일 DB:** 모임, 투표 같은 도메인 데이터와 지하철역 공간 데이터를 PostgreSQL + PostGIS 하나에 두고, 스키마는 Flyway 마이그레이션으로 관리합니다.
-- **중간지점 추천:** 출발지 좌표의 지리적 중심을 구한 뒤 PostGIS `ST_DWithin`으로 반경 5km 안의 역을 찾습니다. Google Routes로 참여자별 이동시간 행렬을 계산해 합이 가장 작은 역 3곳을 고릅니다.
-- **캐싱:** 같은 요청이 외부 API를 반복 호출하지 않도록 중간지점 추천 결과와 역 주변 장소를 Caffeine으로 캐시합니다.
-- **배포:** 백엔드는 GitHub Actions에서 Docker 이미지를 ECR에 올린 뒤 EC2에서 Compose로 교체합니다. 인프라는 Terraform으로 관리합니다. 프론트엔드는 Cloudflare Pages에 배포되고 PR마다 미리보기 주소가 달립니다.
+- **한 프로젝트:** 첫 버전은 React SPA, Spring Boot, EC2로 나뉘어 있었습니다. 리뉴얼은 화면과 API를 Next.js 하나에 두고, AI 호출도 별도 서버 없이 같은 함수 안에서 합니다.
+- **같은 지역에 두기:** Neon에는 서울 리전이 없어서 싱가포르를 쓰고, Vercel 함수도 `sin1`에 두어 DB와 가까이 붙였습니다. 요청은 서울 엣지로 들어와 싱가포르 함수가 처리합니다.
+- **중간지점:** 출발지들의 중심 근처 역 10곳을 PostGIS로 찾고, Google Routes로 사람별 대중교통 시간을 구해 후보를 고릅니다. 결과는 DB 캐시에 한 시간 둡니다.
+- **미리보기 배포:** PR마다 Vercel 미리보기가 생기고, Neon의 `preview` 브랜치와 모의 외부 응답으로 돌아서 외부 API 한도를 쓰지 않습니다.
+
+### 비용을 0원으로 묶는 방법
+
+모임이 한 달에 몇 개 만들어지는 규모라 모든 서비스를 무료 플랜으로 운영합니다. 결제 계정이 연결된 것은 Google Routes 하나이고, 무료 한도를 넘지 않게 세 겹으로 막습니다.
+
+1. 앱이 서울 기준 한 달 행렬 항목 4,000건에서 새 계산을 멈추고 캐시된 결과를 씁니다.
+2. Google Cloud 할당량으로 하루 160건을 넘는 요청을 거절합니다. 31일을 다 써도 무료 한도 5,000건 아래입니다.
+3. 1,000원 예산 알림을 걸어 두었습니다.
 
 <br/>
 
@@ -113,78 +107,38 @@ flowchart LR
 
 ```text
 moyeorak
-├── app/                   새 앱 (Next.js, 리뉴얼 0단계)
-├── frontend/              새로 만들 프론트엔드 작업 공간
-├── backend/               새로 만들 백엔드 작업 공간
-├── reference/
-│   ├── frontend/          기존 프론트엔드 (서브모듈, dnd-14th-8-frontend)
-│   └── backend/           기존 백엔드 (서브모듈, dnd-14th-8-backend)
-└── docs/assets/           README 이미지와 소개 영상
+├── app/                 지금 운영 중인 Next.js 앱
+├── design/brand-v3/     브랜드, 캐릭터 마주, 화면 시안
+├── docs/
+│   ├── superpowers/     설계 문서와 구현 계획
+│   ├── eval/            AI 평가 세트
+│   ├── metrics/         지표 기준선
+│   └── legacy/          첫 버전 소개
+├── reference/           첫 버전 프론트엔드와 백엔드 (서브모듈)
+├── frontend/, backend/  리뉴얼 전에 비워 둔 작업 공간
+└── docs/assets/         첫 버전 화면과 소개 영상
 ```
-
-`reference/`의 두 서브모듈은 2026년 8월 말 커밋에 고정되어 있습니다. 백엔드는 `dev`, 프론트엔드는 `main` 브랜치 기준입니다.
 
 <br/>
 
 ## 🚀 로컬 실행
 
-```bash
-git clone --recurse-submodules https://github.com/hyunolike/moyeorak.git
-```
-
-### 새 앱 (app/)
-
-리뉴얼 0단계로 만든 Next.js 앱입니다. 화면과 API를 한 프로젝트에 두었고, 설계는 [리뉴얼 설계 문서](./docs/superpowers/specs/2026-10-30-moyeorak-renewal-design.md)에 있습니다. Node 24, pnpm 10, PostGIS 컨테이너가 필요합니다.
+Node 24, pnpm 10, PostGIS 컨테이너가 필요합니다.
 
 ```bash
-cd app
+git clone https://github.com/hyunolike/moyeorak.git
+cd moyeorak/app
 pnpm install
 pnpm dev
 ```
 
-DB 준비, 환경 변수, 테스트, 배포 절차는 [app/README.md](./app/README.md)에 정리했습니다.
-
-### Backend
-
-Java 25와 Docker가 필요합니다.
-
-```bash
-cd reference/backend
-cp .env.example .env    # KAKAO_API_KEY, GOOGLE_API_KEY, ODSAY_API_KEY 입력
-./gradlew bootRun --args='--spring.profiles.active=local'
-```
-
-`bootRun`을 실행하면 spring-boot-docker-compose가 PostgreSQL과 Redis 컨테이너를 함께 띄우고, Flyway가 스키마와 역 데이터를 적용합니다. 외부 API 키가 없어도 서버와 일정 기능은 동작하지만 중간지점 추천, 경로, 주변 장소 기능은 키가 있어야 합니다.
-
-```bash
-./gradlew test                              # 테스트 (JaCoCo 커버리지 70% 기준)
-docker-compose --profile monitoring up -d   # 모니터링 스택이 필요할 때만
-```
-
-- Swagger UI: http://localhost:8080/swagger-ui.html
-
-### Frontend
-
-Node 24 이상과 pnpm 10이 필요합니다.
-
-```bash
-cd reference/frontend
-nvm use                 # .nvmrc 기준 Node 24
-cp .env.example .env    # VITE_API_BASE_URL=http://localhost:8080, 지도 키 입력
-pnpm install
-pnpm dev
-```
-
-```bash
-pnpm check        # Biome lint + format 검사
-pnpm build        # 타입 검사 + 프로덕션 빌드
-pnpm storybook    # 컴포넌트 카탈로그 (http://localhost:6006)
-```
+DB 준비, 환경 변수, 테스트, 배포 절차는 [app/README.md](./app/README.md)에 있습니다.
 
 <br/>
 
 ## 🔗 더 보기
 
-- [기존 백엔드 README](https://github.com/dnd-side-project/dnd-14th-8-backend#readme): ERD, API 명세, CI/CD 파이프라인
-- [로컬 개발 환경 가이드](https://github.com/dnd-side-project/dnd-14th-8-backend/blob/dev/docs/local-dev-setup.md)
-- [새 백엔드 작업 공간](./backend/README.md), [새 프론트엔드 작업 공간](./frontend/README.md)
+- [리뉴얼 설계](./docs/superpowers/specs/2026-10-30-moyeorak-renewal-design.md)와 [무료 배포 설계](./docs/superpowers/specs/2026-10-31-free-deployment-design.md)
+- 단계별 구현 계획: [0단계 기반](./docs/superpowers/plans/2026-10-30-phase0-foundation.md), [1단계 얼굴과 입구](./docs/superpowers/plans/2026-10-30-phase1-face-and-entry.md), [2단계 결정](./docs/superpowers/plans/2026-10-31-phase2-decision.md), [배포](./docs/superpowers/plans/2026-10-31-free-deployment.md)
+- [브랜드 v3](./design/brand-v3/BRAND.md)
+- [첫 버전 소개](./docs/legacy/README.md): DND 14기 때의 화면, 기술 스택, 아키텍처
