@@ -2,6 +2,7 @@ import {
   seoulDayStart,
   seoulMidnight,
   seoulParts,
+  seoulYearMonth,
   slotInstant,
 } from "@/lib/seoul-time";
 
@@ -41,4 +42,9 @@ test("seoulDayStart는 서울 날짜의 자정을 돌려준다", () => {
   expect(
     seoulDayStart(new Date("2026-11-07T14:59:00.000Z")).toISOString(),
   ).toBe("2026-11-06T15:00:00.000Z");
+});
+
+test("seoulYearMonth는 서울 기준 월 경계를 지킨다", () => {
+  expect(seoulYearMonth(new Date("2026-10-31T15:10:00Z"))).toBe("2026-11");
+  expect(seoulYearMonth(new Date("2026-10-31T14:50:00Z"))).toBe("2026-10");
 });

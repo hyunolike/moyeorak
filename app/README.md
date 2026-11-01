@@ -14,21 +14,22 @@
 
 `.env.example`을 `.env.local`로 복사해 채웁니다. `pnpm dev`는 `.env.local`을 읽고, 이 파일은 git에 올라가지 않습니다.
 
-| 이름                      | 용도                                                                        |
-| ------------------------- | --------------------------------------------------------------------------- |
-| `DATABASE_URL`            | 앱이 쓰는 PostgreSQL 연결 문자열                                            |
-| `DATABASE_URL_TEST`       | 테스트용 DB. `.env.test`에 로컬 값이 들어 있어서 보통 따로 채우지 않습니다. |
-| `ADMIN_TOKEN`             | 관리자 지표 페이지 접근 토큰. 비워 두면 접근이 항상 거부됩니다.             |
-| `GOOGLE_API_KEY`          | Google Routes 이동시간 계산                                                 |
-| `KAKAO_API_KEY`           | Kakao Local 장소 검색                                                       |
-| `SITE_URL`                | 공유 미리보기에 쓰는 사이트 주소. `https://`를 포함한 전체 주소로 적습니다. |
-| `NVIDIA_API_KEY`          | 말로 남기기에 쓰는 NVIDIA AI 키                                             |
-| `NVIDIA_MODEL_PARSE`      | 가능 시간 문장을 해석하는 모델 이름                                         |
-| `NVIDIA_MODEL_SUGGEST`    | 제안에 쓰는 모델 이름                                                       |
-| `NVIDIA_BASE_URL`         | (선택) AI 호출 주소. 비우면 `https://integrate.api.nvidia.com/v1`           |
-| `AI_CALL_CAP_PER_MEETING` | (선택) 모임 하나의 AI 호출 상한. 비우면 40                                  |
-| `MIDPOINT_DAILY_CAP`      | 모임 하나가 하루에 새로 계산할 수 있는 중간지점 추천 수. 비우면 30          |
-| `LEGACY_DATABASE_URL`     | 옛 서비스 DB. 교체 배포 때 `pnpm migrate:legacy`에서만 씁니다.              |
+| 이름                         | 용도                                                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`               | 앱이 쓰는 PostgreSQL 연결 문자열                                                                                                            |
+| `DATABASE_URL_TEST`          | 테스트용 DB. `.env.test`에 로컬 값이 들어 있어서 보통 따로 채우지 않습니다.                                                                 |
+| `ADMIN_TOKEN`                | 관리자 지표 페이지 접근 토큰. 비워 두면 접근이 항상 거부됩니다.                                                                             |
+| `GOOGLE_API_KEY`             | Google Routes 이동시간 계산                                                                                                                 |
+| `KAKAO_API_KEY`              | Kakao Local 장소 검색                                                                                                                       |
+| `SITE_URL`                   | 공유 미리보기에 쓰는 사이트 주소. `https://`를 포함한 전체 주소로 적습니다. 비우면 Vercel의 `VERCEL_URL`, 그것도 없으면 localhost를 씁니다. |
+| `NVIDIA_API_KEY`             | 말로 남기기에 쓰는 NVIDIA AI 키                                                                                                             |
+| `NVIDIA_MODEL_PARSE`         | 가능 시간 문장을 해석하는 모델 이름                                                                                                         |
+| `NVIDIA_MODEL_SUGGEST`       | 제안에 쓰는 모델 이름                                                                                                                       |
+| `NVIDIA_BASE_URL`            | (선택) AI 호출 주소. 비우면 `https://integrate.api.nvidia.com/v1`                                                                           |
+| `AI_CALL_CAP_PER_MEETING`    | (선택) 모임 하나의 AI 호출 상한. 비우면 40                                                                                                  |
+| `MIDPOINT_DAILY_CAP`         | 모임 하나가 하루에 새로 계산할 수 있는 중간지점 추천 수. 비우면 30                                                                          |
+| `GOOGLE_MONTHLY_ELEMENT_CAP` | (선택) 한 달 동안 모든 모임이 Google 이동 시간 계산에 쓸 수 있는 행렬 항목 수. 비우면 4000                                                  |
+| `LEGACY_DATABASE_URL`        | 옛 서비스 DB. 옛 DB가 없어 지금은 쓰지 않습니다. `pnpm migrate:legacy`에서만 씁니다.                                                        |
 
 외부 API 키가 없으면 `MOCK_EXTERNAL=1`을 붙여 실행합니다. Google Routes와 Kakao 클라이언트가 가짜 데이터를 돌려줘서 키 없이도 전체 흐름을 볼 수 있습니다.
 
@@ -150,23 +151,62 @@ app
     └── styles/        디자인 토큰
 ```
 
-## 배포 체크리스트
+## 배포
 
-Vercel과 Neon을 쓰는 배포입니다. 호스트 계정이 있어야 해서 아직 실행하지 않았고, 아래 항목을 하나씩 확인합니다.
+Vercel Hobby와 Neon Free로 `https://moyeorak.hyunolike.dev`에 배포합니다. Vercel 프로젝트의 Root Directory는 `app/`, Production Branch는 `develop`입니다. PR을 develop에 머지하면 운영에 배포되고, 문제가 생기면 Vercel의 Instant Rollback으로 이전 배포로 되돌립니다. 데이터는 Neon 무료 플랜의 복원 기간(6시간) 안에서 시점 복원이 됩니다.
 
-- [ ] Vercel 프로젝트를 만들고 Root Directory를 `app/`으로 지정합니다. 이렇게 하면 Next.js가 자동으로 감지되어 `vercel.json`은 필요 없습니다.
-- [ ] Node.js 버전을 24로 맞춥니다.
-- [ ] 아래 [운영 환경 변수](#운영-환경-변수)를 Vercel에 넣습니다. 운영에서 `MOCK_EXTERNAL`은 설정하지 않습니다.
-- [ ] Neon 데이터베이스에서 `CREATE EXTENSION IF NOT EXISTS postgis;`를 실행합니다.
-- [ ] Neon 연결 문자열을 `DATABASE_URL`로 두고 `pnpm db:migrate`를 실행합니다.
-- [ ] 미리보기 주소에서 모임 만들기, 일정 투표, 출발지 등록, 중간지점 추천 흐름을 손으로 한 번 확인합니다.
-- [ ] `/admin/metrics?token=...`이 열리고 토큰 없이는 거부되는지 확인합니다.
+함수가 도는 리전은 `vercel.json`이 `sin1`(싱가포르)로 정합니다. 지정하지 않으면 새 프로젝트의 기본값인 미국 동부에서 돌기 때문에 Neon의 `aws-ap-southeast-1`과 같은 지역으로 맞췄습니다. Hobby 함수의 실행 시간은 기본값과 최대값이 모두 300초라서 `maxDuration`은 따로 정하지 않습니다.
 
-### 운영 환경 변수
+PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `MOCK_EXTERNAL=1`로 돌리고 외부 API 키를 넣지 않습니다. Google, Kakao, NVIDIA를 부르지 않으니 무료 한도를 쓰지 않고, 실제 외부 연동은 운영에서만 확인합니다.
 
-Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMIN_TOKEN`, `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST`, `SITE_URL`입니다. `DATABASE_URL_TEST`는 테스트에서만, `LEGACY_DATABASE_URL`은 이전 도구를 돌릴 때 셸에서만 쓰므로 Vercel에는 넣지 않습니다. `MIDPOINT_DAILY_CAP`, `NVIDIA_BASE_URL`, `AI_CALL_CAP_PER_MEETING`은 기본값을 바꿀 때만 넣습니다.
+### 배포 절차
+
+키, 결제, 계정이 필요한 단계는 호스트가 직접 합니다.
+
+1. Neon에서 `aws-ap-southeast-1` 프로젝트를 만들고, 기본 소유자 역할로 `CREATE EXTENSION IF NOT EXISTS postgis;`를 실행합니다. 이 SQL은 Neon 콘솔의 SQL Editor에서 실행해도 됩니다. 운영 브랜치의 풀링 연결 문자열과 직접 연결 문자열을 확인합니다.
+2. 운영 브랜치에 마이그레이션을 적용합니다. 먼저 `app/`에서 `pnpm install`을 실행해 둡니다. 빌드 때 자동으로 돌리지 않고, 마이그레이션이 든 PR은 머지 전에 운영 DB의 직접 연결 문자열(풀러가 아닌 주소)로 사람이 실행합니다. `drizzle.config.ts`가 `DATABASE_URL_TEST`를 먼저 읽기 때문에 그 변수를 비운 셸에서 돌립니다.
+
+   ```bash
+   env -u DATABASE_URL_TEST DATABASE_URL=<직접 연결 주소> pnpm db:migrate
+   ```
+
+   끝나면 `select count(*) from stations`가 654인지 확인합니다.
+3. 운영 브랜치에서 `preview` 브랜치를 만들고 풀링 연결 문자열을 확인합니다. 사용자가 들어오기 전에 만들어야 사용자 데이터가 복사되지 않습니다. 다시 만들 때는 Neon의 "부모에서 초기화"를 쓰지 않습니다. 새 루트 브랜치를 만들고 PostGIS를 켠 뒤 마이그레이션을 적용합니다.
+4. Google Cloud 프로젝트를 만들고 결제 계정을 연결한 뒤 Routes API를 사용 설정합니다. API 키를 발급해 Routes API에만 쓰도록 제한합니다. 요청 할당량은 하루 300요청으로 두고(분당 할당량만 있으면 분당 10요청), 예산 알림은 1,000원으로 걸어 둡니다. 실제로 비용을 막는 장치는 앱의 월 상한(`GOOGLE_MONTHLY_ELEMENT_CAP`)이고, 할당량과 예산 알림은 그 바깥에서 한 번 더 받쳐 주는 용도입니다.
+5. Kakao Developers 앱의 REST API 키를 확인합니다. NVIDIA 개발자 키를 발급하고 임시 모델을 `NVIDIA_MODEL_PARSE`와 `NVIDIA_MODEL_SUGGEST`에 지정합니다.
+6. Vercel에 GitHub 저장소를 연결합니다. Root Directory는 `app/`, Production Branch는 `develop`, Node는 24로 둡니다. 가져오기 화면에서는 환경 변수를 입력하지 않습니다. 이 화면에 넣은 값은 모든 환경에 한꺼번에 적용되어 운영 키가 미리보기와 개발 환경에 섞입니다. 첫 배포는 환경 변수가 없어 실패해도 괜찮으니 그대로 둡니다.
+
+   배포가 만들어진 뒤 Settings의 Environment Variables에서 아래 [배포 환경 변수](#배포-환경-변수) 표대로 하나씩 추가합니다. 변수마다 Production만 또는 Preview만 체크하고, Development는 어떤 변수에도 체크하지 않습니다. 이 화면의 기본값이 모든 환경이라서 체크를 직접 풀어야 합니다. 이와 별개로 `ENABLE_EXPERIMENTAL_COREPACK=1`을 Production과 Preview 둘 다에 추가합니다. `packageManager`가 `pnpm@10.17.0`인데 Vercel은 이 값을 이 변수가 있을 때만 따릅니다.
+
+   변수를 다 넣고 나면 다시 배포(Redeploy)합니다. 첫 빌드 로그에서 pnpm 버전이 10.17.0인지, 함수 리전이 `sin1`인지 확인합니다. 첫 PR을 열기 전에 Preview 환경에 `MOCK_EXTERNAL=1`이 들어 있고 Google, Kakao, NVIDIA 키가 없는지 한 번 더 봅니다. 앱도 `VERCEL_ENV`가 `preview`이면 Google을 부르지 않지만, 다른 서비스는 이 변수 설정에만 기대기 때문입니다.
+7. Vercel에 `moyeorak.hyunolike.dev`를 추가하고, 가비아 DNS에 Vercel이 알려 주는 CNAME을 넣어 인증서가 발급되는지 확인합니다.
+8. 운영 주소에서 모임 하나를 끝까지 진행합니다. 만들기, 투표, 말로 입력, 제안, 확정, 출발지, 장소 제안, 요약 카드와 이미지를 확인하고, `ADMIN_TOKEN`으로 관리자 지표를 열어 AI 사용량을 봅니다. 카카오톡 공유 디버거로 미리보기도 확인하고, 공유 링크의 og:url이 `moyeorak.hyunolike.dev`인지 확인합니다. Vercel의 미리보기 보호가 카카오 스크래퍼를 막기 때문에 링크 미리보기는 운영 주소에서만 확인합니다.
+9. 확인용 모임을 2단계와 같은 직접 연결로 지웁니다. 모임 행을 지우면 연결된 행이 함께 지워집니다. 지표에 섞이지 않게 하려는 작업입니다.
+
+   ```sql
+   delete from meetings where id = '<확인용 id>';
+   ```
+
+10. 평가 세트를 채워 모델을 고르고 환경 변수를 교체합니다.
+
+### 배포 환경 변수
+
+| 이름                                                           | 운영                             | 미리보기                        |
+| -------------------------------------------------------------- | -------------------------------- | ------------------------------- |
+| `DATABASE_URL`                                                 | Neon 운영 브랜치 풀링 주소       | Neon `preview` 브랜치 풀링 주소 |
+| `SITE_URL`                                                     | `https://moyeorak.hyunolike.dev` | 넣지 않음(`VERCEL_URL` 사용)    |
+| `MOCK_EXTERNAL`                                                | 넣지 않음                        | `1`                             |
+| `GOOGLE_API_KEY`, `KAKAO_API_KEY`                              | 넣음                             | 넣지 않음                       |
+| `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST` | 넣음                             | 넣지 않음                       |
+| `ADMIN_TOKEN`                                                  | 긴 무작위 문자열                 | 다른 무작위 문자열              |
+| `GOOGLE_MONTHLY_ELEMENT_CAP`                                   | 기본값이면 생략                  | 생략                            |
+| `ENABLE_EXPERIMENTAL_COREPACK`                                 | `1`                              | `1`                             |
+
+`DATABASE_URL_TEST`는 테스트에서만, `LEGACY_DATABASE_URL`은 이전 도구를 돌릴 때 셸에서만 쓰므로 Vercel에는 넣지 않습니다. `MIDPOINT_DAILY_CAP`, `NVIDIA_BASE_URL`, `AI_CALL_CAP_PER_MEETING`도 기본값을 바꿀 때만 넣습니다.
 
 ## 옛 서비스에서 옮겨 오기
+
+옛 서비스 DB가 남아 있지 않아 이번 배포에서는 이 절차를 쓰지 않습니다. 도구는 기록으로 남겨 둡니다.
 
 기존 Spring Boot 서비스의 모임은 도메인을 새 앱으로 돌리는 시점에 한 번 옮깁니다. 이미 공유된 `/meetings/{id}` 링크가 새 앱에서도 같은 모임을 열고, 옛 앱에서 참여했던 사람도 이름을 다시 묻지 않고 같은 참여자로 알아보게 하려는 작업입니다. 옛 프론트는 브라우저 localStorage의 `moyeorak.session`에 참여자 UUID를 두었고, 이전 도구는 이 값을 새 참여자의 기기 키로 그대로 옮깁니다. localStorage는 도메인마다 따로 저장되므로 새 앱이 옛 앱과 같은 도메인에서 열려야 이 값을 읽을 수 있습니다.
 
@@ -200,7 +240,7 @@ Vercel에 넣는 값은 `DATABASE_URL`, `GOOGLE_API_KEY`, `KAKAO_API_KEY`, `ADMI
    LEGACY_DATABASE_URL=<옛 DB> DATABASE_URL=<새 DB> pnpm migrate:legacy
    ```
 
-5. Vercel 프로젝트에 위의 [운영 환경 변수](#운영-환경-변수)를 넣습니다. `SITE_URL`에는 옛 앱이 쓰던 도메인을 `https://`를 포함한 전체 주소로 적습니다.
+5. Vercel 프로젝트에 위의 [배포 환경 변수](#배포-환경-변수)를 넣습니다. `SITE_URL`에는 옛 앱이 쓰던 도메인을 `https://`를 포함한 전체 주소로 적습니다.
 
 6. 도메인을 새 앱으로 돌립니다. 옛 앱과 같은 도메인이어야 브라우저에 남아 있는 `moyeorak.session`을 새 앱이 읽을 수 있습니다.
 

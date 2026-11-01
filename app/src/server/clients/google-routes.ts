@@ -1,5 +1,10 @@
-import { ExternalApiError, fetchJson } from "@/server/clients/errors";
+import {
+  ExternalApiError,
+  fetchJson,
+  RateLimitedError,
+} from "@/server/clients/errors";
 import { haversineMeters, type LatLng } from "@/server/clients/geo";
+import { reserveGoogleElements } from "@/server/clients/google-usage";
 
 const URL =
   "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
@@ -59,7 +64,11 @@ export async function computeTransitMatrix(
   destinations: LatLng[],
   departAt: Date,
 ): Promise<(number | null)[][]> {
-  if (process.env.MOCK_EXTERNAL === "1") {
+  // 미리보기 배포는 환경 변수 설정이 잘못돼도 운영 키와 한도를 쓰지 않게 목으로 둔다.
+  if (
+    process.env.MOCK_EXTERNAL === "1" ||
+    process.env.VERCEL_ENV === "preview"
+  ) {
     return origins.map((o) =>
       destinations.map((d) =>
         Math.ceil(haversineMeters(o, d) / MOCK_METERS_PER_MINUTE),
@@ -74,6 +83,12 @@ export async function computeTransitMatrix(
     destinations.map(() => null),
   );
   if (origins.length === 0 || destinations.length === 0) return matrix;
+
+  // 앱 전체 월 상한. 호출이 실패해도 돌려주지 않는다(보수적으로 센다).
+  if (!(await reserveGoogleElements(origins.length * destinations.length)))
+    throw new RateLimitedError(
+      "이번 달 이동 시간 계산 한도를 다 썼어요. 다음 달에 다시 시도해 주세요",
+    );
 
   const chunkSize = Math.max(1, Math.floor(MAX_ELEMENTS / destinations.length));
   for (let start = 0; start < origins.length; start += chunkSize) {

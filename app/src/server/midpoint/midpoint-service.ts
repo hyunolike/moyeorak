@@ -98,7 +98,17 @@ export async function recommendMidpoint(
     throw new RateLimitedError();
   }
 
-  const result = await compute(departures, departAt);
+  let result: MidpointResult;
+  try {
+    result = await compute(departures, departAt);
+  } catch (e) {
+    // 앱 전체 월 상한에 닿았다. 모임 하루 상한과 같은 경로로 간다.
+    if (e instanceof RateLimitedError) {
+      const latest = await latestCached<MidpointResult>(prefix);
+      if (latest) return latest;
+    }
+    throw e;
+  }
   await setCached(key, result, CACHE_TTL_MS);
   return result;
 }
