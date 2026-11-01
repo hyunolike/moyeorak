@@ -6,7 +6,7 @@
 
 ### 서로의 시간을, 하나의 약속으로
 
-[![](https://img.shields.io/badge/-moyeorak.hyunolike.dev-FF6B4A?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.hyunolike.dev)
+[![](https://img.shields.io/badge/-moyeorak.hyunolike.dev-F45B3F?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.hyunolike.dev)
 [![](https://img.shields.io/badge/-첫_버전_소개-16161A?style=flat&logo=github&logoColor=white)](./docs/legacy/README.md)
 
 </div>
