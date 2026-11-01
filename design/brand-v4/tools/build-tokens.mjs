@@ -22,6 +22,28 @@ export const SINGLES = Object.freeze({
   "danger-soft": "#FBEAE8",
 });
 
+// 정보 색: 브랜드 색과 따로 둔다. 사람들은 지하철 노선을 색으로 먼저 알아본다(서울교통공사 노선 색).
+export const LINES = Object.freeze({
+  "line-1": "#0052A4",
+  "line-2": "#00A84D",
+  "line-3": "#EF7C1C",
+  "line-4": "#00A5DE",
+  "line-5": "#996CAC",
+  "line-6": "#CD7C2F",
+  "line-7": "#747F00",
+  "line-8": "#E6186C",
+  "line-9": "#BDB092",
+  "line-gyeongui": "#77C4A3",
+  "line-sinbundang": "#D4003B",
+});
+
+// 지도 색: 탠저린 핀과 노선이 돋보이게 차분한 중립색으로.
+export const MAP = Object.freeze({
+  "map-land": "#F2F1EC",
+  "map-road": "#FFFFFF",
+  "map-water": "#D6E4EA",
+});
+
 // 역할 → 원색 이름. 역할 이름은 지금 앱이 쓰는 이름과 같다.
 export const ROLES = Object.freeze({
   bg: "white",
@@ -131,6 +153,8 @@ export function buildCss() {
   const prims = [
     ...Object.entries(RAMPS).flatMap(([n, r]) => LEVELS.map((l) => `  --color-${n}-${l}: ${r[l]};`)),
     ...Object.entries(SINGLES).map(([n, v]) => `  --color-${n}: ${v};`),
+    ...Object.entries(LINES).map(([n, v]) => `  --color-${n}: ${v};`),
+    ...Object.entries(MAP).map(([n, v]) => `  --color-${n}: ${v};`),
   ];
   const roles = Object.entries(ROLES).map(([r, p]) => `  --color-${r}: ${varName(p)};`);
   const legacy = Object.entries(LEGACY).map(([n, target]) => `  --color-${n}: ${varName(target)};`);

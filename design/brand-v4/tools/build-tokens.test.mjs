@@ -47,3 +47,15 @@ test("기존 화면이 쓰는 색 클래스가 모두 정의된다 (Review Focus
   const missing = [...used].filter((u) => !defined.has(u));
   assert.deepEqual(missing, [], `정의되지 않은 색: ${missing.join(", ")}`);
 });
+
+test("지하철 노선 색은 브랜드와 별도의 정보 색으로 들어 있다", () => {
+  const css = buildCss();
+  for (const [line, hex] of [["1", "#0052A4"], ["2", "#00A84D"], ["3", "#EF7C1C"], ["4", "#00A5DE"], ["5", "#996CAC"], ["6", "#CD7C2F"], ["7", "#747F00"], ["8", "#E6186C"], ["9", "#BDB092"], ["gyeongui", "#77C4A3"], ["sinbundang", "#D4003B"]]) {
+    assert.ok(css.includes(`--color-line-${line}: ${hex};`), `노선 ${line}`);
+  }
+});
+
+test("지도 색(바탕, 길, 강)이 들어 있다", () => {
+  const css = buildCss();
+  for (const k of ["map-land", "map-road", "map-water"]) assert.match(css, new RegExp(`--color-${k}: #[0-9A-F]{6};`), k);
+});

@@ -57,3 +57,17 @@ test("tokens.vars.css는 앱 토큰과 같은 값을 :root 변수로 담는다",
     assert.ok(vars.includes(`${m[1]}: ${m[2]};`), m[1]);
   }
 });
+
+const section = (id) => html().split(/<section/).find((s) => s.includes(`id="${id}"`));
+
+test("첫 화면 그림에서 노선이 모이는 점은 마주다", () => {
+  const s = section("landing");
+  assert.match(s, /data-meet[\s\S]*data-maju=/, "모이는 점에 마주");
+});
+
+test("역 목록은 지도와 함께 보이고 노선 배지는 노선 색을 쓴다", () => {
+  const s = section("stations");
+  assert.match(s, /data-map/, "지도");
+  assert.match(s, /var\(--color-line-6\)/, "6호선 색");
+  assert.match(s, /var\(--color-line-3\)/, "3호선 색");
+});

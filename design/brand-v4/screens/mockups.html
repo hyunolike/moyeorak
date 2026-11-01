@@ -105,7 +105,9 @@ section.phone { width: 375px; height: 812px; background: var(--color-bg); positi
 .station .rank { width: 24px; height: 24px; border-radius: 7px; font-size: 13px; font-weight: 800; display: grid; place-items: center; background: var(--color-surface-sunken); }
 .station.on .rank { background: var(--color-action); color: var(--color-on-action); }
 .station .nm { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
-.station .line { font-size: 12px; font-weight: 700; border: 1.5px solid var(--color-ink-900); border-radius: 99px; padding: 1px 7px; }
+.station .line { font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; color: var(--color-text); }
+.station .line i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.map { margin: 14px 20px 6px; border-radius: 16px; overflow: hidden; height: 176px; }
 .station .avg { margin-left: auto; font-size: 14px; color: var(--color-muted); }
 .station .avg b { color: var(--color-text); font-size: 16px; }
 .bars { display: grid; grid-template-columns: 44px 1fr 40px; gap: 6px 8px; align-items: center; font-size: 13px; }
@@ -155,14 +157,15 @@ section.phone { width: 375px; height: 812px; background: var(--color-bg); positi
   <div class="scroll pad" style="padding-top:36px">
     <h1 class="h1" style="font-size:34px">친구들 약속,<br>링크 하나로<br>정해요</h1>
     <p class="sub" style="margin-top:14px">각자 되는 시간과 출발지를 남기면, 마주가 한두 개로 추려 드려요. 마지막 결정은 모임을 만든 사람이 해요.</p>
-    <svg viewBox="0 0 335 150" width="335" height="150" style="margin-top:28px" aria-hidden="true">
-      <path d="M0 26 H120 Q150 26 150 56 V96" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
-      <path d="M335 26 H210 Q182 26 182 56 V96" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
-      <path d="M0 76 H90 Q130 76 150 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
-      <path d="M335 76 H245 Q205 76 182 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
-      <circle cx="166" cy="112" r="30" fill="var(--color-ink-900)"/>
-      <circle cx="166" cy="112" r="16" fill="var(--color-action)"/>
-    </svg>
+    <div data-meet style="position:relative;width:335px;height:170px;margin-top:24px">
+      <svg viewBox="0 0 335 170" width="335" height="170" aria-hidden="true" style="position:absolute;inset:0">
+        <path d="M0 26 H120 Q150 26 150 56 V92" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
+        <path d="M335 26 H210 Q182 26 182 56 V92" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
+        <path d="M0 76 H90 Q130 76 146 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
+        <path d="M335 76 H245 Q205 76 186 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
+      </svg>
+      <div style="position:absolute;left:122px;top:82px"><svg data-maju="happy" role="img" aria-label="마주 — 기쁨" width="88" height="88" viewBox="0 0 64 64"><path fill="var(--color-tangerine-500)" d="M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z"/><path fill="var(--color-ink-900)" fill-rule="evenodd" d="M2.7159512479097785 52 H61.28404875209022 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2.7159512479097785 52 Z M47 57 A3 3 0 1 0 53 57 A3 3 0 1 0 47 57 Z"/><path fill="var(--color-ink-900)" d="M14 27 Q21 10 28 27 Q29 30 26 31 Q24 32 23 29 Q21 24 19 29 Q18 32 15 31 Q13 30 14 27 Z M36 27 Q43 10 50 27 Q51 30 48 31 Q46 32 45 29 Q43 24 41 29 Q40 32 37 31 Q35 30 36 27 Z M23 34 H41 Q43 34 43 36 Q43 44 32 44 Q21 44 21 36 Q21 34 23 34 Z"/></svg></div>
+    </div>
     <ol style="list-style:none;margin-top:28px;display:flex;flex-direction:column;gap:14px">
       <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">1</span><b style="font-size:16px">링크를 단톡방에 보내요</b></li>
       <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">2</span><b style="font-size:16px">각자 되는 시간과 출발지를 남겨요</b></li>
@@ -280,26 +283,46 @@ section.phone { width: 375px; height: 812px; background: var(--color-bg); positi
       <h1 class="h2" style="margin-top:4px">어디서 만날까요?</h1>
       <p class="sub" style="margin-top:4px">출발지 5곳에서 가운데에 있는 역이에요</p>
     </div>
-    <div style="height:16px"></div>
+    <div data-map class="map" aria-label="출발지와 후보 역 지도">
+      <svg viewBox="0 0 335 176" width="335" height="176">
+        <rect width="335" height="176" fill="var(--color-map-land)"/>
+        <path d="M-10 128 C60 112 110 150 175 132 S280 102 345 118 L345 150 C280 134 230 166 175 160 S60 140 -10 158 Z" fill="var(--color-map-water)"/>
+        <path d="M0 64 H335 M168 0 V176 M40 0 L120 176 M250 0 L300 176" stroke="var(--color-map-road)" stroke-width="6" fill="none"/>
+        <g stroke="var(--color-ink-900)" stroke-width="2" stroke-dasharray="4 4" fill="none">
+          <path d="M44 34 L168 92"/><path d="M296 52 L168 92"/><path d="M262 20 L168 92"/><path d="M58 158 L168 92"/><path d="M116 150 L168 92"/>
+        </g>
+        <g fill="var(--color-white)" stroke="var(--color-ink-400)" stroke-width="3">
+          <circle cx="226" cy="126" r="7"/><circle cx="208" cy="78" r="7"/>
+        </g>
+        <g font-family="Pretendard, sans-serif" font-size="11" font-weight="700" text-anchor="middle">
+          <circle cx="44" cy="34" r="12" fill="var(--color-ink-900)"/><text x="44" y="38" fill="var(--color-white)">현</text>
+          <circle cx="296" cy="52" r="12" fill="var(--color-ink-900)"/><text x="296" y="56" fill="var(--color-white)">서</text>
+          <circle cx="262" cy="20" r="12" fill="var(--color-ink-900)"/><text x="262" y="24" fill="var(--color-white)">지</text>
+          <circle cx="58" cy="158" r="12" fill="var(--color-ink-900)"/><text x="58" y="162" fill="var(--color-white)">민</text>
+          <circle cx="116" cy="150" r="12" fill="var(--color-ink-900)"/><text x="116" y="154" fill="var(--color-white)">준</text>
+        </g>
+        <circle cx="168" cy="92" r="16" fill="var(--color-ink-900)"/><circle cx="168" cy="92" r="9" fill="var(--color-action)"/>
+        <rect x="106" y="56" width="124" height="24" rx="12" fill="var(--color-ink-900)"/>
+        <text x="168" y="72" font-family="Pretendard, sans-serif" font-size="12" font-weight="800" text-anchor="middle" fill="var(--color-white)">녹사평 · 평균 30분</text>
+      </svg>
+    </div>
     <div class="station on">
-      <div class="top"><span class="rank">1</span><span class="nm">녹사평</span><span class="line">6호선</span><span class="avg num">평균 <b>30</b>분</span></div>
+      <div class="top"><span class="rank">1</span><span class="nm">녹사평</span><span class="line"><i style="background:var(--color-line-6)"></i>6호선</span><span class="avg num">평균 <b>30</b>분</span></div>
       <div class="bars num">
         <span class="who">현호</span><span class="track"><i style="width:44%"></i></span><span class="m">22분</span>
         <span class="who">서연</span><span class="track"><i style="width:56%"></i></span><span class="m">28분</span>
-        <span class="who">준호</span><span class="track"><i style="width:62%"></i></span><span class="m">31분</span>
-        <span class="who">지우</span><span class="track"><i style="width:66%"></i></span><span class="m">33분</span>
         <span class="who">민지</span><span class="track"><i style="width:76%"></i></span><span class="m">38분</span>
       </div>
     </div>
     <div class="station">
-      <div class="top"><span class="rank">2</span><span class="nm">옥수</span><span class="line">3호선</span><span class="avg num">평균 <b>31</b>분</span></div>
+      <div class="top"><span class="rank">2</span><span class="nm">옥수</span><span class="line"><i style="background:var(--color-line-3)"></i>3호선 · 경의중앙</span><span class="avg num">평균 <b>31</b>분</span></div>
       <div class="bars num">
         <span class="who">현호</span><span class="track"><i style="width:58%"></i></span><span class="m">29분</span>
         <span class="who">민지</span><span class="track"><i style="width:64%"></i></span><span class="m">32분</span>
       </div>
     </div>
     <div class="station">
-      <div class="top"><span class="rank">3</span><span class="nm">약수</span><span class="line">3호선</span><span class="avg num">평균 <b>33</b>분</span></div>
+      <div class="top"><span class="rank">3</span><span class="nm">약수</span><span class="line"><i style="background:var(--color-line-3)"></i>3호선 <i style="background:var(--color-line-6);margin-left:4px"></i>6호선</span><span class="avg num">평균 <b>33</b>분</span></div>
     </div>
   </div>
   <div class="cta-wrap"><div class="cta" data-cta>녹사평역으로 정하기</div></div>
