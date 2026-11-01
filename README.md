@@ -1,12 +1,12 @@
 <div align="center">
 
 <a href="https://moyeorak.hyunolike.dev">
-  <img src="design/brand-v3/logo/lockup-horizontal.svg" width="320" alt="모여락" />
+  <img src="design/brand-v4/logo/final/horizontal.svg" width="320" alt="모여락" />
 </a>
 
 ### 서로의 시간을, 하나의 약속으로
 
-[![](https://img.shields.io/badge/-moyeorak.hyunolike.dev-F45B3F?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.hyunolike.dev)
+[![](https://img.shields.io/badge/-moyeorak.hyunolike.dev-FF6A13?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.hyunolike.dev)
 [![](https://img.shields.io/badge/-첫_버전_소개-16161A?style=flat&logo=github&logoColor=white)](./docs/legacy/README.md)
 
 </div>
@@ -20,19 +20,17 @@
 첫 버전은 겹치는 시간과 가까운 역을 목록으로 보여 주는 데서 멈췄습니다. 정보는 충분했지만 누가 마지막에 정하느냐는 여전히 단톡방의 몫이었습니다. 리뉴얼한 모여락에서는 캐릭터 **마주**가 응답을 보고 시간이나 장소를 한두 개 제안하고, 모임을 만든 사람이 "이걸로 확정"을 누르면 끝납니다. 마지막 결정은 언제나 사람이 합니다.
 
 <div align="center">
-  <img src="design/brand-v3/character/3d/guide-256.png" width="140" alt="마주" />
+  <img src="design/brand-v4/logo/final/symbol.svg" width="96" alt="마주" />
 </div>
 
 <br/>
 
 ## 🖥️ 화면
 
-| 시작 | 모임 홈 | 말로 입력하기 | 마주의 제안 | 확정 |
-| :---: | :---: | :---: | :---: | :---: |
-| <img src="design/brand-v3/mockups/01-landing.png" width="150" /> | <img src="design/brand-v3/mockups/02-meeting-home.png" width="150" /> | <img src="design/brand-v3/mockups/03-time-input.png" width="150" /> | <img src="design/brand-v3/mockups/04-suggestion.png" width="150" /> | <img src="design/brand-v3/mockups/05-confirmed.png" width="150" /> |
-| 버튼 하나로 모임 만들기 | 진행 단계와 응답 현황 | "평일 저녁 다 돼"를 시간표에 칠하기 | 제안 한두 개와 이유 | 단톡방에 붙일 요약 카드 |
-
-화면은 brand-v3 시안입니다.
+| 시작 | 모임 홈 | 시간 투표 | 마주의 제안 | 역 목록 | 약속 카드 |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/assets/screens-v4/01-landing.png" width="130" /> | <img src="docs/assets/screens-v4/02-home.png" width="130" /> | <img src="docs/assets/screens-v4/03-vote.png" width="130" /> | <img src="docs/assets/screens-v4/04-suggest.png" width="130" /> | <img src="docs/assets/screens-v4/05-stations.png" width="130" /> | <img src="docs/assets/screens-v4/06-summary.png" width="130" /> |
+| 단톡방 장면과 모임 만들기 버튼 | 4명 중 3명이 응답한 모임과 진행 단계 | 말로 입력하거나 손가락으로 쓸어 칠한 시간표 | 시간 제안 카드와 이유 | 지도 위 가운데 역과 사람별 이동 시간 | 단톡방에 붙일 확정 카드 |
 
 <br/>
 
@@ -108,7 +106,7 @@ flowchart LR
 ```text
 moyeorak
 ├── app/                 지금 운영 중인 Next.js 앱
-├── design/brand-v3/     브랜드, 캐릭터 마주, 화면 시안
+├── design/brand-v4/     브랜드, 캐릭터 마주, 화면 시안
 ├── docs/
 │   ├── superpowers/     설계 문서와 구현 계획
 │   ├── eval/            AI 평가 세트
@@ -140,5 +138,5 @@ DB 준비, 환경 변수, 테스트, 배포 절차는 [app/README.md](./app/READ
 
 - [리뉴얼 설계](./docs/superpowers/specs/2026-10-30-moyeorak-renewal-design.md)와 [무료 배포 설계](./docs/superpowers/specs/2026-10-31-free-deployment-design.md)
 - 단계별 구현 계획: [0단계 기반](./docs/superpowers/plans/2026-10-30-phase0-foundation.md), [1단계 얼굴과 입구](./docs/superpowers/plans/2026-10-30-phase1-face-and-entry.md), [2단계 결정](./docs/superpowers/plans/2026-10-31-phase2-decision.md), [배포](./docs/superpowers/plans/2026-10-31-free-deployment.md)
-- [브랜드 v3](./design/brand-v3/BRAND.md)
+- [브랜드 v4](./design/brand-v4/BRAND.md)
 - [첫 버전 소개](./docs/legacy/README.md): DND 14기 때의 화면, 기술 스택, 아키텍처
