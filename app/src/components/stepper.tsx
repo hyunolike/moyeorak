@@ -39,7 +39,7 @@ export function Stepper({
           aria-label="증가"
           disabled={value >= max}
           onClick={() => onChange(value + 1)}
-          className={`${stepButton} bg-primary-main text-k-5`}
+          className={`${stepButton} bg-primary-main text-on-action`}
         >
           +
         </button>

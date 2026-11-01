@@ -59,3 +59,23 @@ test("지도 색(바탕, 길, 강)이 들어 있다", () => {
   const css = buildCss();
   for (const k of ["map-land", "map-road", "map-water"]) assert.match(css, new RegExp(`--color-${k}: #[0-9A-F]{6};`), k);
 });
+
+test("모든 --color 변수는 자기 자신을 참조하지 않고 끝내 16진 값으로 풀린다", () => {
+  const css = buildCss();
+  // Tailwind는 같은 이름이면 나중 정의가 이긴다. 블록 순서대로 마지막 값을 쓴다.
+  const defs = new Map();
+  for (const m of css.matchAll(/(--color-[\w-]+): ([^;]+);/g)) defs.set(m[1], m[2].trim());
+  for (const [name, value] of defs) {
+    assert.notEqual(value, `var(${name})`, `${name} 자기 참조`);
+    let v = value;
+    const seen = new Set([name]);
+    while (v.startsWith("var(")) {
+      const ref = v.slice(4, -1);
+      assert.ok(!seen.has(ref), `${name} 순환: ${[...seen, ref].join(" → ")}`);
+      seen.add(ref);
+      assert.ok(defs.has(ref), `${name} → ${ref} 정의 없음`);
+      v = defs.get(ref);
+    }
+    assert.match(v, /^#[0-9A-F]{6}$/, `${name} → ${v}`);
+  }
+});

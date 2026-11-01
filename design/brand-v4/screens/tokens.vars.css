@@ -22,8 +22,8 @@
   --color-ink-800: #27262A;
   --color-ink-900: #17181A;
   --color-white: #FFFFFF;
-  --color-success: #177A41;
-  --color-warning: #9A6000;
+  --color-green-700: #177A41;
+  --color-amber-700: #9A6000;
   --color-danger: #B3261E;
   --color-danger-soft: #FBEAE8;
   --color-line-1: #0052A4;
@@ -76,8 +76,8 @@
   --color-error: var(--color-danger);
   --color-on-error: var(--color-white);
   --color-error-soft: var(--color-danger-soft);
-  --color-success: var(--color-success);
-  --color-warning: var(--color-warning);
+  --color-success: var(--color-green-700);
+  --color-warning: var(--color-amber-700);
   --color-disabled-bg: var(--color-ink-200);
   --color-disabled-text: var(--color-ink-600);
   --color-focus: var(--color-tangerine-700);

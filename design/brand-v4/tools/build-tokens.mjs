@@ -16,8 +16,9 @@ export const RAMPS = Object.freeze({
 
 export const SINGLES = Object.freeze({
   white: "#FFFFFF",
-  success: "#177A41",
-  warning: "#9A6000",
+  // 원색 이름은 역할 이름(success, warning)과 겹치면 안 된다(겹치면 역할이 자기 자신을 참조한다).
+  "green-700": "#177A41",
+  "amber-700": "#9A6000",
   danger: "#B3261E",
   "danger-soft": "#FBEAE8",
 });
@@ -63,8 +64,8 @@ export const ROLES = Object.freeze({
   error: "danger",
   "on-error": "white",
   "error-soft": "danger-soft",
-  success: "success",
-  warning: "warning",
+  success: "green-700",
+  warning: "amber-700",
   "disabled-bg": "ink-200",
   "disabled-text": "ink-600",
   focus: "tangerine-700",

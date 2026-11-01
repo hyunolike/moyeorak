@@ -10,7 +10,7 @@ const base =
 const variants: Record<Variant, string> = {
   black:
     "border-transparent bg-k-800 text-k-5 enabled:hover:bg-k-750 enabled:active:bg-k-700",
-  blue: "border-transparent bg-primary-main text-k-5 enabled:hover:bg-p-450 enabled:active:bg-p-500",
+  blue: "border-transparent bg-primary-main text-on-action enabled:hover:bg-p-450 enabled:active:bg-p-500",
   white:
     "border-k-200 bg-k-5 text-k-800 enabled:hover:bg-k-10 enabled:active:bg-k-50",
 };
