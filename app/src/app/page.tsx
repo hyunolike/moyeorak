@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { ChatScene } from "@/components/landing/chat-scene";
+import { InstallEntry } from "@/components/landing/install-entry";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { PageTitle } from "@/components/layout/page-title";
@@ -21,6 +22,7 @@ export default function LandingPage() {
           단톡방에 링크만 보내면 돼요. 앱 설치도, 가입도 없어요.
         </p>
         <ChatScene />
+        <InstallEntry />
         <footer className="text-muted text-c1 mt-8 text-center break-keep">
           서비스 이용 중 문의나 오류가 있다면{" "}
           <a

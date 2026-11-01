@@ -2,10 +2,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "모여락",
     short_name: "모여락",
-    description: "모임 장소와 시간을 함께 정하는 서비스",
+    description: "단톡방 링크 하나로 친구들 약속 시간과 장소를 정해요",
+    lang: "ko",
+    dir: "ltr",
     start_url: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#FFFFFF",
     theme_color: "#FFFFFF",

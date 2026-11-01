@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Providers } from "@/app/providers";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { siteUrl } from "@/lib/site-url";
 import "./globals.css";
 
@@ -14,6 +15,12 @@ export const metadata: Metadata = {
     ],
     apple: "/brand/icons/apple-touch-180.png",
   },
+  // 아이폰에서 홈 화면에 추가하면 사파리 주소창 없이 앱처럼 열린다.
+  appleWebApp: {
+    capable: true,
+    title: "모여락",
+    statusBarStyle: "default",
+  },
 };
 
 export const viewport: Viewport = {
@@ -26,6 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ko" data-theme="light" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
         <Providers>{children}</Providers>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
