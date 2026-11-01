@@ -1,6 +1,11 @@
 "use client";
 
+import { Avatar, ListRow } from "@/components/layout/list-row";
+import { StatusChip } from "@/components/layout/status-chip";
 import type { Departure } from "@/lib/api-types";
+
+const textButton =
+  "text-muted text-b3 h-10 cursor-pointer rounded-sm px-2 active:bg-surface-sunken";
 
 export function DepartureList({
   departures,
@@ -15,60 +20,51 @@ export function DepartureList({
 }) {
   if (departures.length === 0) {
     return (
-      <p className="text-b4 text-k-500 py-6 text-center">
+      <p className="text-b4 text-muted px-5 py-6 text-center">
         아직 등록된 출발지가 없어요
       </p>
     );
   }
 
   return (
-    <ul className="flex flex-col">
+    <ul aria-label="등록된 출발지">
       {departures.map((departure) => {
         const isMine = departure.participantId === myParticipantId;
         return (
-          <li
-            key={departure.voteId}
-            data-testid="departure-item"
-            className="border-k-100 border-b py-4"
-          >
-            <div
-              data-testid={isMine ? "my-departure" : undefined}
-              className="flex items-center gap-3"
-            >
-              <span className="bg-p-50 text-c1 text-primary-main grid size-9 shrink-0 place-items-center rounded-full">
-                {departure.name.slice(0, 1)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1">
-                  <span className="text-k-800 text-t2 truncate">
-                    {departure.name}
-                  </span>
-                  {isMine && (
-                    <span className="bg-p-50 text-c1 text-primary-main shrink-0 rounded-[4px] px-1.5">
-                      나
+          <li key={departure.voteId} data-testid="departure-item">
+            <div data-testid={isMine ? "my-departure" : undefined}>
+              <ListRow
+                leading={<Avatar>{departure.name.slice(0, 1)}</Avatar>}
+                title={
+                  <>
+                    <span className="block truncate">{departure.name}</span>
+                    <span className="text-muted text-b4 block truncate">
+                      {departure.label}
                     </span>
-                  )}
-                </p>
-                <p className="text-b5 text-k-500 truncate">{departure.label}</p>
-              </div>
-              {isMine && (
-                <div className="text-b4 flex shrink-0 gap-3">
-                  <button
-                    type="button"
-                    onClick={onEdit}
-                    className="text-k-600 cursor-pointer"
-                  >
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(departure.voteId)}
-                    className="text-k-600 cursor-pointer"
-                  >
-                    삭제
-                  </button>
-                </div>
-              )}
+                  </>
+                }
+                trailing={
+                  isMine ? (
+                    <span className="flex shrink-0 items-center gap-1">
+                      <StatusChip tone="selected">나</StatusChip>
+                      <button
+                        type="button"
+                        onClick={onEdit}
+                        className={textButton}
+                      >
+                        수정
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(departure.voteId)}
+                        className={textButton}
+                      >
+                        삭제
+                      </button>
+                    </span>
+                  ) : null
+                }
+              />
             </div>
           </li>
         );

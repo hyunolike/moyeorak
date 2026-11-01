@@ -171,7 +171,7 @@ test("출발지 2개를 넣으면 중간지점 결과에 역 이름이 나온다
 
   await page.reload();
   await expect(page.getByTestId("departure-item")).toHaveCount(2);
-  await page.getByRole("link", { name: "중간지점 결과 보러가기" }).click();
+  await page.getByRole("link", { name: "가운데 역 찾기" }).click();
   await expect(page).toHaveURL(/\/location\/stations$/);
   await expect(page.getByTestId("station-name")).toBeVisible();
   await expect(page.getByTestId("per-participant")).toHaveCount(2);
