@@ -17,10 +17,19 @@ export function isAdminToken(token: string | undefined): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+/** `Authorization: Bearer` 헤더가 있으면 그 값을, 없으면 주소의 token을 쓴다. */
+export function adminTokenFrom(
+  authorization: string | null,
+  queryToken: string | undefined,
+): string | undefined {
+  const bearer = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  return bearer ?? queryToken ?? undefined;
+}
+
 export function requireAdmin(request: Request): void {
-  const auth = request.headers.get("authorization");
-  const bearer = auth?.match(/^Bearer\s+(.+)$/i)?.[1];
-  const token =
-    bearer ?? new URL(request.url).searchParams.get("token") ?? undefined;
+  const token = adminTokenFrom(
+    request.headers.get("authorization"),
+    new URL(request.url).searchParams.get("token") ?? undefined,
+  );
   if (!isAdminToken(token)) throw new UnauthorizedError();
 }
