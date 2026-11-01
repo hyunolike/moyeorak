@@ -25,17 +25,43 @@ const PLACES = {
 type Name = keyof typeof PLACES;
 
 async function shoot(page: Page, file: string) {
-  // 개발 모드의 "N" 표시를 숨기고, 글꼴과 움직임이 끝난 뒤에 찍는다.
-  await page.addStyleTag({
-    content: "nextjs-portal { display: none !important; }",
+  // 캡처 전용: 모의 제안 문장은 끝에 "(모의)"를 붙여 모의임을 밝힌다. README 화면에는 빼고 찍는다.
+  await page.evaluate(() => {
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+    );
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      n.nodeValue = (n.nodeValue ?? "").replace(/\s*\(모의\)/g, "");
+    }
   });
   await page.evaluate(() => document.fonts.ready);
-  await page.waitForTimeout(600);
+  // 움직임이 모두 끝날 때까지 기다린다.
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document.getAnimations().filter((a) => a.playState === "running")
+              .length,
+        ),
+      { timeout: 5_000 },
+    )
+    .toBe(0);
   await page.screenshot({ path: `${OUT}/${file}` });
 }
 
 test("v4 화면 여섯 장을 캡처한다", async ({ page }) => {
   test.setTimeout(120_000);
+
+  // 개발 모드의 "N" 표시는 이동할 때마다 다시 생기므로, 모든 문서에 스타일을 한 번 심어 숨긴다.
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const style = document.createElement("style");
+      style.textContent = "nextjs-portal { display: none !important; }";
+      document.head.append(style);
+    });
+  });
 
   await page.goto("/");
   await expect(page.getByRole("link", { name: "모임 만들기" })).toBeVisible();
