@@ -142,6 +142,22 @@ section.phone { width: 375px; height: 812px; background: var(--color-bg); positi
 .seg2 b.on { background: var(--color-bg); color: var(--color-text); font-weight: 700; box-shadow: 0 1px 2px rgb(23 24 26 / 0.08); }
 .warn { font-size: 14px; color: var(--color-warning); font-weight: 600; }
 .label { font-size: 13px; color: var(--color-muted); font-weight: 600; }
+/* 첫 화면 장면: 단톡방 */
+.scene { margin-top: 22px; background: var(--color-surface-sunken); border-radius: 20px; padding: 16px 14px; display: flex; flex-direction: column; gap: 10px; }
+.msg-row { display: flex; gap: 8px; align-items: flex-start; }
+.msg-col { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.av { width: 30px; height: 30px; border-radius: 10px; background: var(--color-ink-200); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+.who-name { font-size: 12px; color: var(--color-muted); font-weight: 600; }
+.bub { background: var(--color-bg); border-radius: 4px 14px 14px 14px; padding: 8px 11px; font-size: 14px; line-height: 1.4; }
+.linkcard { display: flex; gap: 10px; align-items: center; background: var(--color-bg); border: 1.5px solid var(--color-ink-900); border-radius: 14px; padding: 10px 12px 10px 10px; }
+.linkcard div { display: flex; flex-direction: column; }
+.linkcard b { font-size: 14px; }
+.linkcard span { font-size: 12px; color: var(--color-muted); }
+.result { display: flex; gap: 10px; align-items: center; background: var(--color-action); color: var(--color-on-action); border-radius: 14px; padding: 12px 14px; margin-top: 4px; }
+.result div { display: flex; flex-direction: column; }
+.result b { font-size: 14px; font-weight: 800; }
+.result span { font-size: 12px; font-weight: 600; }
+.step-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--color-ink-900); color: var(--color-white); display: grid; place-items: center; font-size: 14px; font-weight: 800; flex: none; }
 .cap { width: 375px; font-size: 13px; color: var(--color-ink-700); margin-top: 8px; font-weight: 600; }
 .col { display: flex; flex-direction: column; }
 </style>
@@ -154,27 +170,26 @@ section.phone { width: 375px; height: 812px; background: var(--color-bg); positi
 <section class="phone" id="landing" aria-label="첫 화면">
   <div class="status"></div>
   <div class="appbar"><img src="../logo/final/horizontal.svg" alt="모여락" height="26" style="margin-left:12px"></div>
-  <div class="scroll pad" style="padding-top:36px">
-    <h1 class="h1" style="font-size:34px">친구들 약속,<br>링크 하나로<br>정해요</h1>
-    <p class="sub" style="margin-top:14px">각자 되는 시간과 출발지를 남기면, 마주가 한두 개로 추려 드려요. 마지막 결정은 모임을 만든 사람이 해요.</p>
-    <div data-meet style="position:relative;width:335px;height:170px;margin-top:24px">
-      <svg viewBox="0 0 335 170" width="335" height="170" aria-hidden="true" style="position:absolute;inset:0">
-        <path d="M0 26 H120 Q150 26 150 56 V92" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
-        <path d="M335 26 H210 Q182 26 182 56 V92" fill="none" stroke="var(--color-ink-900)" stroke-width="12" stroke-linecap="round"/>
-        <path d="M0 76 H90 Q130 76 146 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
-        <path d="M335 76 H245 Q205 76 186 96" fill="none" stroke="var(--color-ink-300)" stroke-width="12" stroke-linecap="round"/>
-      </svg>
-      <div style="position:absolute;left:122px;top:82px"><svg data-maju="happy" role="img" aria-label="마주 — 기쁨" width="88" height="88" viewBox="0 0 64 64"><path fill="var(--color-tangerine-500)" d="M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z"/><path fill="var(--color-ink-900)" fill-rule="evenodd" d="M2.7159512479097785 52 H61.28404875209022 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2.7159512479097785 52 Z M47 57 A3 3 0 1 0 53 57 A3 3 0 1 0 47 57 Z"/><path fill="var(--color-ink-900)" d="M14 27 Q21 10 28 27 Q29 30 26 31 Q24 32 23 29 Q21 24 19 29 Q18 32 15 31 Q13 30 14 27 Z M36 27 Q43 10 50 27 Q51 30 48 31 Q46 32 45 29 Q43 24 41 29 Q40 32 37 31 Q35 30 36 27 Z M23 34 H41 Q43 34 43 36 Q43 44 32 44 Q21 44 21 36 Q21 34 23 34 Z"/></svg></div>
+  <div class="scroll pad" style="padding-top:28px">
+    <h1 class="h1" style="font-size:32px">친구들 약속,<br>링크 하나로 정해요</h1>
+    <p class="sub" style="margin-top:10px">단톡방에 링크만 보내면 돼요. 앱 설치도, 가입도 없어요.</p>
+    <div data-scene class="scene" aria-label="단톡방에서 링크로 약속을 정하는 장면">
+      <div class="msg-row"><span class="av">현</span><div class="msg-col">
+        <span class="who-name">현호</span>
+        <p class="bub">이번 주 저녁 언제 돼? 여기 남겨 줘!</p>
+        <div class="linkcard" data-link-card><svg data-maju="default" role="img" aria-label="마주 — 기본" width="40" height="40" viewBox="0 0 64 64"><path fill="var(--color-tangerine-500)" d="M16.5 4 H47.5 A14.5 14.5 0 0 1 62 18.5 V47.5 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2 47.5 V18.5 A14.5 14.5 0 0 1 16.5 4 Z"/><path fill="var(--color-ink-900)" fill-rule="evenodd" d="M2.7159512479097785 52 H61.28404875209022 A14.5 14.5 0 0 1 47.5 62 H16.5 A14.5 14.5 0 0 1 2.7159512479097785 52 Z M47 57 A3 3 0 1 0 53 57 A3 3 0 1 0 47 57 Z"/><path fill="var(--color-ink-900)" d="M21 18 H21 A6 6 0 0 1 27 24 V28 A6 6 0 0 1 21 34 H21 A6 6 0 0 1 15 28 V24 A6 6 0 0 1 21 18 Z M43 18 H43 A6 6 0 0 1 49 24 V28 A6 6 0 0 1 43 34 H43 A6 6 0 0 1 37 28 V24 A6 6 0 0 1 43 18 Z M23 37 C24 36 25 36 26 37 Q32 43 38 37 C39 36 40 36 41 37 C42 38 42 40 41 41 Q32 50 23 41 C22 40 22 38 23 37 Z"/></svg><div><b>현호님의 모임</b><span>되는 시간을 남겨 주세요 · 모여락</span></div></div>
+      </div></div>
+      <div class="msg-row" data-reply><span class="av">서</span><p class="bub">남겼어!</p></div>
+      <div class="msg-row" data-reply><span class="av">준</span><p class="bub">나도 칠했어. 토요일 좋아</p></div>
+      <div class="result" data-result>
+        <span class="step-dot">✓</span>
+        <div><b class="num">11월 8일 (토) 오후 6시 · 녹사평역</b><span>모두 응답하고 현호님이 확정했어요</span></div>
+      </div>
     </div>
-    <ol style="list-style:none;margin-top:28px;display:flex;flex-direction:column;gap:14px">
-      <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">1</span><b style="font-size:16px">링크를 단톡방에 보내요</b></li>
-      <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">2</span><b style="font-size:16px">각자 되는 시간과 출발지를 남겨요</b></li>
-      <li style="display:flex;gap:12px;align-items:center"><span class="chip on num" style="width:28px;justify-content:center;padding:0">3</span><b style="font-size:16px">제안 중 하나를 골라 확정해요</b></li>
-    </ol>
   </div>
   <div class="cta-wrap"><div class="cta" data-cta>모임 만들기</div></div>
 </section>
-<p class="cap">첫 화면 — 장면 일러스트 대신 노선 두 개가 한 역에 모이는 그림. 마주는 없음.</p>
+<p class="cap">첫 화면 — 단톡방에 링크 하나 보내면 친구들이 남기고 약속이 정해지는 장면.</p>
 </div>
 
 <!-- 2. 모임 홈 -->

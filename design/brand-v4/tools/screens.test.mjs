@@ -60,9 +60,13 @@ test("tokens.vars.css는 앱 토큰과 같은 값을 :root 변수로 담는다",
 
 const section = (id) => html().split(/<section/).find((s) => s.includes(`id="${id}"`));
 
-test("첫 화면 그림에서 노선이 모이는 점은 마주다", () => {
+test("첫 화면 그림은 단톡방 링크 하나로 약속이 정해지는 장면이다", () => {
   const s = section("landing");
-  assert.match(s, /data-meet[\s\S]*data-maju=/, "모이는 점에 마주");
+  assert.match(s, /data-scene/, "장면");
+  assert.match(s, /data-link-card[\s\S]*data-maju=/, "링크 카드 안의 마주");
+  assert.match(s, /data-reply/, "친구들의 답");
+  assert.match(s, /data-result/, "정해진 약속");
+  assert.match(s, /앱 설치도, 가입도 없어요/, "링크만으로 된다는 말");
 });
 
 test("역 목록은 지도와 함께 보이고 노선 배지는 노선 색을 쓴다", () => {

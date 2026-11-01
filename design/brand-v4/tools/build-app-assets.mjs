@@ -14,13 +14,14 @@ import { PALETTE } from "./palette.mjs";
 
 export const EXPRESSIONS = ["default", "thinking", "happy", "sorry", "waiting", "ignored", "match"];
 
-/** 탠저린 바탕 위 잉크 심볼. rounded면 둥근 사각 바탕, scale은 심볼 크기 비율. */
+/** 흰 바탕 위 마주 심볼. rounded면 둥근 사각 바탕, scale은 심볼 크기 비율. */
 export function iconSvg({ size = 64, rounded = true, scale = 0.78 } = {}) {
   const inset = (64 * (1 - scale)) / 2;
+  // 흰 바탕에 탠저린 마주(원래 색 그대로). 탠저린 바탕이면 얼굴이 묻히고, 잉크 바탕이면 노선 띠가 묻힌다.
   const field = rounded
-    ? `<rect width="64" height="64" rx="14" fill="${PALETTE.tangerine500}"/>`
-    : `<rect width="64" height="64" fill="${PALETTE.tangerine500}"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="모여락"><title>모여락</title>${field}<g transform="translate(${inset} ${inset}) scale(${scale})">${logoSymbol({ face: "white" })}</g></svg>\n`;
+    ? `<rect width="64" height="64" rx="14" fill="${PALETTE.white}"/>`
+    : `<rect width="64" height="64" fill="${PALETTE.white}"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="모여락"><title>모여락</title>${field}<g transform="translate(${inset} ${inset}) scale(${scale})">${logoSymbol()}</g></svg>\n`;
 }
 
 async function png(svg, size, file) {

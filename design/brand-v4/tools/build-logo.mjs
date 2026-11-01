@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { majuParts, majuSvg } from "./build-maju.mjs";
 
 const INK = "#17181A";
 const TANGERINE = "#FF6A13";
@@ -45,53 +46,21 @@ export function arrival({ left, top, turnX, stationY, radius, core = radius, mon
 // 환승역: 양쪽에서 들어온 노선 두 개가 한 줄기로 합쳐져 같은 역에 도착한다.
 // 두 노선은 같은 줄기(x 28~36)와 같은 역을 공유하므로 색에서는 겹쳐 그려도
 // 되고, 단색에서는 두 경로가 같은 구멍을 가져 역 고리가 그대로 남는다.
-// 심볼(A3, 2026-11-01 호스트 승인): 머리 위 노선 두 개가 모여 역 얼굴에 닿는다.
-// 역 고리가 얼굴이 되고, 노선은 짧고 둥글게 머리 위 새싹처럼 올라간다.
-// face: "tangerine"(흰 바탕용) | "white"(탠저린 앱 아이콘용). mono는 잉크 한 색, 얼굴 속은 비운다.
-const strokeLine = (d, w = 8) =>
-  `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-const SPROUT = ["M14 9 Q24 9 28 15 Q31 19.5 32 22", "M50 9 Q40 9 36 15 Q33 19.5 32 22"];
-const FACE = { cx: 32, cy: 41.5, r: 16, ring: 3.8 };
-const EYES = [[26, 39], [38, 39]];
-const SMILE = "M27.8 45.5 Q32 49.3 36.2 45.5";
+// 심볼: 마주 얼굴(2026-11-01 호스트 결정). 로고 캐릭터를 마주로 통일한다.
+// 일반 판(노선 띠 있음)을 쓰고, 16px은 띠 없는 소형판을 쓴다.
+// face: "tangerine"(흰 바탕용) | "white"(탠저린 앱 아이콘용). mono는 잉크 한 색, 눈과 입은 뚫는다.
+const svgInner = (svg) => svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").trim();
 
 export function logoSymbol({ mono = false, face = "tangerine" } = {}) {
-  const { cx, cy, r, ring } = FACE;
-  const sprouts = SPROUT.map((d) => strokeLine(d)).join("");
-  const eyes = EYES.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="${INK}"/>`).join("");
-  const smile = `<path d="${SMILE}" fill="none" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/>`;
-  if (mono) {
-    // 잉크 고리(속이 빈 원) + 눈과 입
-    return `${sprouts}${ink(`${circle(cx, cy, r + ring)} ${circle(cx, cy, r)}`)}${eyes}${smile}`;
-  }
+  if (mono) return svgInner(majuSvg("default", { mono: true }));
+  const p = majuParts("default");
   const fill = face === "white" ? "#FFFFFF" : TANGERINE;
-  return `${sprouts}<circle cx="${cx}" cy="${cy}" r="${r + ring}" fill="${INK}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"/>${eyes}${smile}`;
+  return `<path fill="${fill}" d="${p.face}"/><path fill="${INK}" fill-rule="evenodd" d="${[...p.eyes, p.mouth].join(" ")} ${p.band}"/>`;
 }
 
-// 16px 전용판: 16x16 픽셀 지도를 4단위 정사각형으로 찍는다. 얼굴은 눈만 남긴다.
-const PIXEL_MAP = [
-  "................",
-  "................",
-  "..kk........kk..",
-  "...kk......kk...",
-  "....kk....kk....",
-  "......kkkk......",
-  "....kkkkkkkk....",
-  "...kttttttttk...",
-  "..kttttttttttk..",
-  "..kttkttttkttk..",
-  "..kttkttttkttk..",
-  "..kttttttttttk..",
-  "..kttttttttttk..",
-  "...kttttttttk...",
-  "....kkkkkkkk....",
-  "................",
-];
-
+// 16px 전용판: 띠 없는 마주 소형판.
 export function pixelSymbol() {
-  const cells = (ch) =>
-    PIXEL_MAP.flatMap((row, y) => [...row].map((c, x) => (c === ch ? box(x * 4, y * 4, 4, 4) : null)).filter(Boolean)).join(" ");
-  return `<path fill="${TANGERINE}" d="${cells("t")}"/>${ink(cells("k"))}`;
+  return svgInner(majuSvg("default", { small: true }));
 }
 
 // 워드마크 레터링 규칙
@@ -123,7 +92,7 @@ export function finalWordmark({ mono = true } = {}) {
 
 const FINAL_NOTE = `## final — 같은 도착점
 
-로고 심볼과 캐릭터 마주를 분리했다. 최종 심볼(A3)은 "역 얼굴"이다. 환승역의 역 고리가 얼굴이 되고, 노선 두 개는 짧고 둥글게 머리 위로 모여 새싹처럼 올라간다. 얼굴은 탠저린(앱 아이콘에서는 흰색), 테두리와 눈, 입은 잉크다. 노선이 모인다는 뜻은 워드마크 "락"의 받침 노선과 역 점이 함께 맡는다. symbol-16.svg는 16x16 픽셀 지도를 4단위 정사각형으로 찍은 전용판이며 얼굴에는 눈만 남긴다. 단색은 잉크 고리 속을 비우고 눈과 입만 잉크로 둔다.
+로고 심볼은 마주 얼굴이다. 처음에는 마주 얼굴이 심볼이었다가 환승역 기호와 역 얼굴(A3)을 거쳐, 호스트 결정으로 다시 마주로 통일했다. 노선 띠가 있는 일반 판을 쓰고 16px 탭 아이콘은 띠 없는 소형판을 쓴다. 앱 아이콘은 흰 바탕에 탠저린 마주다(탠저린 바탕이면 얼굴이, 잉크 바탕이면 노선 띠가 묻힌다). 노선이 모인다는 뜻은 마주의 노선 띠와 워드마크 "락"의 받침 노선, 역 점이 함께 맡는다.
 
 한글은 B를 바탕으로 새로 그렸고, 마지막에 레터링 규칙을 세워 손으로 정리했다. 자모 몸통 ㅁ, ㅇ, ㄹ은 모두 너비 36이고, ㅇ만 정원이다(둥근 네모 ㅇ은 작은 크기에서 ㅁ으로 읽혀 "모며락"이 됐다). 원은 네모보다 작아 보여 반지름을 0.5 키웠다. 모의 ㅗ 바닥 획은 상자 너비와 같아 받침대처럼 튀어나오지 않는다. 전시용 컷이라 잉크 트랩은 두지 않았다. 세 음절 모두 위끝 4, 몸통 아래끝 58로 같은 높이에 서고, 락의 받침 노선만 기준선 아래로 내려가 역 점의 아래끝이 64에 닿는다. ㄹ의 높이 33과 열린 틈 5.34를 확보해 32px 조합에서도 되접힘이 붙지 않게 했다. 음절 사이 실제 틈은 둥근 ㅇ 앞 8.5(원 보정 0.5 포함), 평평한 획끼리 11이다. 워드마크는 잉크 한 색이고, 컬러 조합에서는 받침 역 점만 탠저린이다. A/B/C SVG는 검토 이력을 담은 보관본으로 유지하며 생성기는 더 이상 보관본을 덮어쓰지 않는다.
 `;
@@ -136,7 +105,7 @@ export async function buildLogos() {
   const files = {
     "symbol.svg": svg(64, 64, "모여락 — 같은 도착점 심볼", logoSymbol()),
     "symbol-16.svg": svg(64, 64, "모여락 — 16px 심볼", pixelSymbol(), 16),
-    "app-icon.svg": svg(64, 64, "모여락 앱 아이콘", `<path fill="${TANGERINE}" d="${roundBox(0, 0, 64, 64, 14)}"/><g transform="translate(7 7) scale(0.78)">${logoSymbol({ face: "white" })}</g>`),
+    "app-icon.svg": svg(64, 64, "모여락 앱 아이콘", `<path fill="#FFFFFF" d="${roundBox(0, 0, 64, 64, 14)}"/><g transform="translate(7 7) scale(0.78)">${logoSymbol()}</g>`),
     "wordmark.svg": svg(width, 64, "모여락 최종 워드마크", finalWordmark()),
     "horizontal.svg": svg(width + 76, 64, "모여락 최종 가로형", logoSymbol() + group(76, 0, finalWordmark({ mono: false }))),
     "vertical.svg": svg(width, 136, "모여락 최종 세로형", group((width - 64) / 2, 0, logoSymbol()) + group(0, 72, finalWordmark({ mono: false }))),

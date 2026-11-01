@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import sharp from "sharp";
 import { arrival, finalWordmark, logoSymbol, LOGO_LINE, WORDMARK } from "./build-logo.mjs";
+import { majuParts } from "./build-maju.mjs";
 import { checkSvg } from "./qa.mjs";
 
 const wrap = (body, width = 64) => `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="64" viewBox="0 0 ${width} 64">${body}</svg>`;
@@ -28,7 +29,7 @@ function components(data, width, height) {
 
 test("심볼과 받침의 역 점은 32px에서도 선에 붙어 있고 단색 중심은 실제 구멍이다", async () => {
   const consonant = (mono) => arrival({ left: 0, top: 41, turnX: 32, stationY: 57.5, radius: 6.5, mono });
-  for (const [draw, cx, cy] of [[(mono) => logoSymbol({ mono }), 32, 36], [consonant, 38, 57.5]]) {
+  for (const [draw, cx, cy] of [[(mono) => logoSymbol({ mono }), 21, 26], [consonant, 38, 57.5]]) {
     for (const size of [32, 64]) {
       const color = await render(draw(false), size);
       assert.equal(components(color.data, size, size), 1, "station is attached, never a floating period");
@@ -40,23 +41,18 @@ test("심볼과 받침의 역 점은 32px에서도 선에 붙어 있고 단색 �
   assert.equal(LOGO_LINE.horizontal, LOGO_LINE.vertical * 0.93);
 });
 
-test("심볼은 노선 두 개가 머리 위로 모인 역 얼굴이다 (A3)", async () => {
-  const { data } = await render(logoSymbol(), 64);
-  const at = (x, y) => [...data.subarray((y * 64 + x) * 4, (y * 64 + x) * 4 + 4)];
-  const ink = (x, y) => { const [r, g, b, a] = at(x, y); return a > 127 && r < 60 && g < 60 && b < 60; };
-  const tangerine = (x, y) => { const [r, g, b] = at(x, y); return r > 230 && g > 90 && g < 125 && b < 40; };
-  assert.ok(ink(16, 9) && ink(48, 9), "머리 위 노선 두 개");
-  assert.ok(ink(32, 22), "노선이 만나는 자리");
-  assert.ok(ink(32, 59), "얼굴 테두리 아래");
-  assert.ok(tangerine(32, 33) && tangerine(20, 42), "얼굴은 탠저린");
-  assert.ok(ink(26, 39) && ink(38, 39), "눈 두 개");
-  assert.ok(tangerine(32, 39), "눈 사이는 얼굴색");
-  assert.ok(!ink(4, 30) && !ink(60, 30), "옆은 비어 있다");
+test("로고 심볼은 마주 얼굴이다 (노선 띠 있는 일반 판)", () => {
+  const sym = logoSymbol();
+  const p = majuParts("default");
+  assert.ok(sym.includes(p.face), "마주 얼굴 윤곽");
+  assert.ok(sym.includes(p.band), "역명판 노선 띠");
+  for (const eye of p.eyes) assert.ok(sym.includes(eye), "마주 눈");
 });
 
 test("앱 아이콘용 심볼은 흰 얼굴이라 탠저린 바탕과 구분된다", async () => {
   const { data } = await render(`<rect width="64" height="64" fill="#FF6A13"/>${logoSymbol({ face: "white" })}`, 64);
-  assert.deepEqual([...data.subarray((33 * 64 + 32) * 4, (33 * 64 + 32) * 4 + 3)], [255, 255, 255]);
+  assert.deepEqual([...data.subarray((10 * 64 + 32) * 4, (10 * 64 + 32) * 4 + 3)], [255, 255, 255], "이마는 흰색");
+  assert.deepEqual([...data.subarray((26 * 64 + 21) * 4, (26 * 64 + 21) * 4 + 3)], [23, 24, 26], "눈은 잉크");
 });
 
 test("세 음절의 위끝이 같고 역 점만 기준선 아래로 내려간다", async () => {
@@ -74,25 +70,23 @@ test("32px 워드마크의 ㄹ 두 틈은 열려 있다", async () => {
   }
 });
 
-test("16px 심볼은 온전한 픽셀에 맞고 눈 두 개가 떨어져 있다", async () => {
+test("16px 심볼은 띠 없는 마주 소형판이고 눈 두 개가 떨어져 있다", async () => {
   const src = await readFile(new URL("../logo/final/symbol-16.svg", import.meta.url), "utf8");
-  const arity = { M: 2, L: 2, H: 1, V: 1, A: 7, Z: 0 };
-  for (const [, d] of src.matchAll(/\sd="([^"]+)"/g)) {
-    const tokens = d.match(/[A-Z]|-?\d+(?:\.\d+)?/g);
-    for (let i = 0; i < tokens.length;) {
-      const command = tokens[i++], length = arity[command];
-      assert.notEqual(length, undefined);
-      for (let j = 0; j < length; j++) {
-        const value = Number(tokens[i++]);
-        if (command !== "A" || (j !== 3 && j !== 4)) assert.equal(value % 4, 0);
-      }
-    }
-  }
+  const p = majuParts("default", { small: true });
+  assert.ok(src.includes(p.face) && !src.includes(majuParts("default").band), "소형판(띠 없음)");
   const { data } = await sharp(Buffer.from(src)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const px = (x, y) => [...data.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4)];
-  const INK = [23, 24, 26, 255], FACE = [255, 106, 19, 255];
-  for (const [x, y] of [[2, 2], [13, 2], [7, 5], [5, 9], [10, 9], [7, 14]]) assert.deepEqual(px(x, y), INK, `잉크 ${x},${y}`);
-  for (const [x, y] of [[7, 9], [4, 11], [11, 11]]) assert.deepEqual(px(x, y), FACE, `얼굴 ${x},${y}`);
+  let best = 0;
+  for (let y = 4; y < 9; y++) {
+    let runs = 0, inRun = false;
+    for (let x = 1; x < 15; x++) {
+      const i = (y * 16 + x) * 4;
+      const dark = data[i + 3] > 128 && data[i] + data[i + 1] + data[i + 2] < 200;
+      if (dark && !inRun) runs++;
+      inRun = dark;
+    }
+    best = Math.max(best, runs);
+  }
+  assert.ok(best >= 2, `눈 덩어리 ${best}`);
 });
 
 test("여의 ㅇ은 정원이라 ㅁ과 구분된다", async () => {
