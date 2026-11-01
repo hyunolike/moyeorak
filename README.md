@@ -9,6 +9,12 @@
 [![](https://img.shields.io/badge/-moyeorak.hyunolike.dev-FF6A13?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.hyunolike.dev)
 [![](https://img.shields.io/badge/-첫_버전_소개-16161A?style=flat&logo=github&logoColor=white)](./docs/legacy/README.md)
 
+<br/>
+
+https://github.com/user-attachments/assets/f0a9be91-336c-49d0-a5df-f31b487eab14
+
+<sub>단톡방 링크에서 약속 카드까지, 21초 소개 영상</sub>
+
 </div>
 
 <br/>
@@ -114,7 +120,7 @@ moyeorak
 │   └── legacy/          첫 버전 소개
 ├── reference/           첫 버전 프론트엔드와 백엔드 (서브모듈)
 ├── frontend/, backend/  리뉴얼 전에 비워 둔 작업 공간
-└── docs/assets/         첫 버전 화면과 소개 영상
+└── docs/assets/         README 화면 캡처와 소개 영상
 ```
 
 <br/>
