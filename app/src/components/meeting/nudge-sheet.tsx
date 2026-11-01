@@ -71,6 +71,7 @@ export function NudgeSheetView({
   messages,
   errorMessage,
   onCopy,
+  onShare,
   onRetry,
 }: {
   open: boolean;
@@ -81,6 +82,8 @@ export function NudgeSheetView({
   messages: NudgeMessage[];
   errorMessage?: string;
   onCopy: (text: string) => Promise<boolean> | boolean;
+  /** 기기가 Web Share를 지원할 때만 쓴다. */
+  onShare?: (text: string) => void;
   onRetry?: () => void;
 }) {
   const [tone, setTone] = useState<NudgeMessage["tone"]>("friendly");
@@ -91,6 +94,7 @@ export function NudgeSheetView({
     return () => window.clearTimeout(t);
   }, [copied]);
 
+  const canShare = typeof navigator !== "undefined" && "share" in navigator;
   const selected = messages.find((m) => m.tone === tone) ?? messages[0];
 
   return (
@@ -183,6 +187,16 @@ export function NudgeSheetView({
             <CopyIcon done={copied} />
             복사하기
           </Button>
+          {canShare && onShare && (
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={status !== "ready" || !selected}
+              onClick={() => selected && onShare(selected.text)}
+            >
+              공유하기
+            </Button>
+          )}
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
@@ -234,6 +248,10 @@ export function NudgeSheet({
       onCopy={async (text) => {
         shareEvent.mutate();
         return copyText(text);
+      }}
+      onShare={(text) => {
+        shareEvent.mutate();
+        navigator.share({ text }).catch(() => {});
       }}
     />
   );

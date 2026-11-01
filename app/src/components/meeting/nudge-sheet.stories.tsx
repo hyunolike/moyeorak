@@ -11,6 +11,7 @@ const meta = {
     open: true,
     onClose: () => {},
     onCopy: () => true,
+    onShare: () => {},
     waitingLabel: "민지님",
     status: "ready",
     messages: [

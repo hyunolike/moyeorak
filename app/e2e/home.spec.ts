@@ -21,7 +21,7 @@ test("모임을 만들면 홈에서 마주가 상황을 알려준다", async ({ 
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   await expect(page.getByRole("status")).toContainText(
-    "아직 아무도 응답하지 않았어요",
+    "첫 번째로 남겨 볼까요?",
   );
   await expect(
     page.getByRole("link", { name: "가능한 시간 남기기" }),
@@ -47,7 +47,7 @@ test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, brow
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
   await expect(page.getByRole("status")).toContainText(
-    "아직 아무도 응답하지 않았어요",
+    "첫 번째로 남겨 볼까요?",
   );
 
   const context = await browser.newContext();
@@ -61,10 +61,9 @@ test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, brow
   await expect(friend).toHaveURL(/\/schedule$/);
   await context.close();
 
-  await expect(page.getByRole("status")).toContainText(
-    "2명 중 1명이 응답했어요. 현호님 기다리는 중이에요.",
-    { timeout: 20_000 },
-  );
+  await expect(page.getByRole("status")).toContainText("현호님만 남았어요", {
+    timeout: 20_000,
+  });
 });
 
 test("호스트가 재촉하기를 누르면 메시지가 보이고 말투를 바꿀 수 있다", async ({

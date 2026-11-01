@@ -89,12 +89,6 @@ export function joinWaitingNames(names: string[]): string {
   return `${names[0]}님 외 ${names.length - 1}명`;
 }
 
-function waitingNames(p: MeetingProgress, voted: (x: Participant) => boolean) {
-  return joinWaitingNames(
-    p.participants.filter((x) => !voted(x)).map((x) => x.name),
-  );
-}
-
 type Participant = MeetingProgress["participants"][number];
 
 export function homeState(p: MeetingProgress, meId: number | null): HomeState {
@@ -118,13 +112,28 @@ function canNudge(p: MeetingProgress, meId: number | null): boolean {
   return p.status !== "confirmed" && isHost(p, meId) && hasWaiting(p);
 }
 
+/** 시간이 정해지고 장소를 막 모으기 시작한 모임인지. */
+function startsLocation(p: MeetingProgress): boolean {
+  return p.status === "locating" && p.scope === "both";
+}
+
+/** 남은 사람 안내. 한 명이면 이름을, 여럿이면 인원수를 말한다. */
+function remaining(
+  p: MeetingProgress,
+  voted: (x: Participant) => boolean,
+  count: number,
+): string {
+  const names = p.participants.filter((x) => !voted(x)).map((x) => x.name);
+  return count === 1 && names.length === 1
+    ? `${names[0]}님만 남았어요`
+    : `${count}명이 아직이에요`;
+}
+
 /** 확정 전, 참여한 사람의 큰 제목. 장소를 막 모으기 시작했으면 단계를 알려 준다. */
 function progressTitle(p: MeetingProgress, n: number, m: number): string {
   if (n >= m) return `${m}명 모두 응답했어요`;
   if (n > 0) return `${m}명 중 ${n}명이 응답했어요`;
-  if (p.status === "locating" && p.scope === "both") {
-    return "시간은 정해졌어요. 이제 장소예요";
-  }
+  if (startsLocation(p)) return "시간은 정해졌어요. 이제 장소예요";
   return "아직 아무도 응답하지 않았어요";
 }
 
@@ -152,7 +161,7 @@ function baseState(
       ...base,
       expression: "happy",
       title: confirmedTitle(p),
-      message: confirmedSentence(p),
+      message: "약속이 정해졌어요",
       action: { label: "약속 카드 보기", href: `/meetings/${id}/summary` },
     };
   }
@@ -162,7 +171,7 @@ function baseState(
       ...base,
       expression: "default",
       title: `${p.hostName}님이 약속을 잡고 있어요`,
-      message: `${p.hostName}님이 약속을 잡고 있어요. 이름을 남기고 함께 정해요.`,
+      message: "이름을 남기고 함께 정해요",
       action: {
         label: "참여하기",
         href: current === "location" ? votesHref : resultHref,
@@ -193,18 +202,16 @@ function baseState(
       ...base,
       expression: "match",
       title,
-      message: "모두 응답했어요. 제안 받아볼까요?",
+      message: "제안 받아 볼까요?",
       action: suggestAction,
     };
   }
   if (host && n >= 2 && n * 2 > m) {
-    const names = p.participants.filter((x) => !voted(x)).map((x) => x.name);
-    const who = names.length > 0 ? joinWaitingNames(names) : `${m - n}명`;
     return {
       ...base,
       expression: "waiting",
       title,
-      message: `${n}명 응답했는데, 지금 결과로 제안 받아볼까요? 아니면 ${who} 기다릴까요?`,
+      message: `${remaining(p, voted, m - n)}. 지금 결과로 제안 받아 볼까요?`,
       action: suggestAction,
     };
   }
@@ -213,7 +220,7 @@ function baseState(
       ...base,
       expression: "match",
       title,
-      message: "모두 응답했어요. 결과를 확인해 볼까요?",
+      message: "모두 응답했어요",
       action: { label: "결과 보기", href: resultHref },
     };
   }
@@ -222,18 +229,17 @@ function baseState(
       ...base,
       expression: "default",
       title,
-      message: "아직 아무도 응답하지 않았어요. 첫 번째로 남겨 볼까요?",
+      message: startsLocation(p)
+        ? "출발지를 남기면 가운데 역을 찾아 드려요"
+        : "첫 번째로 남겨 볼까요?",
       action: myAction,
     };
   }
-  const waiting = p.participants.some((x) => !voted(x))
-    ? waitingNames(p, voted)
-    : `${m - n}명`;
   return {
     ...base,
     expression: "waiting",
     title,
-    message: `${m}명 중 ${n}명이 응답했어요. ${waiting} 기다리는 중이에요.`,
+    message: remaining(p, voted, m - n),
     action: myAction,
   };
 }
