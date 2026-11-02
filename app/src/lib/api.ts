@@ -7,6 +7,8 @@ import type {
   Meeting,
   MeetingProgress,
   Midpoint,
+  NearbyPlaces,
+  NearestStation,
   Place,
   ScheduleSummary,
   Scope,
@@ -304,6 +306,23 @@ export function usePlaceSearch(keyword: string) {
     queryFn: () =>
       apiFetch<Place[]>(`/api/places/search?q=${encodeURIComponent(keyword)}`),
     enabled: keyword.length > 0,
+  });
+}
+
+/** 좌표에서 가까운 역 후보를 묻는다. 현재 위치 버튼이 누를 때만 부른다. */
+export function fetchNearestStations(lat: number, lng: number) {
+  return apiFetch<NearestStation[]>(
+    `/api/places/nearest?lat=${lat}&lng=${lng}`,
+  );
+}
+
+/** 확정된 역 근처의 음식점과 카페. 실패해도 다시 묻지 않는다. 화면은 섹션을 숨긴다. */
+export function useNearbyPlaces(meetingId: string) {
+  return useQuery({
+    queryKey: ["nearby", meetingId],
+    queryFn: () => apiFetch<NearbyPlaces>(`/api/meetings/${meetingId}/nearby`),
+    retry: false,
+    staleTime: 60 * 60 * 1000,
   });
 }
 

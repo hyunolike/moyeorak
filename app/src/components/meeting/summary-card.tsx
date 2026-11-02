@@ -11,6 +11,8 @@ import { BottomCta } from "@/components/layout/bottom-cta";
 import { GuideLine } from "@/components/layout/guide-line";
 import { formatDuration } from "@/components/location/format";
 import { lineColor } from "@/components/map/line-color";
+import { CalendarAction } from "@/components/meeting/calendar-action";
+import { NearbyPlacesSection } from "@/components/meeting/nearby-places";
 import { MobileLayout } from "@/components/mobile-layout";
 import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { Button } from "@/components/ui/button";
@@ -69,8 +71,11 @@ export function SummaryCardView({
   justConfirmed = false,
   onShare,
   onCopy,
+  nearby,
 }: {
   summary: MeetingSummary;
+  /** 카드와 액션 아래에 붙는 근처 장소 섹션. */
+  nearby?: ReactNode;
   /** 확정 직후 진입이면 카드가 올라오고 도장이 한 번 강조된다. */
   justConfirmed?: boolean;
   onShare: () => void;
@@ -169,6 +174,11 @@ export function SummaryCardView({
             </span>
             글로 복사
           </button>
+          <CalendarAction
+            summary={summary}
+            tileClassName={actionTile}
+            iconClassName={actionIcon}
+          />
           {summary.place ? (
             <a
               className={actionTile}
@@ -184,6 +194,7 @@ export function SummaryCardView({
             </a>
           ) : null}
         </div>
+        {nearby}
       </div>
       <BottomCta
         primary={
@@ -249,6 +260,14 @@ export function SummaryCard({ summary }: { summary: MeetingSummary }) {
       justConfirmed={justConfirmed}
       onShare={share}
       onCopy={copy}
+      nearby={
+        summary.place ? (
+          <NearbyPlacesSection
+            meetingId={summary.meetingId}
+            stationName={stationLabel(summary.place.name)}
+          />
+        ) : null
+      }
     />
   );
 }

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { resetTestDb } from "@/db/test-utils";
 import { ExternalApiError } from "@/server/clients/errors";
-import { searchPlaces } from "@/server/clients/kakao-local";
+import { searchNearbyPlaces, searchPlaces } from "@/server/clients/kakao-local";
 
 beforeEach(async () => {
   await resetTestDb();
@@ -114,4 +114,92 @@ test("searchPlaces는 실패한 응답을 캐시하지 않는다", async () => {
   vi.stubGlobal("fetch", ok);
   await expect(searchPlaces("x")).resolves.toEqual([]);
   expect(ok).toHaveBeenCalledTimes(1);
+});
+
+const categoryBody = (code: string) => ({
+  documents: [
+    {
+      id: `${code}-1`,
+      place_name: code === "FD6" ? "고기집" : "카페 하나",
+      category_name:
+        code === "FD6" ? "음식점 > 한식 > 육류,고기" : "음식점 > 카페",
+      distance: "120",
+      place_url: `http://place.map.kakao.com/${code}1`,
+      x: "126.98",
+      y: "37.53",
+    },
+  ],
+});
+
+const categoryFetch = () =>
+  vi.fn().mockImplementation(async (url: string) => {
+    const code = new URL(url).searchParams.get("category_group_code") ?? "";
+    return new Response(JSON.stringify(categoryBody(code)), { status: 200 });
+  });
+
+test("searchNearbyPlaces는 반경 500m 음식점과 카페를 찾아 정리한다", async () => {
+  const fetchMock = categoryFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  const nearby = await searchNearbyPlaces({ lat: 37.53, lng: 126.98 });
+  expect(nearby.food).toEqual([
+    {
+      id: "FD6-1",
+      name: "고기집",
+      category: "육류,고기",
+      distance: 120,
+      url: "https://place.map.kakao.com/FD61",
+    },
+  ]);
+  expect(nearby.cafe[0]?.name).toBe("카페 하나");
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+  const parsed = new URL(url);
+  expect(parsed.origin + parsed.pathname).toBe(
+    "https://dapi.kakao.com/v2/local/search/category.json",
+  );
+  expect(parsed.searchParams.get("x")).toBe("126.98");
+  expect(parsed.searchParams.get("y")).toBe("37.53");
+  expect(parsed.searchParams.get("radius")).toBe("500");
+  expect((init.headers as Record<string, string>).Authorization).toBe(
+    "KakaoAK kakao-key",
+  );
+});
+
+test("searchNearbyPlaces는 같은 역 좌표를 캐시에서 돌려준다", async () => {
+  const fetchMock = categoryFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  const first = await searchNearbyPlaces({ lat: 37.53, lng: 126.98 });
+  const second = await searchNearbyPlaces({ lat: 37.530001, lng: 126.980001 });
+  expect(second).toEqual(first);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+test("searchNearbyPlaces는 한쪽이라도 실패하면 ExternalApiError이고 캐시하지 않는다", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockImplementation(async (url: string) =>
+        url.includes("CE7")
+          ? new Response("no", { status: 500 })
+          : new Response(JSON.stringify(categoryBody("FD6")), { status: 200 }),
+      ),
+  );
+  await expect(
+    searchNearbyPlaces({ lat: 37.53, lng: 126.98 }),
+  ).rejects.toBeInstanceOf(ExternalApiError);
+  const ok = categoryFetch();
+  vi.stubGlobal("fetch", ok);
+  await searchNearbyPlaces({ lat: 37.53, lng: 126.98 });
+  expect(ok).toHaveBeenCalledTimes(2);
+});
+
+test("searchNearbyPlaces는 MOCK_EXTERNAL=1이면 fetch 없이 고정 목록", async () => {
+  vi.stubEnv("MOCK_EXTERNAL", "1");
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  const nearby = await searchNearbyPlaces({ lat: 37.53, lng: 126.98 });
+  expect(nearby.food.length).toBeGreaterThan(0);
+  expect(nearby.cafe.length).toBeGreaterThan(0);
+  expect(fetchMock).not.toHaveBeenCalled();
 });

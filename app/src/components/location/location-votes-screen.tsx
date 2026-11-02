@@ -9,6 +9,7 @@ import { GuideLine } from "@/components/layout/guide-line";
 import { PageTitle } from "@/components/layout/page-title";
 import { SectionBand } from "@/components/layout/section-band";
 import { Skeleton } from "@/components/layout/skeleton";
+import { CurrentLocation } from "@/components/location/current-location";
 import { DepartureList } from "@/components/location/departure-list";
 import { PlaceSearch } from "@/components/location/place-search";
 import { MeetingGate } from "@/components/meeting/meeting-gate";
@@ -16,7 +17,7 @@ import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useDeleteDeparture, useDepartures, useSaveDeparture } from "@/lib/api";
-import type { Meeting } from "@/lib/api-types";
+import type { Meeting, Place } from "@/lib/api-types";
 
 const MIN_DEPARTURES = 2;
 
@@ -37,6 +38,12 @@ export function DepartureManager({
   const count = departures.data?.length ?? 0;
   const enough = count >= MIN_DEPARTURES;
   const stationsPath = `/meetings/${meeting.id}/location/stations`;
+
+  const savePlace = (place: Place) =>
+    save.mutate(
+      { voteId: mine?.voteId, ...place },
+      { onSuccess: () => setEditing(false) },
+    );
 
   const status = (text: string) => (
     <p className="text-b4 text-muted px-5 py-6 text-center">{text}</p>
@@ -66,11 +73,9 @@ export function DepartureManager({
             </p>
             <PlaceSearch
               disabled={save.isPending}
-              onPick={(place) =>
-                save.mutate(
-                  { voteId: mine?.voteId, ...place },
-                  { onSuccess: () => setEditing(false) },
-                )
+              onPick={savePlace}
+              belowForm={
+                <CurrentLocation disabled={save.isPending} onPick={savePlace} />
               }
             />
             {save.isError && (

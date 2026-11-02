@@ -1,7 +1,6 @@
 "use client";
 
 import { Avatar, ListRow } from "@/components/layout/list-row";
-import { StatusChip } from "@/components/layout/status-chip";
 import type { Departure } from "@/lib/api-types";
 
 const textButton =
@@ -37,7 +36,18 @@ export function DepartureList({
                 leading={<Avatar>{departure.name.slice(0, 1)}</Avatar>}
                 title={
                   <>
-                    <span className="block truncate">{departure.name}</span>
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate">{departure.name}</span>
+                      {isMine ? (
+                        // 버튼과 헷갈리지 않게 배경 없는 글자 라벨로 이름 옆에 둔다.
+                        <span
+                          data-me-label
+                          className="text-action-text text-c1 shrink-0"
+                        >
+                          나
+                        </span>
+                      ) : null}
+                    </span>
                     <span className="text-muted text-b4 block truncate">
                       {departure.label}
                     </span>
@@ -45,8 +55,7 @@ export function DepartureList({
                 }
                 trailing={
                   isMine ? (
-                    <span className="flex shrink-0 items-center gap-1">
-                      <StatusChip tone="selected">나</StatusChip>
+                    <span className="flex shrink-0 items-center">
                       <button
                         type="button"
                         onClick={onEdit}

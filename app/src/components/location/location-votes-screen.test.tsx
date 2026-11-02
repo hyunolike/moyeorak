@@ -93,3 +93,23 @@ test("출발지가 2개 이상이면 역 목록으로 가는 링크가 된다", 
   );
   expect(screen.queryByText("출발지를 2개 이상 등록해 주세요")).toBeNull();
 });
+
+test("내 행의 '나' 표시는 이름 옆 라벨이고 수정, 삭제 버튼 묶음과 떨어져 있다", () => {
+  departureData = [departure(1, 1, "현호"), departure(2, 2, "서연")];
+  render(<DepartureManager meeting={meeting} me={me} />);
+  const mine = screen.getByTestId("my-departure");
+  const label = mine.querySelector("[data-me-label]") as HTMLElement;
+  expect(label).toHaveTextContent("나");
+  expect(label.closest("button")).toBeNull();
+  const edit = screen.getByRole("button", { name: "수정" });
+  expect(edit.parentElement).not.toContainElement(label);
+  // 이름 줄 안에 있다.
+  expect(label.parentElement).toHaveTextContent("현호");
+});
+
+test("내 출발지가 없으면 현재 위치 버튼이 검색과 함께 나온다", () => {
+  render(<DepartureManager meeting={meeting} me={me} />);
+  expect(
+    screen.getByRole("button", { name: "현재 위치로 찾기" }),
+  ).toBeInTheDocument();
+});

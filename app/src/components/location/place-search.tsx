@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Avatar, ListRow } from "@/components/layout/list-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +11,12 @@ import type { Place } from "@/lib/api-types";
 export function PlaceSearch({
   onPick,
   disabled = false,
+  belowForm,
 }: {
   onPick: (place: Place) => void;
   disabled?: boolean;
+  /** 검색칸 바로 아래, 결과 목록 위에 둘 것(현재 위치 버튼 등). */
+  belowForm?: ReactNode;
 }) {
   const [keyword, setKeyword] = useState("");
   const [submitted, setSubmitted] = useState("");
@@ -47,6 +50,7 @@ export function PlaceSearch({
           검색
         </Button>
       </form>
+      {belowForm}
 
       {search.isFetching && (
         <p className="text-b4 text-muted py-4 text-center">검색 중...</p>

@@ -45,6 +45,19 @@ export type Departure = {
 
 export type Place = { label: string; lat: number; lng: number };
 
+/** 현재 위치에서 가까운 역 후보. distance는 현재 위치에서 떨어진 미터다. */
+export type NearestStation = Place & { distance: number };
+
+export type NearbyPlace = {
+  id: string;
+  name: string;
+  category: string;
+  distance: number;
+  url: string;
+};
+
+export type NearbyPlaces = { food: NearbyPlace[]; cafe: NearbyPlace[] };
+
 export type Station = {
   stationId: number;
   name: string;

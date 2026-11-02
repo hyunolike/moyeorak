@@ -22,7 +22,23 @@ vi.mock("next/link", () => ({
   ),
 }));
 const mutate = vi.fn();
-vi.mock("@/lib/api", () => ({ useShareEvent: () => ({ mutate }) }));
+vi.mock("@/lib/api", () => ({
+  useShareEvent: () => ({ mutate }),
+  useNearbyPlaces: () => ({
+    data: {
+      food: [
+        {
+          id: "1",
+          name: "고기집",
+          category: "한식",
+          distance: 100,
+          url: "https://place.map.kakao.com/1",
+        },
+      ],
+      cafe: [],
+    },
+  }),
+}));
 vi.mock("motion/react", async (orig) => ({
   ...(await orig<typeof import("motion/react")>()),
   useReducedMotion: vi.fn(() => false),
@@ -245,4 +261,33 @@ test("60분이 넘는 이동 시간은 시간과 분으로 보인다", () => {
   );
   expect(screen.getByText("1시간 15분")).toBeTruthy();
   expect(screen.queryByText("75분")).toBeNull();
+});
+
+test("시작 시각이 있으면 액션 줄에 캘린더가 있고, 없으면 없다", () => {
+  const { rerender } = render(
+    <SummaryCardView summary={summary} onShare={noop} onCopy={noop} />,
+  );
+  expect(screen.getByRole("button", { name: "캘린더" })).toBeTruthy();
+  rerender(
+    <SummaryCardView
+      summary={{ ...summary, start: null, end: null }}
+      onShare={noop}
+      onCopy={noop}
+    />,
+  );
+  expect(screen.queryByRole("button", { name: "캘린더" })).toBeNull();
+});
+
+test("장소가 있으면 카드 아래에 근처 장소 섹션이 나온다", () => {
+  render(<SummaryCard summary={summary} />);
+  expect(
+    screen.getByRole("region", { name: "근처에서 만나기 좋은 곳" }),
+  ).toBeTruthy();
+});
+
+test("장소가 없으면 근처 장소 섹션이 없다", () => {
+  render(<SummaryCard summary={{ ...summary, place: null, travel: [] }} />);
+  expect(
+    screen.queryByRole("region", { name: "근처에서 만나기 좋은 곳" }),
+  ).toBeNull();
 });
