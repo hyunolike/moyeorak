@@ -38,7 +38,7 @@ function ScheduleMain({
     <MobileLayout>
       <AppBar
         back={`/meetings/${meeting.id}`}
-        title="가능한 시간"
+        title="모두의 시간"
         action={<ShareButton meetingId={meeting.id} />}
       />
       <div className="px-5 pt-2">
@@ -47,7 +47,9 @@ function ScheduleMain({
         </PageTitle>
         {!closed && (
           <p className="text-b2 text-muted mt-1.5">
-            시간표를 누르면 내 시간을 고칠 수 있어요
+            {hasMyVote
+              ? "칸을 누르면 내 시간을 고치는 화면으로 가요"
+              : "칸을 누르면 내 시간을 남기는 화면으로 가요"}
           </p>
         )}
       </div>

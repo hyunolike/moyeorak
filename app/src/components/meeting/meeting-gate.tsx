@@ -1,12 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { type ReactNode, useState } from "react";
 import { AppBar } from "@/components/layout/app-bar";
 import { Skeleton } from "@/components/layout/skeleton";
 import { JoinInvite } from "@/components/meeting/join-invite";
 import { MobileLayout } from "@/components/mobile-layout";
 import { useInviteViewed, useMe, useMeeting } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
+import { inputPath } from "@/lib/stage-route";
 
 type Participant = Meeting["participants"][number];
 
@@ -43,13 +45,32 @@ export function MeetingGate({
   );
   const { isPending, isError, me } = useMe(meeting);
   useInviteViewed(meeting.id, !isPending && !isError && !me);
+  const router = useRouter();
+  const pathname = usePathname();
+  const [leaving, setLeaving] = useState(false);
 
+  // 처음 참여했거나 아직 응답하지 않은 이름으로 이어서 하면 결과 화면을 거치지 않고
+  // 지금 단계의 입력 화면(시간 고르기, 출발지)으로 바로 보낸다.
+  // 이미 응답한 이름으로 이어서 하면 고르러 온 화면에 그대로 둔다.
+  const handleEntered = ({ responded }: { responded: boolean }) => {
+    if (responded) return;
+    const target = inputPath(meeting);
+    if (target === pathname) return;
+    setLeaving(true);
+    router.replace(target);
+  };
+
+  if (leaving) return <GateLoading message="이동하고 있어요" />;
   if (isPending) return <GateLoading message="불러오는 중이에요" />;
   if (isError) {
     return (
       <GateLoading message="참여 정보를 확인하지 못했어요. 잠시 후 다시 시도해 주세요." />
     );
   }
-  if (!me) return <JoinInvite meeting={meeting} flow={flow} />;
+  if (!me) {
+    return (
+      <JoinInvite meeting={meeting} flow={flow} onEntered={handleEntered} />
+    );
+  }
   return children(meeting, me);
 }

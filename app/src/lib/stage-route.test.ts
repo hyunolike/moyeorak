@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { stageRedirect } from "@/lib/stage-route";
+import { inputPath, stageRedirect } from "@/lib/stage-route";
 
 const m = (status: "scheduling" | "locating" | "confirmed", scope = "both") =>
   ({ id: "m1", status, scope }) as const;
@@ -37,4 +37,13 @@ test("장소 단계의 장소 화면은 그대로 둔다", () => {
   expect(
     stageRedirect(m("locating", "location"), "location-stations"),
   ).toBeNull();
+});
+
+test("참여 직후에는 지금 단계의 입력 화면으로 간다", () => {
+  expect(inputPath(m("scheduling"))).toBe("/meetings/m1/schedule/votes");
+  expect(inputPath(m("locating"))).toBe("/meetings/m1/location/votes");
+  expect(inputPath(m("locating", "location"))).toBe(
+    "/meetings/m1/location/votes",
+  );
+  expect(inputPath(m("confirmed"))).toBe("/meetings/m1/summary");
 });

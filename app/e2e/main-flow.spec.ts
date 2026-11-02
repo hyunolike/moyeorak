@@ -43,7 +43,7 @@ async function createMeeting(
 ) {
   await page.goto("/");
   await page.getByRole("link", { name: "모임 만들기" }).click();
-  await page.getByLabel("팀장 이름").fill(name);
+  await page.getByLabel("내 이름").fill(name);
   await page.getByRole("button", { name: scope, exact: true }).click();
   await expect(
     page.getByRole("button", { name: scope, exact: true }),
@@ -70,7 +70,7 @@ async function newPage(browser: Browser) {
 
 /** 투표 화면에서 둘째 날 09:00, 09:30, 10:00 슬롯(서울 기준)을 고르고 저장한다. */
 async function voteThreeSlots(page: Page) {
-  await page.getByRole("link", { name: "일정 추가하기" }).click();
+  await page.getByRole("link", { name: "내 시간 남기기" }).click();
   await expect(page).toHaveURL(/\/schedule\/votes$/);
   for (const slot of [0, 1, 2]) {
     await page
@@ -94,7 +94,7 @@ async function expectSeoulSlots(page: Page, id: string) {
       new Date(`${day}T${t}:00+09:00`).toISOString(),
     ),
   );
-  await page.getByRole("tab", { name: "최적일정" }).click();
+  await page.getByRole("tab", { name: "추천 시간" }).click();
   const best = page.getByTestId("best-slot").first();
   await expect(best).toContainText("09:00 ~ 10:30");
   const [, month, date] = day.split("-").map(Number);
@@ -102,7 +102,9 @@ async function expectSeoulSlots(page: Page, id: string) {
   return best;
 }
 
-test("모임을 만들고 투표하면 최적일정에 내 이름이 나온다", async ({ page }) => {
+test("모임을 만들고 투표하면 추천 시간에 내 이름이 나온다", async ({
+  page,
+}) => {
   await createMeeting(page, "둘 다", "현호", "schedule");
   await expect(page).toHaveURL(/\/meetings\/[^/]+\/schedule$/);
   scheduleMeetingId = meetingIdFrom(page);
@@ -122,8 +124,10 @@ test("모임을 만들고 투표하면 최적일정에 내 이름이 나온다",
   // 참여 기록 캐시를 지워도 device_key로 다시 찾아 초대 화면 대신 메인을 보여준다.
   await page.evaluate(() => window.localStorage.removeItem("my_participants"));
   await page.reload();
-  await expect(page.getByRole("tab", { name: "최적일정" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "일정 수정하기" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "추천 시간" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "내 시간 고치기" }),
+  ).toBeVisible();
   await expect(page.getByText("초대되었어요")).toHaveCount(0);
   expect(
     await page.evaluate(() => window.localStorage.getItem("my_participants")),

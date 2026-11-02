@@ -27,3 +27,14 @@ export function stageRedirect(
   }
   return null;
 }
+
+/**
+ * 지금 단계에서 내 응답을 남기는 화면. 참여 직후 바로 이리로 보낸다.
+ * 시간 단계는 시간 고르기, 장소 단계는 출발지, 확정 뒤에는 약속 카드다.
+ */
+export function inputPath(meeting: Pick<Meeting, "id" | "status">): string {
+  const base = `/meetings/${meeting.id}`;
+  if (meeting.status === "confirmed") return `${base}/summary`;
+  if (meeting.status === "locating") return `${base}/location/votes`;
+  return `${base}/schedule/votes`;
+}

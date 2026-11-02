@@ -156,7 +156,14 @@ export function useCreateMeeting() {
   });
 }
 
-export function useJoin(meetingId: string) {
+/**
+ * 이 기기로 모임에 참여한다. `onJoined`는 참여자로 표시되기 직전에 부른다
+ * (참여 화면이 사라지기 전에 다음 화면으로 보낼 수 있게).
+ */
+export function useJoin(
+  meetingId: string,
+  options?: { onJoined?: () => void },
+) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (name: string) =>
@@ -167,22 +174,44 @@ export function useJoin(meetingId: string) {
     onSuccess: async ({ participantId }) => {
       storeParticipantId(meetingId, participantId);
       await client.invalidateQueries({ queryKey: keys.meeting(meetingId) });
+      options?.onJoined?.();
       client.setQueryData(keys.me(meetingId), participantId);
     },
   });
 }
 
 /** 다른 브라우저에서 이미 있는 친구 이름을 골라 그 사람으로 이어서 한다. */
-export function useClaim(meetingId: string) {
+/**
+ * `onClaimed`에는 그 사람이 지금 단계에 이미 응답했는지 함께 넘긴다.
+ * 응답 여부를 확인하지 못하면 응답한 것으로 본다(지금 화면에 그대로 둔다).
+ */
+export function useClaim(
+  meetingId: string,
+  options?: { onClaimed?: (result: { responded: boolean }) => void },
+) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (participantId: number) =>
-      apiFetch<{ participantId: number }>(
+    mutationFn: async (participantId: number) => {
+      const claimed = await apiFetch<{ participantId: number }>(
         `/api/meetings/${meetingId}/claim`,
         json("POST", { participantId, deviceKey: getDeviceKey() }),
-      ),
-    onSuccess: ({ participantId }) => {
+      );
+      const responded = await apiFetch<MeetingProgress>(
+        `/api/meetings/${meetingId}/progress`,
+      )
+        .then((p) =>
+          p.participants.some(
+            (x) =>
+              x.id === claimed.participantId &&
+              (p.status === "locating" ? x.votedLocation : x.votedSchedule),
+          ),
+        )
+        .catch(() => true);
+      return { ...claimed, responded };
+    },
+    onSuccess: ({ participantId, responded }) => {
       storeParticipantId(meetingId, participantId);
+      options?.onClaimed?.({ responded });
       client.setQueryData(keys.me(meetingId), participantId);
     },
   });

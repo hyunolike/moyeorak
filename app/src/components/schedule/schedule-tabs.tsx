@@ -10,7 +10,7 @@ export type ScheduleTabId = "vote" | "best";
 export const SCHEDULE_TABS_HEIGHT = 48;
 
 /**
- * 시간 투표 화면의 탭(시간 고르기, 최적일정). 시안의 밑줄 탭 모양으로
+ * 결과 화면(모두의 시간)의 탭(시간표, 추천 시간). 시안의 밑줄 탭 모양으로
  * `ui/tabs`의 line 변형을 다듬는다. 탭 줄은 위에 붙어 따라온다.
  */
 export function ScheduleTabs({
@@ -39,10 +39,10 @@ export function ScheduleTabs({
         className="bg-bg border-border sticky top-0 z-30 w-full justify-start gap-5 border-b px-5 py-0 group-data-horizontal/tabs:h-12"
       >
         <TabsTrigger value="vote" className={trigger}>
-          시간 고르기
+          시간표
         </TabsTrigger>
         <TabsTrigger value="best" className={trigger}>
-          최적일정
+          추천 시간
         </TabsTrigger>
       </TabsList>
       <TabsContent value="vote">{vote}</TabsContent>

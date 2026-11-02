@@ -1,5 +1,6 @@
 "use client";
 
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useReducedMotion } from "motion/react";
 import {
   Fragment,
@@ -9,9 +10,17 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { heatLevel } from "@/components/timetable/heat";
 import { vibratePaint } from "@/components/timetable/paint";
+import {
+  type CellPos,
+  firstCell,
+  hiddenRight,
+  horizontalTarget,
+  verticalDelta,
+} from "@/components/timetable/reveal";
 import {
   isTapGesture,
   type PointerPosition,
@@ -43,11 +52,21 @@ export interface TimetableProps {
   stickyHeaderTop?: number;
   /** 읽기 전용 시간표를 탭했을 때. 넘기지 않으면 종전대로 무반응이다. */
   onDisabledTap?: () => void;
+  /**
+   * 이 칸들(슬롯 시각 ms 문자열) 가운데 첫 칸이 보이도록 세로와 가로로 스크롤한다.
+   * 새 객체를 넘길 때마다 한 번 움직인다. `instant`면(또는 움직임 줄이기 설정이면) 바로 옮긴다.
+   */
+  reveal?: { keys: string[]; instant?: boolean } | null;
 }
 
 const TIME_COLUMN_PX = 40;
 const FIT_DATE_COUNT = 5;
 const SCROLL_COLUMN_PX = 56;
+const GAP_PX = 3;
+/** 칸 한 줄 높이(28px)와 간격. 보여 줄 칸 위에 이만큼 여유를 둔다. */
+const ROW_CONTEXT_PX = 31;
+/** 아래 고정 버튼(BottomCta)이 가리는 높이. */
+const BOTTOM_RESERVE_PX = 120;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -65,6 +84,7 @@ export function Timetable({
   pending,
   stickyHeaderTop = 0,
   onDisabledTap,
+  reveal,
 }: TimetableProps) {
   const totalSlots = Math.round((endTime - startTime) * 2);
   const reduceMotion = useReducedMotion() ?? false;
@@ -99,6 +119,7 @@ export function Timetable({
   });
 
   const headerTrackRef = useRef<HTMLDivElement>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
   const frameIdRef = useRef<number | null>(null);
   const pendingScrollLeftRef = useRef(0);
@@ -118,15 +139,113 @@ export function Timetable({
   const bodyGridTemplateColumns = `${TIME_COLUMN_PX}px ${columnTrack}`;
   const headerGridTemplateColumns = columnTrack;
 
-  const syncHeaderTrack = useCallback(() => {
-    if (!headerTrackRef.current) {
-      frameIdRef.current = null;
+  // 오른쪽에 다 보이지 않는 날짜 수. 옆으로 넘길 수 있다는 단서(가장자리 흐림, 안내)에 쓴다.
+  const [hiddenCount, setHiddenCount] = useState(0);
+  const updateHidden = useCallback(() => {
+    const body = bodyScrollRef.current;
+    if (!body || fitsWidth) {
+      setHiddenCount(0);
       return;
     }
+    setHiddenCount(
+      hiddenRight({
+        scrollLeft: body.scrollLeft,
+        viewWidth: body.clientWidth - TIME_COLUMN_PX - GAP_PX,
+        count: dates.length,
+        columnWidth: SCROLL_COLUMN_PX,
+        gap: GAP_PX,
+      }),
+    );
+  }, [fitsWidth, dates.length]);
 
-    headerTrackRef.current.style.transform = `translate3d(${-pendingScrollLeftRef.current}px, 0, 0)`;
+  useEffect(() => {
+    updateHidden();
+    const body = bodyScrollRef.current;
+    if (!body || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(updateHidden);
+    observer.observe(body);
+    return () => observer.disconnect();
+  }, [updateHidden]);
+
+  const syncHeaderTrack = useCallback(() => {
     frameIdRef.current = null;
-  }, []);
+    updateHidden();
+    if (!headerTrackRef.current) return;
+    headerTrackRef.current.style.transform = `translate3d(${-pendingScrollLeftRef.current}px, 0, 0)`;
+  }, [updateHidden]);
+
+  const scrollBehavior = (instant?: boolean): ScrollBehavior =>
+    instant || reduceMotion ? "instant" : "smooth";
+
+  /** 날짜 한 화면만큼 옆으로 넘긴다. 끝이면 처음 날짜로 돌아간다. */
+  const pageColumns = () => {
+    const body = bodyScrollRef.current;
+    if (!body) return;
+    const width = body.clientWidth - TIME_COLUMN_PX - GAP_PX;
+    body.scrollTo({
+      left: hiddenCount > 0 ? body.scrollLeft + width : 0,
+      behavior: scrollBehavior(),
+    });
+  };
+
+  // 슬롯 시각 → 칸 위치. 말로 칠한 칸이 어디 있는지 찾을 때 쓴다.
+  const cellIndex = useMemo(() => {
+    const index = new Map<string, CellPos>();
+    dates.forEach((date, dateIdx) => {
+      for (let slotIdx = 0; slotIdx < totalSlots; slotIdx++) {
+        const minutes = startTime * 60 + slotIdx * 30;
+        index.set(slotInstant(date, minutes).getTime().toString(), {
+          dateIdx,
+          slotIdx,
+        });
+      }
+    });
+    return index;
+  }, [dates, startTime, totalSlots]);
+
+  // reveal이 바뀔 때마다 첫 칸이 보이게 한다. 가로는 시간표 안에서, 세로는 화면을 움직인다.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reveal 객체가 바뀔 때만 움직인다
+  useEffect(() => {
+    if (!reveal) return;
+    const target = firstCell(reveal.keys, cellIndex);
+    const body = bodyScrollRef.current;
+    if (!target || !body) return;
+    const frame = window.requestAnimationFrame(() => {
+      const behavior = scrollBehavior(reveal.instant);
+      const column = body.querySelector<HTMLElement>(
+        `[data-date-idx="${target.dateIdx}"][data-slot-idx="0"]`,
+      );
+      if (column) {
+        const bodyRect = body.getBoundingClientRect();
+        const rect = column.getBoundingClientRect();
+        const colLeft =
+          rect.left - bodyRect.left + body.scrollLeft - TIME_COLUMN_PX - GAP_PX;
+        const left = horizontalTarget({
+          colLeft,
+          colRight: colLeft + rect.width,
+          scrollLeft: body.scrollLeft,
+          viewWidth: body.clientWidth - TIME_COLUMN_PX - GAP_PX,
+        });
+        if (left !== null) body.scrollTo({ left, behavior });
+      }
+      const row = body.querySelector<HTMLElement>(
+        `[data-date-idx="${target.dateIdx}"][data-slot-idx="${target.slotIdx}"]`,
+      );
+      if (row) {
+        const rect = row.getBoundingClientRect();
+        const top = verticalDelta({
+          cellTop: rect.top,
+          cellBottom: rect.bottom,
+          viewTop:
+            stickyHeaderTop + (stickyHeaderRef.current?.offsetHeight ?? 0),
+          viewBottom: window.innerHeight - BOTTOM_RESERVE_PX,
+          context: ROW_CONTEXT_PX,
+        });
+        if (top !== 0) window.scrollBy({ top, behavior });
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [reveal]);
 
   const handleBodyScroll = (event: UIEvent<HTMLDivElement>) => {
     pendingScrollLeftRef.current = event.currentTarget.scrollLeft;
@@ -293,8 +412,33 @@ export function Timetable({
       className={cn("relative w-full select-none", className)}
       data-painting={pending && pending.size > 0 ? "" : undefined}
     >
-      <div className="bg-bg sticky z-25" style={{ top: stickyHeaderTop }}>
-        <div className="flex gap-[3px] pt-1 pb-1">
+      {!fitsWidth && (
+        <div className="flex justify-end pb-1">
+          <button
+            type="button"
+            onClick={pageColumns}
+            className="text-muted text-c1 -mr-1 flex h-8 cursor-pointer items-center gap-0.5 rounded-sm px-1"
+          >
+            {hiddenCount > 0 ? (
+              <>
+                옆으로 {hiddenCount}일 더 있어요
+                <IconChevronRight size={16} aria-hidden="true" />
+              </>
+            ) : (
+              <>
+                <IconChevronLeft size={16} aria-hidden="true" />
+                처음 날짜로
+              </>
+            )}
+          </button>
+        </div>
+      )}
+      <div
+        ref={stickyHeaderRef}
+        className="bg-bg sticky z-25"
+        style={{ top: stickyHeaderTop }}
+      >
+        <div className="relative flex gap-[3px] pt-1 pb-1">
           <div
             className="bg-bg sticky left-0 z-30 shrink-0"
             style={{ width: TIME_COLUMN_PX }}
@@ -327,91 +471,107 @@ export function Timetable({
               ))}
             </div>
           </div>
+          {hiddenCount > 0 && <EdgeFade />}
         </div>
       </div>
 
-      <div
-        ref={bodyScrollRef}
-        onScroll={handleBodyScroll}
-        onPointerDown={handleBodyPointerDown}
-        onPointerMove={handleBodyPointerMove}
-        onPointerUp={handleBodyPointerUp}
-        onPointerCancel={handleBodyPointerCancel}
-        className={cn(
-          "scrollbar-hide overflow-x-auto overflow-y-hidden overscroll-x-contain",
-          isDraggingSelection ? "touch-none" : "touch-auto",
-        )}
-        data-timetable-scroll="body"
-      >
+      <div className="relative">
         <div
-          className="grid min-w-max gap-[3px]"
-          style={{ gridTemplateColumns: bodyGridTemplateColumns }}
+          ref={bodyScrollRef}
+          onScroll={handleBodyScroll}
+          onPointerDown={handleBodyPointerDown}
+          onPointerMove={handleBodyPointerMove}
+          onPointerUp={handleBodyPointerUp}
+          onPointerCancel={handleBodyPointerCancel}
+          className={cn(
+            "scrollbar-hide overflow-x-auto overflow-y-hidden overscroll-x-contain",
+            isDraggingSelection ? "touch-none" : "touch-auto",
+          )}
+          data-timetable-scroll="body"
+          data-hidden-right={hiddenCount}
         >
-          {Array.from({ length: totalSlots }).map((_, slotIdx) => {
-            const slotMinutes = startTime * 60 + slotIdx * 30;
-            const currentHour = Math.floor(slotMinutes / 60);
-            const currentMinutes = slotMinutes % 60;
-            const timeLabel = `${pad(currentHour)}:${pad(currentMinutes)}`;
+          <div
+            className="grid min-w-max gap-[3px]"
+            style={{ gridTemplateColumns: bodyGridTemplateColumns }}
+          >
+            {Array.from({ length: totalSlots }).map((_, slotIdx) => {
+              const slotMinutes = startTime * 60 + slotIdx * 30;
+              const currentHour = Math.floor(slotMinutes / 60);
+              const currentMinutes = slotMinutes % 60;
+              const timeLabel = `${pad(currentHour)}:${pad(currentMinutes)}`;
 
-            return (
-              <Fragment key={`row-${currentHour}-${currentMinutes}`}>
-                <div className="bg-bg text-c3 text-muted sticky left-0 z-20 h-7 pr-1.5 text-right leading-7 tabular-nums">
-                  {currentMinutes === 0 ? timeLabel : null}
-                </div>
+              return (
+                <Fragment key={`row-${currentHour}-${currentMinutes}`}>
+                  <div className="bg-bg text-c3 text-muted sticky left-0 z-20 h-7 pr-1.5 text-right leading-7 tabular-nums">
+                    {currentMinutes === 0 ? timeLabel : null}
+                  </div>
 
-                {dates.map((date, dateIdx) => {
-                  const timeKey = slotInstant(date, slotMinutes)
-                    .getTime()
-                    .toString();
+                  {dates.map((date, dateIdx) => {
+                    const timeKey = slotInstant(date, slotMinutes)
+                      .getTime()
+                      .toString();
 
-                  // 칠하는 중인 칸은 바뀌기 전 모습으로 그린다.
-                  const isSelected =
-                    selectedSlots.has(timeKey) !== !!pending?.has(timeKey);
-                  const count =
-                    (occupancy[timeKey] ?? 0) +
-                    (countSelection && isSelected ? 1 : 0);
-                  const { month, day, weekday } = dateParts[dateIdx];
+                    // 칠하는 중인 칸은 바뀌기 전 모습으로 그린다.
+                    const isSelected =
+                      selectedSlots.has(timeKey) !== !!pending?.has(timeKey);
+                    const count =
+                      (occupancy[timeKey] ?? 0) +
+                      (countSelection && isSelected ? 1 : 0);
+                    const { month, day, weekday } = dateParts[dateIdx];
 
-                  return (
-                    <TimetableSlot
-                      key={timeKey}
-                      isSelected={isSelected}
-                      isDisabled={disabled}
-                      heat={heatLevel(count, total)}
-                      label={`${month}월 ${day}일 (${weekday}) ${timeLabel}`}
-                      dataDateIdx={dateIdx}
-                      dataSlotIdx={slotIdx}
-                      onPointerDown={(event) => {
-                        if (disabled) {
-                          return;
-                        }
+                    return (
+                      <TimetableSlot
+                        key={timeKey}
+                        isSelected={isSelected}
+                        isDisabled={disabled}
+                        heat={heatLevel(count, total)}
+                        label={`${month}월 ${day}일 (${weekday}) ${timeLabel}`}
+                        dataDateIdx={dateIdx}
+                        dataSlotIdx={slotIdx}
+                        onPointerDown={(event) => {
+                          if (disabled) {
+                            return;
+                          }
 
-                        handlePointerDown({
-                          dateIdx,
-                          slotIdx,
-                          pointerId: event.pointerId,
-                          pointerType: event.pointerType,
-                          clientX: event.clientX,
-                          clientY: event.clientY,
-                        });
+                          handlePointerDown({
+                            dateIdx,
+                            slotIdx,
+                            pointerId: event.pointerId,
+                            pointerType: event.pointerType,
+                            clientX: event.clientX,
+                            clientY: event.clientY,
+                          });
 
-                        if (event.pointerType === "touch") {
-                          event.currentTarget.setPointerCapture(
-                            event.pointerId,
-                          );
-                          return;
-                        }
+                          if (event.pointerType === "touch") {
+                            event.currentTarget.setPointerCapture(
+                              event.pointerId,
+                            );
+                            return;
+                          }
 
-                        event.preventDefault();
-                      }}
-                    />
-                  );
-                })}
-              </Fragment>
-            );
-          })}
+                          event.preventDefault();
+                        }}
+                      />
+                    );
+                  })}
+                </Fragment>
+              );
+            })}
+          </div>
         </div>
+        {hiddenCount > 0 && <EdgeFade />}
       </div>
     </div>
+  );
+}
+
+/** 오른쪽에 날짜가 더 있을 때 가장자리를 흐리게 덮는다. 누르는 것은 아래 칸으로 지나간다. */
+function EdgeFade() {
+  return (
+    <div
+      aria-hidden="true"
+      data-edge-fade=""
+      className="from-bg pointer-events-none absolute inset-y-0 right-0 z-20 w-10 bg-linear-to-l to-transparent"
+    />
   );
 }

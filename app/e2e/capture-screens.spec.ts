@@ -70,7 +70,7 @@ test("v4 화면 여섯 장을 캡처한다", async ({ page }) => {
   // 4명짜리 둘 다 모임
   await page.goto("/new/schedule");
   await page.getByRole("button", { name: "둘 다" }).click();
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "증가" }).click();
   await page.getByRole("button", { name: "증가" }).click();
   await expect(page.getByTestId("participant-count")).toHaveText("4명");

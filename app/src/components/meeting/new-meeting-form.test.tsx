@@ -20,7 +20,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 const fillName = () =>
-  fireEvent.change(screen.getByLabelText("팀장 이름"), {
+  fireEvent.change(screen.getByLabelText("내 이름"), {
     target: { value: "현호" },
   });
 const submit = () =>
@@ -46,10 +46,10 @@ test("제목, 이름 입력, 주 버튼 문구", () => {
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
     "어떤 약속을 정할까요?",
   );
-  expect(screen.getByLabelText("팀장 이름")).toBeTruthy();
+  expect(screen.getByLabelText("내 이름")).toBeTruthy();
   const submit = screen.getByRole("button", { name: "링크 만들기" });
   expect(submit.hasAttribute("disabled")).toBe(true);
-  fireEvent.change(screen.getByLabelText("팀장 이름"), {
+  fireEvent.change(screen.getByLabelText("내 이름"), {
     target: { value: "현호" },
   });
   expect(submit.hasAttribute("disabled")).toBe(false);

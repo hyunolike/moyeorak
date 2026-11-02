@@ -10,8 +10,7 @@ import { TextField } from "@/components/text-field";
 import { Button } from "@/components/ui/button";
 import { ApiError, useClaim, useJoin } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
-
-export const NAME_MAX_LENGTH = 4;
+import { NAME_MAX_LENGTH } from "@/lib/participant-name";
 
 function claimErrorMessage(error: unknown) {
   if (error instanceof ApiError && error.status === 409) {
@@ -30,13 +29,18 @@ function joinErrorMessage(error: unknown) {
 export function JoinInvite({
   meeting,
   flow,
+  onEntered,
 }: {
   meeting: Meeting;
   flow: "schedule" | "location";
+  /** 참여했거나 이어서 하기로 들어온 직후. 이미 응답한 사람이면 `responded`가 true다. */
+  onEntered?: (result: { responded: boolean }) => void;
 }) {
   const [name, setName] = useState("");
-  const join = useJoin(meeting.id);
-  const claim = useClaim(meeting.id);
+  const join = useJoin(meeting.id, {
+    onJoined: () => onEntered?.({ responded: false }),
+  });
+  const claim = useClaim(meeting.id, { onClaimed: onEntered });
   const trimmed = name.trim();
   // 모임을 만든 사람은 이름으로 이어서 할 수 없다(확정과 재촉 권한이 있다).
   const friends = meeting.participants.filter((p) => !p.isHost);

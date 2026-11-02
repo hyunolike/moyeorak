@@ -3,7 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 /** 일정 모임을 만들고 투표 화면까지 들어간다. 모임 id를 돌려준다. */
 async function openVoteScreen(page: Page) {
   await page.goto("/new/schedule");
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];

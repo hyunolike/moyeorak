@@ -12,7 +12,7 @@ export function GuideLine({
   return (
     <div className="bg-assistant text-text text-t2 flex items-center gap-2.5 rounded-md px-3.5 py-3 leading-[1.45]">
       <Maju expression={expression} size={32} className="flex-none" />
-      <span>{children}</span>
+      <span className="break-keep">{children}</span>
     </div>
   );
 }

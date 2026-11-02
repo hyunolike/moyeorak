@@ -8,8 +8,8 @@ export const Schedule: StoryObj = {
   render: () => (
     <Tabs defaultValue="vote" className="w-[343px]">
       <TabsList>
-        <TabsTrigger value="vote">시간 고르기</TabsTrigger>
-        <TabsTrigger value="best">최적일정</TabsTrigger>
+        <TabsTrigger value="vote">시간표</TabsTrigger>
+        <TabsTrigger value="best">추천 시간</TabsTrigger>
       </TabsList>
       <TabsContent value="vote" className="text-b4 text-muted pt-4">
         가능한 시간을 쓸어내려 칠해 주세요.

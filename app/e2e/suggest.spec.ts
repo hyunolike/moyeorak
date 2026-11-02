@@ -8,7 +8,7 @@ const VOTER_KEY = "suggestvotera00000001";
 /** 시간만 모임(2명)을 만들고 팀장과 서연이 이틀 아침을 같이 투표한 뒤 id를 돌려준다. */
 async function createVotedMeeting(page: Page) {
   await page.goto("/new/schedule");
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
@@ -112,7 +112,7 @@ test("팀장이 아닌 기기는 제안 대신 안내 문장을 본다", async (
 
 test("응답이 한 명뿐이면 마주가 기다려 달라고 말한다", async ({ page }) => {
   await page.goto("/new/schedule");
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];

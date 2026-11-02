@@ -17,7 +17,7 @@ test("첫 화면은 링크 하나로 정하는 흐름을 장면으로 보여 준
 test("모임을 만들면 홈에서 마주가 상황을 알려준다", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "모임 만들기" }).click();
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   await expect(page.getByRole("status")).toContainText(
@@ -34,7 +34,7 @@ test("범위를 장소만 고르면 장소 단계로 시작한다", async ({ pag
     "aria-pressed",
     "true",
   );
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   await expect(page.getByRole("link", { name: "출발지 남기기" })).toBeVisible();
@@ -42,7 +42,7 @@ test("범위를 장소만 고르면 장소 단계로 시작한다", async ({ pag
 
 test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, browser }) => {
   await page.goto("/new/schedule");
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
@@ -55,7 +55,8 @@ test("친구가 응답하면 15초 안에 홈이 바뀐다", async ({ page, brow
   await friend.goto(`/meetings/${id}/schedule`);
   await friend.getByLabel("이름").fill("민지");
   await friend.getByRole("button", { name: "모임 참여하기" }).click();
-  await friend.getByRole("link", { name: "일정 추가하기" }).click();
+  // 참여하면 결과 화면을 거치지 않고 바로 시간 고르기 화면으로 간다.
+  await expect(friend).toHaveURL(/\/schedule\/votes$/);
   await friend.locator('button[data-date-idx="1"][data-slot-idx="0"]').click();
   await friend.getByRole("button", { name: "이 시간으로 저장" }).click();
   await expect(friend).toHaveURL(/\/schedule$/);
@@ -71,7 +72,7 @@ test("호스트가 재촉하기를 누르면 메시지가 보이고 말투를 �
   browser,
 }) => {
   await page.goto("/new/schedule");
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];

@@ -8,7 +8,7 @@ async function createVotedScheduleMeeting(
   flow: "schedule" | "both" = "schedule",
 ) {
   await page.goto(`/new/${flow}`);
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
@@ -46,7 +46,7 @@ test("팀장이 시간만 모임의 1순위 시간을 정하면 홈에 정해진
   page,
 }) => {
   const id = await createVotedScheduleMeeting(page);
-  await page.getByRole("tab", { name: "최적일정" }).click();
+  await page.getByRole("tab", { name: "추천 시간" }).click();
   await page.getByRole("button", { name: "이 시간으로 정하기" }).click();
   await page
     .getByRole("dialog", { name: "이 시간으로 정할까요?" })

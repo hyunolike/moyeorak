@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { PageTitle } from "@/components/layout/page-title";
-import { NAME_MAX_LENGTH } from "@/components/meeting/join-invite";
 import {
   PollWindowPicker,
   type Preset,
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreateMeeting } from "@/lib/api";
 import type { Scope } from "@/lib/api-types";
+import { NAME_MAX_LENGTH } from "@/lib/participant-name";
 import { type DayTime, pollWindow, seoulToday } from "@/lib/poll-window";
 
 export type Flow = "both" | "schedule" | "location";
@@ -94,7 +94,7 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
           </ToggleGroup>
           <TextField
             className="mt-6"
-            label="팀장 이름"
+            label="내 이름"
             placeholder="이름을 입력해주세요"
             value={name}
             maxLength={NAME_MAX_LENGTH}

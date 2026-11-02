@@ -58,6 +58,11 @@ test("아무도 응답하지 않으면 default 표정이고 내 응답을 권한
   });
 });
 
+test("모임을 막 만든 팀장에게는 마주가 자기를 한 번 소개한다", () => {
+  const s = homeState(progress(), 1);
+  expect(s.message).toBe("모여락 도우미 마주예요. 첫 번째로 남겨 볼까요?");
+});
+
 test("장소 단계에서는 출발지 남기기를 권한다", () => {
   const s = homeState(progress({ status: "locating" }), 2);
   expect(s.action).toEqual({
@@ -177,10 +182,11 @@ test("확정되면 happy이고 약속 카드 보기를 권한다", () => {
 test("meId가 null이면 default 표정이고 참여하기를 권한다", () => {
   const s = homeState(progress(), null);
   expect(s.expression).toBe("default");
-  expect(s.message).toBe("이름을 남기고 함께 정해요");
+  expect(s.message).toBe("모여락 도우미 마주예요. 이름을 남기고 함께 정해요");
+  // 참여하면 결과 화면을 거치지 않고 바로 시간을 고르는 화면으로 간다.
   expect(s.action).toEqual({
     label: "참여하기",
-    href: "/meetings/m1/schedule",
+    href: "/meetings/m1/schedule/votes",
   });
   expect(homeState(progress({ status: "locating" }), null).action?.href).toBe(
     "/meetings/m1/location/votes",

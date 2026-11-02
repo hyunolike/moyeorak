@@ -5,7 +5,7 @@ test("주말만으로 만들면 투표판에 앞으로 2주의 토요일과 일�
 }) => {
   await page.goto("/new/schedule");
   await page.getByRole("button", { name: "주말만" }).click();
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
@@ -32,7 +32,7 @@ test("날짜 고르기에서 저녁만 고르면 투표판이 18시부터 시작
   await days.nth(2).click();
   await days.nth(3).click();
   await page.getByRole("button", { name: "저녁(18~24시)" }).click();
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];

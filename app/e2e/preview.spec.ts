@@ -71,10 +71,23 @@ test("이모지와 꺾쇠가 든 이름도 메타는 이스케이프되고 이�
 });
 
 test("아주 긴 이름도 이미지는 PNG로 나온다", async ({ request }) => {
-  const id = await createNamed(request, "가".repeat(20));
+  // 이름은 10자까지 받는다. 받을 수 있는 가장 긴 이름으로 그린다.
+  const id = await createNamed(request, "가".repeat(10));
   const res = await request.get(`/meetings/${id}/opengraph-image`);
   expect(res.status()).toBe(200);
   expect(res.headers()["content-type"]).toContain("image/png");
+});
+
+test("10자를 넘는 이름은 서버가 받지 않는다", async ({ request }) => {
+  const res = await request.post("/api/meetings", {
+    data: {
+      hostName: "가".repeat(11),
+      participantCount: 3,
+      scope: "schedule",
+      deviceKey: "abcdefghijklmnopqrstu",
+    },
+  });
+  expect(res.status()).toBe(400);
 });
 
 test("대기 상태와 확정 상태의 미리보기 이미지를 저장한다", async ({

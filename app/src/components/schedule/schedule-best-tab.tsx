@@ -60,7 +60,7 @@ export function ScheduleBestTab({
           onClick={() => setShowAll((prev) => !prev)}
           className="text-muted mt-2 w-full"
         >
-          {showAll ? "더보기 접기" : "최적일정 더보기"}
+          {showAll ? "더보기 접기" : "추천 시간 더보기"}
         </Button>
       )}
     </div>

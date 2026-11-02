@@ -205,3 +205,25 @@ describe("Timetable", () => {
     expect(slots[1].getAttribute("data-heat")).toBe("0");
   });
 });
+
+describe("옆으로 더 있는 날짜 단서", () => {
+  const days = (n: number) =>
+    Array.from(
+      { length: n },
+      (_, i) => new Date(day.getTime() + i * 24 * 60 * 60 * 1000),
+    );
+
+  it("다섯 날 이하로 폭에 맞으면 안내도 흐림도 없다", () => {
+    const { queryByText, container } = render(<Timetable dates={days(5)} />);
+    expect(queryByText(/더 있어요/)).toBeNull();
+    expect(container.querySelector("[data-edge-fade]")).toBeNull();
+  });
+
+  it("날짜가 더 있으면 남은 날짜 수를 알리고 오른쪽 가장자리를 흐린다", () => {
+    const { getByRole, container } = render(<Timetable dates={days(14)} />);
+    expect(
+      getByRole("button", { name: /옆으로 \d+일 더 있어요/ }),
+    ).toBeTruthy();
+    expect(container.querySelector("[data-edge-fade]")).not.toBeNull();
+  });
+});

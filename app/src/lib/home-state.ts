@@ -2,6 +2,12 @@ import type { MajuExpression } from "@/components/brand/maju-sprites";
 import type { MeetingProgress } from "@/lib/api-types";
 import { seoulParts } from "@/lib/seoul-time";
 
+/**
+ * 마주가 처음 말을 거는 자리(초대받은 친구의 홈, 막 모임을 만든 팀장의 홈)에서
+ * 한 번 자기를 소개한다. 그 뒤 화면들의 "마주" 표시가 누구인지 알 수 있게.
+ */
+const MAJU_INTRO = "모여락 도우미 마주예요.";
+
 export type Stage = "schedule" | "location" | "confirmed";
 
 export type HomeState = {
@@ -195,11 +201,9 @@ function baseState(
       ...base,
       expression: "default",
       title: `${p.hostName}님이 약속을 잡고 있어요`,
-      message: "이름을 남기고 함께 정해요",
-      action: {
-        label: "참여하기",
-        href: current === "location" ? votesHref : resultHref,
-      },
+      message: `${MAJU_INTRO} 이름을 남기고 함께 정해요`,
+      // 참여하면 결과 화면을 거치지 않고 바로 내 응답을 남기는 화면으로 간다.
+      action: { label: "참여하기", href: votesHref },
     };
   }
 
@@ -255,7 +259,9 @@ function baseState(
       title,
       message: startsLocation(p)
         ? "출발지를 남기면 가운데 역을 찾아 드려요"
-        : "첫 번째로 남겨 볼까요?",
+        : host
+          ? `${MAJU_INTRO} 첫 번째로 남겨 볼까요?`
+          : "첫 번째로 남겨 볼까요?",
       action: myAction,
     };
   }

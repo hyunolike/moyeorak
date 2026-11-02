@@ -3,7 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 /** 이모지가 든 이름으로 시간만 모임을 만들고 첫 날 09:00~10:00으로 확정한다. */
 async function createConfirmedMeeting(page: Page, hostName: string) {
   await page.goto("/new/schedule");
-  await page.getByLabel("팀장 이름").fill(hostName);
+  await page.getByLabel("내 이름").fill(hostName);
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
@@ -59,7 +59,7 @@ test("이모지가 든 호스트 이름이어도 요약 이미지는 PNG로 나�
 
 test("확정 전 모임의 요약 주소는 모임 홈으로 돌려보낸다", async ({ page }) => {
   await page.goto("/new/schedule");
-  await page.getByLabel("팀장 이름").fill("현호");
+  await page.getByLabel("내 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
   const id = new URL(page.url()).pathname.split("/")[2];
