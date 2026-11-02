@@ -93,16 +93,11 @@ export function MeetingHomeView({
   const entering = useNewlyResponded(respondedPeople.map((p) => p.id));
   const respondedKey = respondedPeople.map((p) => p.id).join(",");
   const action = state?.action;
-  const sharePath = `/meetings/${progress.meetingId}`;
 
   return (
     <MobileLayout>
       <AppBar
-        action={
-          state ? (
-            <ShareButton meetingId={progress.meetingId} path={sharePath} />
-          ) : null
-        }
+        action={state ? <ShareButton meetingId={progress.meetingId} /> : null}
       />
       <div className="px-5 pt-2">
         <PageTitle eyebrow={`${progress.hostName}님의 모임`}>
@@ -159,7 +154,6 @@ export function MeetingHomeView({
             action.href === "#share" ? (
               <ShareButton
                 meetingId={progress.meetingId}
-                path={sharePath}
                 label={action.label}
               />
             ) : (

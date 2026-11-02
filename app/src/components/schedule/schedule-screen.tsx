@@ -39,12 +39,7 @@ function ScheduleMain({
       <AppBar
         back={`/meetings/${meeting.id}`}
         title="가능한 시간"
-        action={
-          <ShareButton
-            meetingId={meeting.id}
-            path={`/meetings/${meeting.id}/schedule`}
-          />
-        }
+        action={<ShareButton meetingId={meeting.id} />}
       />
       <div className="px-5 pt-2">
         <PageTitle eyebrow={`${meeting.hostName}님의 모임`}>
