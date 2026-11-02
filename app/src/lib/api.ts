@@ -314,15 +314,39 @@ export type NudgeResult = {
   link: string;
 };
 
-/** 호스트 전용. 단톡방에 붙일 재촉 메시지를 만든다. 서비스가 직접 보내지는 않는다. */
-export function useNudge(meetingId: string) {
-  return useMutation({
-    mutationFn: () =>
+/**
+ * 호스트 전용. 단톡방에 붙일 재촉 메시지를 AI로 다듬어 받는다. 서비스가 직접 보내지는 않는다.
+ * 화면은 문장 틀을 먼저 보여 주므로 이 요청을 기다리지 않는다. 같은 사람들이 같은 단계에서
+ * 기다리는 동안(waitingKey가 같으면) 10분간 결과를 다시 쓴다. AI 호출 한도를 아끼기 위해서다.
+ */
+export function nudgeQueryOptions(meetingId: string, waitingKey: string) {
+  return {
+    queryKey: ["nudge", meetingId, waitingKey] as const,
+    queryFn: () =>
       apiFetch<NudgeResult>(
         `/api/meetings/${meetingId}/nudge`,
         withDeviceKey({ method: "POST" }),
       ),
-  });
+    staleTime: 10 * 60_000,
+    gcTime: 10 * 60_000,
+    retry: false,
+  };
+}
+
+/** 재촉 시트를 열기 직전에(버튼을 누르기 시작할 때) AI 문장을 미리 요청한다. */
+export function usePrefetchNudge(meetingId: string) {
+  const client = useQueryClient();
+  return (waitingKey: string) => {
+    void client.prefetchQuery(nudgeQueryOptions(meetingId, waitingKey));
+  };
+}
+
+export function useNudge(
+  meetingId: string,
+  waitingKey: string,
+  enabled: boolean,
+) {
+  return useQuery({ ...nudgeQueryOptions(meetingId, waitingKey), enabled });
 }
 
 /** 호스트 전용. 화면을 열 때마다 새로 받는다(투표가 바뀌면 서버가 열린 제안을 지운다). */

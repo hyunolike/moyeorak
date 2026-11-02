@@ -21,9 +21,11 @@ vi.mock("next/link", () => ({
     <a href={href as string}>{children as never}</a>
   ),
 }));
+const prefetchNudge = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api", () => ({
   useShareEvent: () => ({ mutate: vi.fn() }),
-  useNudge: () => ({ mutate: vi.fn(), isError: false, data: undefined }),
+  useNudge: () => ({ isFetching: false, data: undefined }),
+  usePrefetchNudge: () => prefetchNudge,
   ApiError: class extends Error {},
 }));
 

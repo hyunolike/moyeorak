@@ -223,3 +223,26 @@ test("두 문장 모두 검사에 걸리면 rule", async () => {
   const r = await writeNudges(id, { generate, model: "m" });
   expect(r.source).toBe("rule");
 });
+
+test("시간 한도를 넘기면 모델 호출을 끊고 문장 틀, rule", async () => {
+  const id = await setup();
+  const generate: GenerateNudges = vi.fn(
+    ({ signal }) =>
+      new Promise<never>((_, reject) => {
+        signal.addEventListener("abort", () => reject(signal.reason));
+      }),
+  );
+  const started = Date.now();
+  const r = await writeNudges(id, { generate, model: "m", budgetMs: 50 });
+  expect(r.source).toBe("rule");
+  expect(Date.now() - started).toBeLessThan(2000);
+  expect(generate).toHaveBeenCalledOnce();
+});
+
+test("모델이 끊기지 않고 매달려도 한도가 지나면 문장 틀로 답한다", async () => {
+  const id = await setup();
+  const generate: GenerateNudges = vi.fn(() => new Promise<never>(() => {}));
+  const r = await writeNudges(id, { generate, model: "m", budgetMs: 50 });
+  expect(r.source).toBe("rule");
+  expect(r.messages[1].text).toBe(`가능한 시간 남겨 주세요 🙏\n${link(id)}`);
+});
