@@ -10,12 +10,9 @@ const SYSTEM = `너는 모임 도우미 마주야. 호스트가 단톡방에 붙
 - 링크를 쓰지 않는다. 링크는 따로 붙는다.
 - 이름은 아래 목록에 있는 이름만 쓰고, 이름 뒤에 님을 붙인다.`;
 
-export type NudgeInput = {
-  hostName: string;
-  stage: "가능한 시간" | "출발지";
-  waitingNames: string[];
-  notJoined: number;
-};
+export type { NudgeInput } from "@/lib/nudge-template";
+
+import type { NudgeInput } from "@/lib/nudge-template";
 
 export function buildNudgePrompt(input: NudgeInput): {
   system: string;

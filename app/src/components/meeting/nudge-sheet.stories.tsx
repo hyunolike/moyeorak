@@ -13,7 +13,7 @@ const meta = {
     onCopy: () => true,
     onShare: () => {},
     waitingLabel: "민지님",
-    status: "ready",
+    polish: "none",
     messages: [
       {
         tone: "friendly",
@@ -27,11 +27,17 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Ready: Story = {};
-export const Loading: Story = { args: { status: "loading", messages: [] } };
-export const Nobody: Story = {
+/** 문장 틀을 먼저 보여 주고 마주가 뒤에서 다듬는 중. 복사는 바로 된다. */
+export const Polishing: Story = { args: { polish: "polishing" } };
+export const Polished: Story = {
   args: {
-    status: "error",
-    messages: [],
-    errorMessage: "모두 응답했어요",
+    polish: "polished",
+    messages: [
+      {
+        tone: "friendly",
+        text: `민지님, 이번 주 저녁 중에 되는 시간만 살짝 남겨 줘요!\n${link}`,
+      },
+      { tone: "short", text: `민지님 시간 남겨 주세요 🙏\n${link}` },
+    ],
   },
 };

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/layout/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -13,12 +12,9 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  ApiError,
-  type NudgeMessage,
-  useNudge,
-  useShareEvent,
-} from "@/lib/api";
+import { type NudgeMessage, useNudge, useShareEvent } from "@/lib/api";
+import { cn } from "@/lib/cn";
+import { type NudgeInput, ruleMessages } from "@/lib/nudge-template";
 
 const TONES: { value: NudgeMessage["tone"]; label: string }[] = [
   { value: "friendly", label: "다정하게" },
@@ -61,29 +57,31 @@ function CopyIcon({ done }: { done: boolean }) {
   );
 }
 
-/** 화면만 그린다. 메시지를 만들고 이벤트를 남기는 일은 NudgeSheet가 한다. */
+/** AI가 문장을 다듬는 상태. none이면 표시하지 않는다. */
+export type NudgePolish = "polishing" | "polished" | "none";
+
+/** 화면만 그린다. 어떤 문장을 보여 줄지는 NudgeSheet가 정한다. */
 export function NudgeSheetView({
   open,
   onClose,
   waitingLabel,
-  status,
+  polish,
   messages,
-  errorMessage,
   onCopy,
   onShare,
-  onRetry,
+  onInteract,
 }: {
   open: boolean;
   onClose: () => void;
   /** 메시지를 받을 사람. "민지님", "민지님과 서연님", "민지님 외 2명". */
   waitingLabel: string;
-  status: "loading" | "ready" | "error";
+  polish: NudgePolish;
   messages: NudgeMessage[];
-  errorMessage?: string;
   onCopy: (text: string) => Promise<boolean> | boolean;
   /** 기기가 Web Share를 지원할 때만 쓴다. */
   onShare?: (text: string) => void;
-  onRetry?: () => void;
+  /** 말투를 바꾸거나 복사, 공유하면 부른다. 그 뒤로는 보던 문장을 바꾸지 않는다. */
+  onInteract?: () => void;
 }) {
   const [tone, setTone] = useState<NudgeMessage["tone"]>("friendly");
   const [copied, setCopied] = useState(false);
@@ -112,68 +110,56 @@ export function NudgeSheetView({
           <DrawerDescription>단톡방에 붙여 넣으면 돼요</DrawerDescription>
         </DrawerHeader>
 
-        <div className="flex flex-col gap-3.5 px-5 pt-3.5">
-          {status === "loading" && (
-            <div role="status" className="flex flex-col gap-3.5">
-              <span className="sr-only">메시지를 쓰고 있어요</span>
-              <Skeleton className="h-11 w-full" />
-              <Skeleton className="h-28 w-full" />
-            </div>
-          )}
-          {status === "error" && (
-            <>
-              <p role="alert" className="text-error text-b2">
-                {errorMessage ?? "메시지를 만들지 못했어요"}
-              </p>
-              {onRetry && (
-                <Button type="button" variant="ghost" onClick={onRetry}>
-                  다시 만들기
-                </Button>
-              )}
-            </>
-          )}
-          {status === "ready" && selected && (
-            <>
-              {/* 값이 하나뿐인 단일 선택: 눌린 항목을 다시 눌러도 해제되지 않게 막는다 */}
-              <ToggleGroup
-                aria-label="말투"
-                value={[selected.tone]}
-                onValueChange={(next) => {
-                  const picked = next[0] as NudgeMessage["tone"] | undefined;
-                  if (picked) setTone(picked);
-                }}
-                className="bg-surface-sunken w-full p-1"
-                spacing={1}
-              >
-                {TONES.filter((t) =>
-                  messages.some((m) => m.tone === t.value),
-                ).map(({ value, label }) => (
-                  <ToggleGroupItem
-                    key={value}
-                    value={value}
-                    className="text-b3 aria-pressed:bg-bg h-10 flex-1"
-                  >
-                    {label}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
+        {selected && (
+          <div className="flex flex-col gap-3.5 px-5 pt-3.5">
+            {/* 값이 하나뿐인 단일 선택: 눌린 항목을 다시 눌러도 해제되지 않게 막는다 */}
+            <ToggleGroup
+              aria-label="말투"
+              value={[selected.tone]}
+              onValueChange={(next) => {
+                const picked = next[0] as NudgeMessage["tone"] | undefined;
+                if (picked) {
+                  setTone(picked);
+                  onInteract?.();
+                }
+              }}
+              className="bg-surface-sunken w-full p-1"
+              spacing={1}
+            >
+              {TONES.filter((t) =>
+                messages.some((m) => m.tone === t.value),
+              ).map(({ value, label }) => (
+                <ToggleGroupItem
+                  key={value}
+                  value={value}
+                  className="text-b3 aria-pressed:bg-bg h-10 flex-1"
+                >
+                  {label}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <div className="relative">
+              {/* 문장이 바뀌면 key가 바뀌어 살짝 나타난다 */}
               <p
+                key={selected.text}
                 data-testid={`nudge-${selected.tone}`}
-                className="bg-surface-sunken text-text text-b1 rounded-md p-3.5 leading-[1.6] [overflow-wrap:anywhere] break-words whitespace-pre-line select-text"
+                className="bg-surface-sunken text-text text-b1 motion-safe:animate-in motion-safe:fade-in rounded-md p-3.5 leading-[1.6] [overflow-wrap:anywhere] break-keep whitespace-pre-line select-text motion-safe:duration-300"
               >
                 {selected.text}
               </p>
-            </>
-          )}
-        </div>
+              {polish !== "none" && <PolishStatus polish={polish} />}
+            </div>
+          </div>
+        )}
 
         <DrawerFooter className="px-5 pt-5 pb-[max(28px,env(safe-area-inset-bottom))]">
           <Button
             type="button"
             size="cta"
-            disabled={status !== "ready" || !selected}
+            disabled={!selected}
             onClick={async () => {
               if (!selected) return;
+              onInteract?.();
               const ok = await onCopy(selected.text);
               if (ok) {
                 setCopied(true);
@@ -190,8 +176,12 @@ export function NudgeSheetView({
             <Button
               type="button"
               variant="ghost"
-              disabled={status !== "ready" || !selected}
-              onClick={() => selected && onShare(selected.text)}
+              disabled={!selected}
+              onClick={() => {
+                if (!selected) return;
+                onInteract?.();
+                onShare(selected.text);
+              }}
             >
               공유하기
             </Button>
@@ -202,48 +192,78 @@ export function NudgeSheetView({
   );
 }
 
-/** 열릴 때 메시지를 만들고, 복사하면 `shared` 이벤트를 남긴다. */
+/** 메시지 상자 아래 한 줄. 다듬는 동안 점이 숨 쉬듯 깜빡이고, 끝나면 체크로 바뀐다. */
+function PolishStatus({ polish }: { polish: "polishing" | "polished" }) {
+  return (
+    <p
+      role="status"
+      className="text-muted text-c1 mt-2 flex items-center gap-1.5"
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "inline-block size-1.5 rounded-full",
+          polish === "polishing"
+            ? "bg-action motion-safe:animate-pulse"
+            : "bg-muted",
+        )}
+      />
+      {polish === "polishing" ? "마주가 다듬고 있어요" : "마주가 다듬었어요"}
+    </p>
+  );
+}
+
+/**
+ * 열리면 문장 틀을 바로 보여 주고, 뒤에서 AI 문장을 받아 오면 바꿔 끼운다.
+ * 사용자가 그 전에 말투를 바꾸거나 복사, 공유했으면 보던 문장을 그대로 둔다.
+ * 복사하거나 공유하면 `shared` 이벤트를 남긴다.
+ */
 export function NudgeSheet({
   meetingId,
   waitingLabel,
+  input,
   open,
   onClose,
 }: {
   meetingId: string;
   waitingLabel: string;
+  input: NudgeInput;
   open: boolean;
   onClose: () => void;
 }) {
-  const nudge = useNudge(meetingId);
+  const nudge = useNudge(meetingId, nudgeWaitingKey(input), open);
   const shareEvent = useShareEvent(meetingId);
-  const { mutate } = nudge;
-  const requested = useRef(false);
-
+  const [pinnedRule, setPinnedRule] = useState(false);
   useEffect(() => {
-    if (!open) {
-      requested.current = false;
-      return;
-    }
-    if (requested.current) return;
-    requested.current = true;
-    mutate();
-  }, [open, mutate]);
+    if (!open) setPinnedRule(false);
+  }, [open]);
 
-  const status = nudge.isError ? "error" : nudge.data ? "ready" : "loading";
-  const errorMessage =
-    nudge.error instanceof ApiError && nudge.error.status === 409
-      ? nudge.error.message
-      : undefined;
+  const rule = useMemo(
+    () =>
+      ruleMessages(
+        input,
+        `${typeof window === "undefined" ? "" : window.location.origin}/meetings/${meetingId}`,
+      ),
+    [input, meetingId],
+  );
+  const ai = nudge.data?.source === "ai" ? nudge.data.messages : null;
+  const showAi = ai !== null && !pinnedRule;
+  const polish: NudgePolish = showAi
+    ? "polished"
+    : !pinnedRule && nudge.isFetching
+      ? "polishing"
+      : "none";
 
   return (
     <NudgeSheetView
       open={open}
       onClose={onClose}
       waitingLabel={waitingLabel}
-      status={status}
-      messages={nudge.data?.messages ?? []}
-      errorMessage={errorMessage}
-      onRetry={() => mutate()}
+      polish={polish}
+      messages={showAi ? ai : rule}
+      onInteract={() => {
+        if (!showAi) setPinnedRule(true);
+      }}
       onCopy={async (text) => {
         shareEvent.mutate();
         return copyText(text);
@@ -254,4 +274,9 @@ export function NudgeSheet({
       }}
     />
   );
+}
+
+/** 같은 사람들이 같은 단계에서 기다리는 동안은 같은 값. AI 결과를 다시 쓰는 기준이다. */
+export function nudgeWaitingKey(input: NudgeInput): string {
+  return [input.stage, input.notJoined, ...input.waitingNames].join("|");
 }

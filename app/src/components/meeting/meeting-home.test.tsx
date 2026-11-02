@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MeetingHomeView } from "@/components/meeting/meeting-home";
 import type { MeetingProgress } from "@/lib/api-types";
 
@@ -9,9 +9,11 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+const prefetchNudge = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api", () => ({
   useShareEvent: () => ({ mutate: vi.fn() }),
-  useNudge: () => ({ mutate: vi.fn(), isError: false, data: undefined }),
+  useNudge: () => ({ isFetching: false, data: undefined }),
+  usePrefetchNudge: () => prefetchNudge,
   ApiError: class extends Error {},
 }));
 
@@ -116,4 +118,10 @@ test("확정된 모임은 응답 미터를 숨기고 진행 단계는 모두 지
 test("확정 전에는 응답 미터가 보인다", () => {
   render(<MeetingHomeView progress={progress([1, 2])} meId={1} />);
   expect(screen.getByText("응답")).toBeTruthy();
+});
+
+test("재촉하기를 누르기 시작하면 기다리는 사람 기준으로 AI 문장을 미리 받아 둔다", () => {
+  render(<MeetingHomeView progress={progress([1, 2, 3, 4])} meId={1} />);
+  fireEvent.pointerDown(screen.getByRole("button", { name: "재촉하기" }));
+  expect(prefetchNudge).toHaveBeenCalledWith("가능한 시간|0|민지");
 });

@@ -13,13 +13,14 @@ import { RouteProgress } from "@/components/layout/route-progress";
 import { SectionBand } from "@/components/layout/section-band";
 import { Skeleton } from "@/components/layout/skeleton";
 import { StatusChip } from "@/components/layout/status-chip";
-import { NudgeSheet } from "@/components/meeting/nudge-sheet";
+import { NudgeSheet, nudgeWaitingKey } from "@/components/meeting/nudge-sheet";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { buttonVariants } from "@/components/ui/button";
-import { useMe, useMeetingProgress } from "@/lib/api";
+import { useMe, useMeetingProgress, usePrefetchNudge } from "@/lib/api";
 import type { MeetingProgress } from "@/lib/api-types";
 import { homeState, joinWaitingNames, routeStops } from "@/lib/home-state";
+import { nudgeInput } from "@/lib/nudge-template";
 
 /**
  * 이전 렌더보다 새로 응답한 참여자 id. 첫 렌더에는 비어 있다.
@@ -83,6 +84,8 @@ export function MeetingHomeView({
 }) {
   const [nudgeOpen, setNudgeOpen] = useState(false);
   const state = meId === undefined ? null : homeState(progress, meId);
+  const nudge = state?.canNudge ? nudgeInput(progress) : null;
+  const prefetchNudge = usePrefetchNudge(progress.meetingId);
   const votedNow = (p: MeetingProgress["participants"][number]) =>
     progress.status === "locating" ? p.votedLocation : p.votedSchedule;
   const respondedPeople = progress.participants.filter(votedNow);
@@ -169,9 +172,10 @@ export function MeetingHomeView({
             )
           }
           secondary={
-            state?.canNudge ? (
+            nudge ? (
               <button
                 type="button"
+                onPointerDown={() => prefetchNudge(nudgeWaitingKey(nudge))}
                 onClick={() => setNudgeOpen(true)}
                 className="size-full cursor-pointer"
               >
@@ -181,9 +185,10 @@ export function MeetingHomeView({
           }
         />
       ) : null}
-      {state?.canNudge ? (
+      {nudge ? (
         <NudgeSheet
           meetingId={progress.meetingId}
+          input={nudge}
           waitingLabel={
             waitingPeople.length > 0
               ? joinWaitingNames(waitingPeople.map((p) => p.name))
