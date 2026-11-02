@@ -1,6 +1,11 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { meetings, participants, schedulePolls } from "@/db/schema";
+import { type Db, db, type Tx } from "@/db/client";
+import {
+  meetings,
+  participantDevices,
+  participants,
+  schedulePolls,
+} from "@/db/schema";
 import { newId } from "@/lib/nanoid";
 import {
   type PollWindow,
@@ -10,10 +15,13 @@ import {
 } from "@/lib/poll-window";
 import { recordEvent } from "@/server/events/record-event";
 import {
+  CannotClaimHostError,
+  DeviceAlreadyJoinedError,
   InvalidPollWindowError,
   MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
+import { ParticipantNotFoundError } from "@/server/schedule/errors";
 
 export type CreateMeetingInput = {
   hostName: string;
@@ -130,17 +138,13 @@ export async function joinMeeting(
       .for("update");
     if (!meeting) throw new MeetingNotFoundError();
 
-    const existing = await tx
-      .select({ id: participants.id })
-      .from(participants)
-      .where(
-        and(
-          eq(participants.meetingId, meetingId),
-          eq(participants.deviceKey, input.deviceKey),
-        ),
-      );
-    if (existing.length > 0) {
-      return { participantId: existing[0].id, created: false };
+    const existing = await participantIdByDevice(
+      tx,
+      meetingId,
+      input.deviceKey,
+    );
+    if (existing !== null) {
+      return { participantId: existing, created: false };
     }
 
     const current = await tx
@@ -165,17 +169,17 @@ export type DeviceParticipant = {
   isHost: boolean;
 };
 
-/** 이 기기(deviceKey)로 참여한 사람을 찾는다. 읽기만 하고 아무것도 만들지 않는다. */
-export async function findParticipantByDeviceKey(
+/**
+ * 이 기기(deviceKey)로 참여한 사람의 id. 처음 참여한 브라우저(participants.device_key)와
+ * 이름을 골라 이어서 한 브라우저(participant_devices)를 모두 본다.
+ */
+async function participantIdByDevice(
+  tx: Tx | Db,
   meetingId: string,
   deviceKey: string,
-): Promise<DeviceParticipant | null> {
-  const [row] = await db
-    .select({
-      participantId: participants.id,
-      name: participants.name,
-      isHost: participants.isHost,
-    })
+): Promise<number | null> {
+  const [primary] = await tx
+    .select({ id: participants.id })
     .from(participants)
     .where(
       and(
@@ -183,5 +187,75 @@ export async function findParticipantByDeviceKey(
         eq(participants.deviceKey, deviceKey),
       ),
     );
+  if (primary) return primary.id;
+  const [extra] = await tx
+    .select({ id: participantDevices.participantId })
+    .from(participantDevices)
+    .where(
+      and(
+        eq(participantDevices.meetingId, meetingId),
+        eq(participantDevices.deviceKey, deviceKey),
+      ),
+    );
+  return extra?.id ?? null;
+}
+
+/** 이 기기(deviceKey)로 참여한 사람을 찾는다. 읽기만 하고 아무것도 만들지 않는다. */
+export async function findParticipantByDeviceKey(
+  meetingId: string,
+  deviceKey: string,
+): Promise<DeviceParticipant | null> {
+  const id = await participantIdByDevice(db, meetingId, deviceKey);
+  if (id === null) return null;
+  const [row] = await db
+    .select({
+      participantId: participants.id,
+      name: participants.name,
+      isHost: participants.isHost,
+    })
+    .from(participants)
+    .where(eq(participants.id, id));
   return row ?? null;
+}
+
+/**
+ * 다른 브라우저에서 들어온 사람이 이미 있는 이름을 골라 그 사람으로 이어서 한다.
+ * 로그인이 없어서 링크를 가진 사람은 누구든 친구 이름을 고를 수 있다. 그래서 확정과 재촉을 할 수 있는
+ * 모임을 만든 사람은 고를 수 없게 막고, 화면은 고르기 전에 한 번 더 확인한다.
+ */
+export async function claimParticipant(
+  meetingId: string,
+  participantId: number,
+  deviceKey: string,
+): Promise<{ participantId: number }> {
+  return db.transaction(async (tx) => {
+    // 같은 모임의 참여, 이어서 하기와 겹치지 않게 모임 행을 먼저 잠근다.
+    const [meeting] = await tx
+      .select({ id: meetings.id })
+      .from(meetings)
+      .where(eq(meetings.id, meetingId))
+      .for("update");
+    if (!meeting) throw new MeetingNotFoundError();
+
+    const [person] = await tx
+      .select({ id: participants.id, isHost: participants.isHost })
+      .from(participants)
+      .where(
+        and(
+          eq(participants.id, participantId),
+          eq(participants.meetingId, meetingId),
+        ),
+      );
+    if (!person) throw new ParticipantNotFoundError();
+    if (person.isHost) throw new CannotClaimHostError();
+
+    const current = await participantIdByDevice(tx, meetingId, deviceKey);
+    if (current === participantId) return { participantId };
+    if (current !== null) throw new DeviceAlreadyJoinedError();
+
+    await tx
+      .insert(participantDevices)
+      .values({ meetingId, participantId, deviceKey });
+    return { participantId };
+  });
 }

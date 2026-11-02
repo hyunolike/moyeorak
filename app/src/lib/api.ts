@@ -172,6 +172,22 @@ export function useJoin(meetingId: string) {
   });
 }
 
+/** 다른 브라우저에서 이미 있는 친구 이름을 골라 그 사람으로 이어서 한다. */
+export function useClaim(meetingId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (participantId: number) =>
+      apiFetch<{ participantId: number }>(
+        `/api/meetings/${meetingId}/claim`,
+        json("POST", { participantId, deviceKey: getDeviceKey() }),
+      ),
+    onSuccess: ({ participantId }) => {
+      storeParticipantId(meetingId, participantId);
+      client.setQueryData(keys.me(meetingId), participantId);
+    },
+  });
+}
+
 export function useScheduleSummary(meetingId: string) {
   return useQuery({
     queryKey: keys.summary(meetingId),

@@ -45,6 +45,32 @@ export const participants = pgTable(
   ],
 );
 
+/**
+ * 한 참여자를 알아보는 추가 브라우저. 카카오톡 안 브라우저로 참여한 사람이 사파리로 다시 열면
+ * 브라우저 저장소가 달라 다른 사람으로 보이는데, 이름을 골라 이어서 하면 여기 한 줄이 생긴다.
+ * 원래 브라우저(participants.device_key)는 그대로 쓴다.
+ */
+export const participantDevices = pgTable(
+  "participant_devices",
+  {
+    id: serial("id").primaryKey(),
+    meetingId: varchar("meeting_id", { length: 21 })
+      .notNull()
+      .references(() => meetings.id, { onDelete: "cascade" }),
+    participantId: integer("participant_id")
+      .notNull()
+      .references(() => participants.id, { onDelete: "cascade" }),
+    deviceKey: varchar("device_key", { length: 64 }).notNull(),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("participant_devices_meeting_device_uq").on(
+      t.meetingId,
+      t.deviceKey,
+    ),
+  ],
+);
+
 export const schedulePolls = pgTable(
   "schedule_polls",
   {
