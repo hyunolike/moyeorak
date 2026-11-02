@@ -17,6 +17,7 @@ import {
   storeParticipantId,
 } from "@/lib/device-key";
 import { markInviteViewed } from "@/lib/invite-viewed";
+import type { PollWindow } from "@/lib/poll-window";
 import type { Suggestion } from "@/server/suggest/types";
 
 export class ApiError extends Error {
@@ -140,6 +141,7 @@ export function useCreateMeeting() {
       hostName: string;
       participantCount: number;
       scope: Scope;
+      window?: PollWindow;
     }) => {
       const result = await apiFetch<{
         meetingId: string;

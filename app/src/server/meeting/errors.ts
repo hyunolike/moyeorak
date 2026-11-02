@@ -13,3 +13,11 @@ export class MeetingFullError extends Error {
     this.name = "MeetingFullError";
   }
 }
+
+export class InvalidPollWindowError extends Error {
+  readonly code = "INVALID_POLL_WINDOW";
+  constructor() {
+    super("고를 수 없는 날짜나 시간대예요");
+    this.name = "InvalidPollWindowError";
+  }
+}
