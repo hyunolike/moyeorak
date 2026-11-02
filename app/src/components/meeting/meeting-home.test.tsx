@@ -10,10 +10,14 @@ vi.mock("next/link", () => ({
   ),
 }));
 const prefetchNudge = vi.hoisted(() => vi.fn());
+const unconfirmMutate = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api", () => ({
   useShareEvent: () => ({ mutate: vi.fn() }),
   useNudge: () => ({ isFetching: false, data: undefined }),
   usePrefetchNudge: () => prefetchNudge,
+  useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
+  useJoin: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
+  useClaim: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
   ApiError: class extends Error {},
 }));
 
@@ -113,6 +117,67 @@ test("확정된 모임은 응답 미터를 숨기고 진행 단계는 모두 지
     li.getAttribute("data-state"),
   );
   expect(states).toEqual(["done", "done", "done"]);
+});
+
+test("확정된 모임의 모임장은 확정 되돌리기를 한 번 묻고 되돌린다", () => {
+  const confirmed: MeetingProgress = {
+    ...progress([1, 2, 3]),
+    status: "confirmed",
+    confirmedStart: "2026-11-02T09:00:00.000Z",
+  };
+  const { unmount } = render(<MeetingHomeView progress={confirmed} meId={2} />);
+  expect(screen.queryByRole("button", { name: "확정 되돌리기" })).toBeNull();
+  unmount();
+  render(<MeetingHomeView progress={confirmed} meId={1} />);
+  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+    "11월 2일 월요일 오후 6시",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "확정 되돌리기" }));
+  fireEvent.click(screen.getByRole("button", { name: "되돌리기" }));
+  expect(unconfirmMutate).toHaveBeenCalledOnce();
+});
+
+test("확정 뒤 처음 연 사람은 나도 참여하기로 이름을 남긴다", () => {
+  const confirmed: MeetingProgress = {
+    ...progress([1, 2, 3]),
+    status: "confirmed",
+    confirmedStart: "2026-11-02T09:00:00.000Z",
+  };
+  render(<MeetingHomeView progress={confirmed} meId={null} />);
+  expect(
+    screen.getByRole("link", { name: "약속 카드 보기" }).getAttribute("href"),
+  ).toBe("/meetings/m1/summary");
+  // 확정 뒤에는 응답하지 않은 사람을 더 기다리지 않는다.
+  expect(screen.getAllByText("나중에 참여")).toHaveLength(2);
+  expect(screen.queryByText("기다리는 중")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "나도 참여하기" }));
+  expect(
+    screen.getByText("님의 약속에 함께해요", { exact: false }),
+  ).toBeTruthy();
+  expect(screen.getByLabelText("이름")).toBeTruthy();
+});
+
+test("장소 단계에서는 정한 시간을 제목 아래에 보여 준다", () => {
+  const locating: MeetingProgress = {
+    ...progress([]),
+    scope: "both",
+    status: "locating",
+    confirmedStart: "2026-11-02T09:00:00.000Z",
+  };
+  render(<MeetingHomeView progress={locating} meId={2} />);
+  expect(screen.getByText("11월 2일 월요일 오후 6시로 정했어요")).toBeTruthy();
+});
+
+test("예상 인원보다 많이 참여하면 응답 미터의 분모가 참여자 수다", () => {
+  render(
+    <MeetingHomeView
+      progress={{ ...progress([1, 2]), participantCount: 3 }}
+      meId={2}
+    />,
+  );
+  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+    "5명 중 2명이 응답했어요",
+  );
 });
 
 test("확정 전에는 응답 미터가 보인다", () => {

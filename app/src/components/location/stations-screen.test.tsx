@@ -67,7 +67,11 @@ const station = (stationId: number, name: string): Station => ({
   averageMinutes: 30,
   perParticipant: [{ name: "현호", minutes: 30 }],
 });
-const meeting = { id: "m1", status: "locating" } as unknown as Meeting;
+const meeting = {
+  id: "m1",
+  status: "locating",
+  participantCount: 2,
+} as unknown as Meeting;
 
 test("고른 역이 새 목록에서 사라지면 보이는 첫 역으로 확정한다", () => {
   midpointData = {
@@ -85,7 +89,7 @@ test("고른 역이 새 목록에서 사라지면 보이는 첫 역으로 확정
   rerender(<StationsScreen meeting={meeting} />);
 
   fireEvent.click(screen.getByRole("button", { name: "신촌역으로 정하기" }));
-  const dialog = screen.getByRole("dialog", { name: "신촌역으로 정할까요?" });
+  const dialog = screen.getByRole("dialog", { name: "이걸로 확정할까요?" });
   fireEvent.click(within(dialog).getByRole("button", { name: "확정하기" }));
   expect(confirmMutate.mock.calls[0]?.[0]).toBe(3);
 });
@@ -101,7 +105,7 @@ test("고른 역이 목록에 있으면 그 역으로 확정한다", () => {
     screen.getByRole("button", { name: "홍대입구역으로 정하기" }),
   );
   const dialog = screen.getByRole("dialog", {
-    name: "홍대입구역으로 정할까요?",
+    name: "이걸로 확정할까요?",
   });
   fireEvent.click(within(dialog).getByRole("button", { name: "확정하기" }));
   expect(confirmMutate.mock.calls[0]?.[0]).toBe(2);
@@ -151,7 +155,7 @@ test("이름이 이미 역으로 끝나면 역을 또 붙이지 않는다", () =
   render(<StationsScreen meeting={meeting} />);
   fireEvent.click(screen.getByRole("button", { name: "서울역으로 정하기" }));
   expect(
-    screen.getByRole("dialog", { name: "서울역으로 정할까요?" }),
+    screen.getByRole("dialog", { name: "이걸로 확정할까요?" }),
   ).toBeInTheDocument();
   expect(screen.queryByText(/서울역역/)).toBeNull();
 });
@@ -174,17 +178,31 @@ test("확정 시트의 평균 시간도 60분이 넘으면 시간과 분으로 �
   render(<StationsScreen meeting={meeting} />);
   fireEvent.click(screen.getByRole("button", { name: "합정역으로 정하기" }));
   const dialog = screen.getByRole("dialog");
-  expect(within(dialog).getByText("평균 1시간 15분")).toBeInTheDocument();
+  expect(
+    within(dialog).getByText("합정역, 평균 1시간 15분"),
+  ).toBeInTheDocument();
 });
 
 test("역 확정 시트는 다른 확정 시트와 같은 말투다(확정하기, 마침표 없는 주의 문구)", () => {
   midpointData = { type: "ok", stations: [station(1, "합정")] };
   render(<StationsScreen meeting={meeting} />);
   fireEvent.click(screen.getByRole("button", { name: "합정역으로 정하기" }));
-  const dialog = screen.getByRole("dialog", { name: "합정역으로 정할까요?" });
+  const dialog = screen.getByRole("dialog", { name: "이걸로 확정할까요?" });
   expect(within(dialog).getByText("확정하면 장소 투표가 닫혀요")).toBeTruthy();
   expect(within(dialog).getByRole("button", { name: "확정하기" })).toBeTruthy();
   expect(within(dialog).queryByRole("button", { name: "정하기" })).toBeNull();
+});
+
+test("출발지를 남기지 않은 예상 인원이 있으면 확정 시트가 경고한다", () => {
+  midpointData = { type: "ok", stations: [station(1, "합정")] };
+  render(<StationsScreen meeting={{ ...meeting, participantCount: 4 }} />);
+  fireEvent.click(screen.getByRole("button", { name: "합정역으로 정하기" }));
+  const dialog = screen.getByRole("dialog", { name: "이걸로 확정할까요?" });
+  expect(
+    within(dialog).getByText(
+      "아직 2명이 응답하지 않았어요. 확정하면 더 남길 수 없어요",
+    ),
+  ).toBeInTheDocument();
 });
 
 test("장소를 정하면 확정 카드 화면으로 간다", () => {

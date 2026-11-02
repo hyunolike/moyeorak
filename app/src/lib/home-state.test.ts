@@ -1,5 +1,11 @@
 import type { MeetingProgress } from "@/lib/api-types";
-import { confirmedSentence, homeState, routeStops } from "@/lib/home-state";
+import {
+  confirmedSentence,
+  formatConfirmedStart,
+  homeState,
+  routeStops,
+  waitingCount,
+} from "@/lib/home-state";
 
 type P = MeetingProgress["participants"][number];
 const person = (
@@ -195,11 +201,79 @@ test("확정된 모임을 처음 연 사람에게도 확정 안내가 먼저다"
   });
   const s = homeState(p, null);
   expect(s.expression).toBe("happy");
-  expect(s.message).toBe("약속이 정해졌어요");
-  expect(s.action).toEqual({
+  expect(s.message).toBe(
+    "약속이 정해졌어요. 이름을 남기면 약속 카드에 함께 보여요",
+  );
+  expect(s.action).toEqual({ label: "나도 참여하기", href: "#join" });
+  expect(s.secondaryAction).toEqual({
     label: "약속 카드 보기",
     href: "/meetings/m1/summary",
   });
+});
+
+test("확정된 모임의 모임장에게만 확정 되돌리기를 보여 준다", () => {
+  const p = progress({
+    status: "confirmed",
+    confirmedStart: "2026-11-09T10:00:00.000Z",
+  });
+  expect(homeState(p, 1).secondaryAction).toEqual({
+    label: "확정 되돌리기",
+    href: "#unconfirm",
+  });
+  expect(homeState(p, 2).secondaryAction).toBeNull();
+  expect(homeState(progress(), 1).secondaryAction).toBeNull();
+});
+
+describe("예상 인원", () => {
+  const four = (over: Partial<MeetingProgress> = {}) =>
+    progress({
+      participantCount: 2,
+      participants: [
+        person(1, "현호", voted),
+        person(2, "서연", voted),
+        person(3, "민준"),
+        person(4, "지우"),
+      ],
+      ...over,
+    });
+  test("예상 인원보다 많이 참여하면 실제 참여자 수를 분모로 쓴다", () => {
+    expect(homeState(four(), 2).title).toBe("4명 중 2명이 응답했어요");
+    expect(waitingCount(four())).toBe(2);
+  });
+  test("예상 인원이 더 크면 들어오지 않은 자리도 기다린다", () => {
+    expect(waitingCount(four({ participantCount: 6 }))).toBe(4);
+  });
+  test("확정된 모임은 기다리는 사람이 없다", () => {
+    expect(waitingCount(four({ status: "confirmed" }))).toBe(0);
+  });
+});
+
+describe("정해진 시간 안내", () => {
+  test("장소 단계에서는 정한 시간을 알려 준다", () => {
+    const p = progress({
+      status: "locating",
+      confirmedStart: "2026-11-02T09:00:00.000Z",
+    });
+    expect(homeState(p, 2).note).toBe("11월 2일 월요일 오후 6시로 정했어요");
+    expect(homeState(p, null).note).toBe("11월 2일 월요일 오후 6시로 정했어요");
+  });
+  test("시간 단계와 확정 뒤에는 따로 알리지 않는다", () => {
+    expect(homeState(progress(), 2).note).toBeNull();
+    const done = progress({
+      status: "confirmed",
+      confirmedStart: "2026-11-02T09:00:00.000Z",
+    });
+    expect(homeState(done, 2).note).toBeNull();
+  });
+});
+
+test("formatConfirmedStart는 시작 시각 하나를 서울 기준으로 쓴다", () => {
+  expect(formatConfirmedStart("2026-11-02T09:00:00.000Z")).toBe(
+    "11월 2일 월요일 오후 6시",
+  );
+  expect(formatConfirmedStart("2026-11-02T00:30:00.000Z")).toBe(
+    "11월 2일 월요일 오전 9시 30분",
+  );
 });
 
 describe("confirmedSentence", () => {
@@ -406,7 +480,7 @@ describe("큰 제목", () => {
       confirmedStart: "2026-11-07T10:00:00.000Z",
       confirmedPlace: "녹사평역",
     });
-    expect(homeState(p, 2).title).toBe("11월 7일 토요일, 녹사평역");
+    expect(homeState(p, 2).title).toBe("11월 7일 토요일 오후 7시, 녹사평역");
   });
   test("확정인데 시간도 장소도 없으면 문장으로 말한다", () => {
     expect(homeState(five(5, { status: "confirmed" }), 2).title).toBe(

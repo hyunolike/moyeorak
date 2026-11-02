@@ -1,5 +1,5 @@
 import { formatDuration } from "@/components/location/format";
-import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
+import { formatConfirmedStart } from "@/lib/home-state";
 
 export type MeetingSummary = {
   meetingId: string;
@@ -14,6 +14,7 @@ export type MeetingSummary = {
     line: string | null;
     mapUrl: string;
   } | null;
+  /** 참여자마다 한 줄. 출발지를 남기지 않았으면 from과 minutes가 null이다. */
   travel: { name: string; from: string | null; minutes: number | null }[];
 };
 
@@ -35,11 +36,7 @@ function travelLine(t: MeetingSummary["travel"][number]): string {
 /** 단톡방에 붙여 넣는 요약. 없는 줄은 뺀다. */
 export function summaryText(s: MeetingSummary, link: string): string {
   const lines = [`📍 ${s.hostName}님의 모임`];
-  if (s.start && s.end) {
-    lines.push(
-      `🗓 ${formatSlotDate(s.start)} ${formatSlotRange(s.start, s.end)}`,
-    );
-  }
+  if (s.start) lines.push(`🗓 ${formatConfirmedStart(s.start)}`);
   if (s.place) {
     lines.push(`🚉 ${stationLabel(s.place.name)}`);
     for (const t of s.travel) lines.push(travelLine(t));

@@ -12,6 +12,10 @@ export type HomeState = {
   title: string;
   message: string;
   action: { label: string; href: string } | null;
+  /** 아래 보조 버튼. `#unconfirm`은 확정 되돌리기, 그 밖에는 이동할 주소다. 재촉 버튼이 있으면 그쪽이 먼저다. */
+  secondaryAction: { label: string; href: string } | null;
+  /** 제목 아래 한 줄. 장소 단계에서 이미 정한 시간을 알려 준다. */
+  note: string | null;
   /** 호스트이고 확정 전이며 기다리는 사람이 있을 때만 true. */
   canNudge: boolean;
 };
@@ -70,34 +74,59 @@ function formatTime(hour: number, minute: number): string {
   return minute === 0 ? `${period} ${h}시` : `${period} ${h}시 ${minute}분`;
 }
 
+/** 확정 날짜 `M월 D일 요일`. 서울 기준. */
+export function formatConfirmedDay(iso: string | Date): string {
+  const t = seoulParts(new Date(iso));
+  return `${t.month}월 ${t.day}일 ${t.weekday}요일`;
+}
+
+/** 확정 시각 `오후 H시`. 서울 기준. */
+export function formatConfirmedClock(iso: string | Date): string {
+  const t = seoulParts(new Date(iso));
+  return formatTime(t.hour, t.minute);
+}
+
+/**
+ * 확정 시각은 끝 시각 없이 시작 시각 하나로 쓴다. `M월 D일 요일 오후 H시`, 서울 기준.
+ * 약속 카드, 홈, 공유 문구, 링크 미리보기가 모두 이 형식을 쓴다.
+ */
+export function formatConfirmedStart(iso: string | Date): string {
+  return `${formatConfirmedDay(iso)} ${formatConfirmedClock(iso)}`;
+}
+
+/** 진행률 분모. 예상 인원보다 많이 참여하면 실제 참여자 수를 쓴다. */
+export function headcount(
+  p: Pick<MeetingProgress, "participantCount" | "participants">,
+): number {
+  return Math.max(p.participantCount, p.participants.length);
+}
+
 /** `{M월 D일 요일 오후 H시}{, 장소}로 정해졌어요.` 서울 기준. 확정 시각이 없으면 장소만 쓴다. */
 export function confirmedSentence(p: MeetingProgress): string {
   const place = p.confirmedPlace;
-  let when = "";
-  if (p.confirmedStart) {
-    const t = seoulParts(new Date(p.confirmedStart));
-    when = `${t.month}월 ${t.day}일 ${t.weekday}요일 ${formatTime(t.hour, t.minute)}`;
-  }
+  const when = p.confirmedStart ? formatConfirmedStart(p.confirmedStart) : "";
   const subject = [when, place].filter(Boolean).join(", ");
   // 옮겨 온 옛 모임처럼 확정인데 시간도 장소도 없을 때 빈 주어 문장을 만들지 않는다.
   if (!subject) return "약속이 정해졌어요.";
   return `${withDirectionalParticle(subject)} 정해졌어요.`;
 }
 
-/** 확정 화면의 큰 제목. `{M월 D일 요일}{, 장소}`, 시간 없이 날짜와 장소만 쓴다. */
+/** 확정 화면의 큰 제목. `{M월 D일 요일 오후 H시}{, 장소}`. */
 function confirmedTitle(p: MeetingProgress): string {
-  let day = "";
-  if (p.confirmedStart) {
-    const t = seoulParts(new Date(p.confirmedStart));
-    day = `${t.month}월 ${t.day}일 ${t.weekday}요일`;
-  }
-  const title = [day, p.confirmedPlace].filter(Boolean).join(", ");
+  const when = p.confirmedStart ? formatConfirmedStart(p.confirmedStart) : "";
+  const title = [when, p.confirmedPlace].filter(Boolean).join(", ");
   return title || "약속이 정해졌어요";
 }
 
 /** 지금 단계에서 응답한 사람 수. 장소 단계는 출발지, 그 밖에는 가능한 시간을 본다. */
 export function respondedCount(p: MeetingProgress): number {
   return p.participants.filter(votedNow(p)).length;
+}
+
+/** 지금 단계에서 아직 응답하지 않은 자리 수. 들어오지 않은 예상 인원도 센다. 확정이면 0. */
+export function waitingCount(p: MeetingProgress): number {
+  if (p.status === "confirmed") return 0;
+  return Math.max(0, headcount(p) - respondedCount(p));
 }
 
 /** 지금 단계에서 응답했는지 가려내는 함수. */
@@ -116,7 +145,18 @@ export function joinWaitingNames(names: string[]): string {
 type Participant = MeetingProgress["participants"][number];
 
 export function homeState(p: MeetingProgress, meId: number | null): HomeState {
-  return { ...baseState(p, meId), canNudge: canNudge(p, meId) };
+  return {
+    secondaryAction: null,
+    ...baseState(p, meId),
+    note: decidedNote(p),
+    canNudge: canNudge(p, meId),
+  };
+}
+
+/** 시간이 정해진 뒤 장소를 모으는 동안, 정한 시간을 한 줄로 알려 준다. */
+function decidedNote(p: MeetingProgress): string | null {
+  if (p.status !== "locating" || !p.confirmedStart) return null;
+  return `${withDirectionalParticle(formatConfirmedStart(p.confirmedStart))} 정했어요`;
 }
 
 /** 미응답이거나 아직 입장하지 않은 자리가 있는지. writeNudges와 같은 기준이다. */
@@ -124,7 +164,7 @@ function hasWaiting(p: MeetingProgress): boolean {
   const voted = votedNow(p);
   return (
     p.participants.some((x) => !voted(x)) ||
-    p.participantCount - p.participants.length > 0
+    headcount(p) - p.participants.length > 0
   );
 }
 
@@ -164,7 +204,8 @@ function progressTitle(p: MeetingProgress, n: number, m: number): string {
 function baseState(
   p: MeetingProgress,
   meId: number | null,
-): Omit<HomeState, "canNudge"> {
+): Omit<HomeState, "canNudge" | "note" | "secondaryAction"> &
+  Partial<Pick<HomeState, "secondaryAction">> {
   const stages = STAGES[p.scope];
   const current = CURRENT[p.status];
   const base = { stages, current };
@@ -181,12 +222,30 @@ function baseState(
       : `/meetings/${id}/schedule`;
 
   if (p.status === "confirmed") {
+    const card: Action = {
+      label: "약속 카드 보기",
+      href: `/meetings/${id}/summary`,
+    };
+    // 확정 뒤에 링크를 처음 연 친구도 이름을 남기고 함께할 수 있다.
+    if (meId === null) {
+      return {
+        ...base,
+        expression: "happy",
+        title: confirmedTitle(p),
+        message: "약속이 정해졌어요. 이름을 남기면 약속 카드에 함께 보여요",
+        action: { label: "나도 참여하기", href: "#join" },
+        secondaryAction: card,
+      };
+    }
     return {
       ...base,
       expression: "happy",
       title: confirmedTitle(p),
       message: "약속이 정해졌어요",
-      action: { label: "약속 카드 보기", href: `/meetings/${id}/summary` },
+      action: card,
+      secondaryAction: isHost(p, meId)
+        ? { label: "확정 되돌리기", href: "#unconfirm" }
+        : null,
     };
   }
 
@@ -204,7 +263,7 @@ function baseState(
   }
 
   const n = respondedCount(p);
-  const m = p.participantCount;
+  const m = headcount(p);
   const me = p.participants.find((x) => x.id === meId);
   const meResponded = me ? voted(me) : false;
   const respondAction: Action =

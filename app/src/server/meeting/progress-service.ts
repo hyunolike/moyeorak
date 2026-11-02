@@ -14,6 +14,7 @@ export type MeetingProgress = {
   hostName: string;
   scope: "schedule" | "location" | "both";
   status: "scheduling" | "locating" | "confirmed";
+  /** 진행률 분모. 모임장이 정한 예상 인원과 실제 참여자 수 중 큰 값이다. */
   participantCount: number;
   participants: {
     id: number;
@@ -69,7 +70,7 @@ export async function getMeetingProgress(
     hostName: meeting.hostName,
     scope: meeting.scope,
     status: meeting.status,
-    participantCount: meeting.participantCount,
+    participantCount: Math.max(meeting.participantCount, people.length),
     participants: people,
     confirmedStart: poll?.confirmedStart ?? null,
     confirmedEnd: poll?.confirmedEnd ?? null,

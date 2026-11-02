@@ -10,7 +10,7 @@ import type { MeetingSummary } from "@/lib/summary-text";
 const replace = vi.fn();
 let search = "";
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace }),
+  useRouter: () => ({ replace, push: vi.fn() }),
   usePathname: () => "/meetings/m1/summary",
   useSearchParams: () => new URLSearchParams(search),
 }));
@@ -22,7 +22,17 @@ vi.mock("next/link", () => ({
   ),
 }));
 const mutate = vi.fn();
-vi.mock("@/lib/api", () => ({ useShareEvent: () => ({ mutate }) }));
+const unconfirmMutate = vi.fn();
+let meIsHost = false;
+vi.mock("@/lib/api", () => ({
+  useShareEvent: () => ({ mutate }),
+  useMe: () => ({
+    isPending: false,
+    isError: false,
+    me: meIsHost ? { id: 1, name: "현호", isHost: true } : null,
+  }),
+  useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
+}));
 vi.mock("motion/react", async (orig) => ({
   ...(await orig<typeof import("motion/react")>()),
   useReducedMotion: vi.fn(() => false),
@@ -48,7 +58,11 @@ const summary: MeetingSummary = {
   ],
 };
 
+const participants = [{ id: 1, name: "현호", isHost: true }];
+
 beforeEach(() => {
+  meIsHost = false;
+  unconfirmMutate.mockClear();
   search = "";
   replace.mockClear();
   mutate.mockClear();
@@ -61,8 +75,9 @@ test("약속 카드에 날짜, 역과 노선, 확정 도장이 있다", () => {
   render(<SummaryCardView summary={summary} onShare={noop} onCopy={noop} />);
   const card = screen.getByRole("article", { name: "약속 카드" });
   expect(within(card).getByText("현호님의 모임")).toBeTruthy();
-  expect(within(card).getByText("11월 7일 (토)")).toBeTruthy();
-  expect(within(card).getByText(/09:00 ~ 10:00/)).toBeTruthy();
+  expect(within(card).getByText("11월 7일 토요일")).toBeTruthy();
+  expect(within(card).getByText("오전 9시")).toBeTruthy();
+  expect(card.textContent).not.toMatch(/10:00|~/);
   expect(within(card).getByText("녹사평역")).toBeTruthy();
   expect(within(card).getByText("6호선")).toBeTruthy();
   expect(within(card).getByText("확정")).toBeTruthy();
@@ -103,16 +118,57 @@ test("보조 행동 셋, 주 버튼, 글자 링크", () => {
   ).toBe("/meetings/m1");
 });
 
-test("장소가 없으면 역, 사람 행, 카카오맵이 없다", () => {
+test("장소가 없으면 역, 이동 행, 카카오맵 대신 함께하는 사람을 쓴다", () => {
   render(
     <SummaryCardView
-      summary={{ ...summary, place: null, travel: [] }}
+      summary={{
+        ...summary,
+        place: null,
+        travel: [
+          { name: "현호", from: null, minutes: null },
+          { name: "늦은", from: null, minutes: null },
+        ],
+      }}
       onShare={noop}
       onCopy={noop}
     />,
   );
   expect(screen.queryByRole("listitem")).toBeNull();
   expect(screen.queryByRole("link", { name: "카카오맵에서 보기" })).toBeNull();
+  expect(screen.getByText("현호, 늦은 함께해요")).toBeTruthy();
+});
+
+test("출발지를 남기지 않은 사람은 이동 시간 대신 출발지 없음으로 쓴다", () => {
+  render(
+    <SummaryCardView
+      summary={{
+        ...summary,
+        travel: [
+          ...summary.travel,
+          { name: "늦은", from: null, minutes: null },
+        ],
+      }}
+      onShare={noop}
+      onCopy={noop}
+    />,
+  );
+  const rows = screen.getAllByRole("listitem");
+  expect(rows[3].textContent).toBe("늦은 출발지 없음");
+});
+
+test("모임장에게만 확정 되돌리기를 보여 주고 한 번 물은 뒤 되돌린다", () => {
+  const { unmount } = render(
+    <SummaryCard summary={summary} participants={participants} />,
+  );
+  expect(screen.queryByRole("button", { name: "확정 되돌리기" })).toBeNull();
+  unmount();
+
+  meIsHost = true;
+  render(<SummaryCard summary={summary} participants={participants} />);
+  fireEvent.click(screen.getByRole("button", { name: "확정 되돌리기" }));
+  expect(screen.getByText("확정을 되돌릴까요?")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "되돌리기" }));
+  expect(unconfirmMutate).toHaveBeenCalledOnce();
 });
 
 test("확정 직후가 아니면 올라오는 움직임이 없다", () => {
@@ -124,7 +180,7 @@ test("확정 직후가 아니면 올라오는 움직임이 없다", () => {
 
 test("확정 직후 표시가 있으면 올라오고, 한 번 재생한 뒤 표시를 지운다", () => {
   search = "just=confirmed";
-  render(<SummaryCard summary={summary} />);
+  render(<SummaryCard summary={summary} participants={participants} />);
   expect(screen.getByRole("article", { name: "약속 카드" }).dataset.enter).toBe(
     "rise",
   );
@@ -136,7 +192,7 @@ test("확정 직후 표시가 있으면 올라오고, 한 번 재생한 뒤 표�
 test("움직임 줄이기이면 확정 직후여도 카드가 바로 나타난다", () => {
   vi.mocked(useReducedMotion).mockReturnValue(true);
   search = "just=confirmed";
-  render(<SummaryCard summary={summary} />);
+  render(<SummaryCard summary={summary} participants={participants} />);
   expect(
     screen.getByRole("article", { name: "약속 카드" }).dataset.enter,
   ).toBeUndefined();
@@ -144,7 +200,7 @@ test("움직임 줄이기이면 확정 직후여도 카드가 바로 나타난�
 });
 
 test("표시가 없으면 주소를 바꾸지 않는다", () => {
-  render(<SummaryCard summary={summary} />);
+  render(<SummaryCard summary={summary} participants={participants} />);
   expect(replace).not.toHaveBeenCalled();
 });
 
@@ -164,7 +220,7 @@ describe("복사와 공유", () => {
   });
 
   test("글로 복사는 요약을 복사하고 토스트로 알린다", async () => {
-    render(<SummaryCard summary={summary} />);
+    render(<SummaryCard summary={summary} participants={participants} />);
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "글로 복사" }));
     });
@@ -176,7 +232,7 @@ describe("복사와 공유", () => {
 
   test("복사가 막히면 실패 토스트를 띄우고 이벤트는 남기지 않는다", async () => {
     writeText.mockRejectedValueOnce(new Error("denied"));
-    render(<SummaryCard summary={summary} />);
+    render(<SummaryCard summary={summary} participants={participants} />);
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "글로 복사" }));
     });
@@ -190,7 +246,7 @@ describe("복사와 공유", () => {
       value: share,
       configurable: true,
     });
-    render(<SummaryCard summary={summary} />);
+    render(<SummaryCard summary={summary} participants={participants} />);
     await act(async () => {
       fireEvent.click(
         screen.getByRole("button", { name: "단톡방에 공유하기" }),
@@ -209,7 +265,7 @@ describe("복사와 공유", () => {
       value: share,
       configurable: true,
     });
-    render(<SummaryCard summary={summary} />);
+    render(<SummaryCard summary={summary} participants={participants} />);
     await act(async () => {
       fireEvent.click(
         screen.getByRole("button", { name: "단톡방에 공유하기" }),
@@ -221,7 +277,7 @@ describe("복사와 공유", () => {
   });
 
   test("Web Share가 없으면 복사로 대신한다", async () => {
-    render(<SummaryCard summary={summary} />);
+    render(<SummaryCard summary={summary} participants={participants} />);
     await act(async () => {
       fireEvent.click(
         screen.getByRole("button", { name: "단톡방에 공유하기" }),

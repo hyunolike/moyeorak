@@ -120,3 +120,11 @@ test("날짜 고르기는 14일까지만 고를 수 있다", () => {
   expect(screen.getByText("14일 골랐어요(최대 14일)")).toBeTruthy();
   expect(days[14].getAttribute("aria-pressed")).toBe("false");
 });
+
+test("인원은 예상 인원이라 더 와도 참여할 수 있다고 알린다", () => {
+  render(<NewMeetingForm flow="both" />);
+  expect(screen.getByRole("group", { name: "몇 명이 모이나요?" })).toBeTruthy();
+  expect(
+    screen.getByText("대략이어도 괜찮아요. 더 와도 참여할 수 있어요"),
+  ).toBeTruthy();
+});

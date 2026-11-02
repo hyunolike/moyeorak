@@ -166,7 +166,11 @@ export function useJoin(meetingId: string) {
       ),
     onSuccess: async ({ participantId }) => {
       storeParticipantId(meetingId, participantId);
-      await client.invalidateQueries({ queryKey: keys.meeting(meetingId) });
+      // 모임 홈(progress)에서 참여해도 새 참여자가 목록에 바로 보이게 둘 다 다시 읽는다.
+      await Promise.all([
+        client.invalidateQueries({ queryKey: keys.meeting(meetingId) }),
+        client.invalidateQueries({ queryKey: keys.progress(meetingId) }),
+      ]);
       client.setQueryData(keys.me(meetingId), participantId);
     },
   });
@@ -405,6 +409,19 @@ function useInvalidateDecision(meetingId: string) {
       client.invalidateQueries({ queryKey: keys.progress(meetingId) }),
       client.invalidateQueries({ queryKey: keys.summary(meetingId) }),
     ]);
+}
+
+/** 모임장 전용. 마지막 확정 하나를 되돌린다. */
+export function useUnconfirm(meetingId: string) {
+  const invalidate = useInvalidateDecision(meetingId);
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ status: "scheduling" | "locating" }>(
+        `/api/meetings/${meetingId}/unconfirm`,
+        withDeviceKey({ method: "POST" }),
+      ),
+    onSettled: invalidate,
+  });
 }
 
 export function useCreateSuggestions(meetingId: string) {

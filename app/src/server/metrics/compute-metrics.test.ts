@@ -78,6 +78,20 @@ test("computeMetrics: 정원 4명 중 3명 vote_done이면 participationRate 0.7
   expect(m.participationRate).toBe(0.75);
 });
 
+test("computeMetrics: 예상 인원보다 많이 참여하면 실제 참여자 수를 분모로 쓴다", async () => {
+  const { meetingId, participantId } = await make(2, "a");
+  const summary = await getScheduleSummary(meetingId);
+  const slot = new Date(`${summary.poll.dateOptions[1]}T14:00:00+09:00`);
+  await saveScheduleVote(meetingId, participantId, [slot]);
+  for (const c of ["b", "c", "d"]) {
+    const j = await joinMeeting(meetingId, { name: c, deviceKey: key(c) });
+    if (c === "b") await saveScheduleVote(meetingId, j.participantId, [slot]);
+  }
+  // 4명 참여 중 2명 투표. 예상 인원(2명) 기준이면 1이 되어 부풀려진다.
+  const m = await computeMetrics(range());
+  expect(m.participationRate).toBe(0.5);
+});
+
 test("computeMetrics: 같은 deviceKey가 30일 안에 두 번 만들면 reuseRate에 잡힌다", async () => {
   await make(3, "a");
   await make(3, "a");

@@ -2,7 +2,7 @@ import { ZodError } from "zod";
 import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import { readJson, toResponse } from "@/server/http";
 import {
-  MeetingFullError,
+  DeviceAlreadyJoinedError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
 
@@ -20,7 +20,7 @@ test("오류를 상태 코드로 매핑한다", async () => {
   expect((await notFound.json()).error.code).toBe("MEETING_NOT_FOUND");
 
   const full = await toResponse(async () => {
-    throw new MeetingFullError();
+    throw new DeviceAlreadyJoinedError();
   });
   expect(full.status).toBe(409);
 

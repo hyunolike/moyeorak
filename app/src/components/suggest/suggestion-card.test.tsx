@@ -142,10 +142,28 @@ test("확정은 확인 시트에서 한 번 묻고 고른 카드로 onAccept를 
   fireEvent.click(screen.getByRole("button", { name: "이걸로 확정" }));
   expect(onAccept).not.toHaveBeenCalled();
   const dialog = screen.getByRole("dialog", { name: "이걸로 확정할까요?" });
-  expect(within(dialog).getByText("11월 7일 (토) 14:00 ~ 16:00")).toBeVisible();
+  expect(within(dialog).getByText("11월 7일 토요일 오후 2시")).toBeVisible();
   expect(within(dialog).getByText("확정하면 시간 투표가 닫혀요")).toBeVisible();
   fireEvent.click(within(dialog).getByRole("button", { name: "확정하기" }));
   expect(onAccept).toHaveBeenCalledWith(schedule);
+});
+
+test("응답하지 않은 자리가 있으면 확정 시트가 경고한다", () => {
+  render(
+    <SuggestionDeck
+      suggestions={[schedule, second]}
+      onAccept={noop}
+      onNext={noop}
+      waiting={2}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "이걸로 확정" }));
+  const dialog = screen.getByRole("dialog", { name: "이걸로 확정할까요?" });
+  expect(
+    within(dialog).getByText(
+      "아직 2명이 응답하지 않았어요. 확정하면 더 남길 수 없어요",
+    ),
+  ).toBeVisible();
 });
 
 test("다른 제안 보기는 고른 카드로 onNext를 부른다", () => {
