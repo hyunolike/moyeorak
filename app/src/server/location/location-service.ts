@@ -3,7 +3,10 @@ import { db } from "@/db/client";
 import { locationVotes, meetings, participants } from "@/db/schema";
 import { recordEvent } from "@/server/events/record-event";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
-import { ParticipantNotFoundError } from "@/server/schedule/errors";
+import {
+  AlreadyConfirmedError,
+  ParticipantNotFoundError,
+} from "@/server/schedule/errors";
 import { dropProposed } from "@/server/suggest/store";
 
 export type Departure = {
@@ -22,11 +25,13 @@ export async function upsertDeparture(
 ): Promise<{ voteId: number }> {
   return db.transaction(async (tx) => {
     const [meeting] = await tx
-      .select({ id: meetings.id })
+      .select({ id: meetings.id, status: meetings.status })
       .from(meetings)
       .where(eq(meetings.id, meetingId))
       .for("update");
     if (!meeting) throw new MeetingNotFoundError();
+    // 확정 뒤에 출발지가 바뀌면 약속 카드의 이동 시간이 합의한 내용과 달라진다.
+    if (meeting.status === "confirmed") throw new AlreadyConfirmedError();
 
     const [person] = await tx
       .select({ id: participants.id })
@@ -82,11 +87,12 @@ export async function deleteDeparture(
 ): Promise<void> {
   await db.transaction(async (tx) => {
     // 제안 저장과 겹치지 않게 모임 행을 먼저 잠근다.
-    await tx
-      .select({ id: meetings.id })
+    const [meeting] = await tx
+      .select({ status: meetings.status })
       .from(meetings)
       .where(eq(meetings.id, meetingId))
       .for("update");
+    if (meeting?.status === "confirmed") throw new AlreadyConfirmedError();
     const [vote] = await tx
       .select({ id: locationVotes.id })
       .from(locationVotes)

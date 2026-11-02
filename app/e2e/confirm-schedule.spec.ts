@@ -2,9 +2,12 @@ import { expect, type Page, test } from "@playwright/test";
 
 const CONFIRMED_COPY = "이미 시간이 정해졌어요. 모임 홈에서 확인해 주세요.";
 
-/** 시간만 모임을 만들고 둘째 날 09:00, 09:30을 투표한 뒤 일정 화면에 선다. */
-async function createVotedScheduleMeeting(page: Page) {
-  await page.goto("/new/schedule");
+/** 모임을 만들고(기본은 시간만) 둘째 날 09:00, 09:30을 투표한 뒤 일정 화면에 선다. */
+async function createVotedScheduleMeeting(
+  page: Page,
+  flow: "schedule" | "both" = "schedule",
+) {
+  await page.goto(`/new/${flow}`);
   await page.getByLabel("팀장 이름").fill("현호");
   await page.getByRole("button", { name: "링크 만들기" }).click();
   await expect(page).toHaveURL(/\/meetings\/[^/]+$/);
@@ -58,30 +61,18 @@ test("팀장이 시간만 모임의 1순위 시간을 정하면 홈에 정해진
     /\d+월 \d+일/,
   );
 
+  // 예전에 공유된 시간 화면 링크로 들어와도 약속 카드로 간다.
   await page.goto(`/meetings/${id}/schedule`);
-  await expect(
-    page.getByRole("link", { name: "모임 홈으로 가기" }),
-  ).toBeVisible();
-  await expect(page.getByRole("link", { name: "일정 수정하기" })).toHaveCount(
-    0,
-  );
+  await expect(page).toHaveURL(new RegExp(`/meetings/${id}/summary$`));
 });
 
-test("정해진 모임의 투표 화면은 고칠 수 없고 모임 홈으로 안내한다", async ({
+test("정해진 모임의 시간 수정 화면 링크는 약속 카드로 간다", async ({
   page,
 }) => {
   const id = await createVotedScheduleMeeting(page);
   await confirmByApi(page, id);
   await page.goto(`/meetings/${id}/schedule/votes`);
-  await expect(page.getByText(CONFIRMED_COPY)).toBeVisible();
-  await expect(page.getByLabel("말로 남기기")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "이 시간으로 저장" }),
-  ).toHaveCount(0);
-  // 시간표는 읽기 전용이라 칸이 눌림 버튼으로 그려지지 않는다.
-  await expect(page.locator("button[aria-pressed]")).toHaveCount(0);
-  await page.getByRole("link", { name: "모임 홈으로 가기" }).click();
-  await expect(page).toHaveURL(new RegExp(`/meetings/${id}$`));
+  await expect(page).toHaveURL(new RegExp(`/meetings/${id}/summary$`));
 });
 
 test("저장하다 409를 받으면 시간이 정해졌다고 알린다", async ({ page }) => {
@@ -129,4 +120,15 @@ test("말로 남기기가 409를 받으면 마주가 모임 홈으로 안내한�
   await expect(
     bubble.getByRole("link", { name: "모임 홈으로 가기" }),
   ).toHaveAttribute("href", `/meetings/${id}`);
+});
+
+test("시간이 정해져 장소 단계로 넘어가면 예전 시간 화면 링크는 출발지 화면으로 간다", async ({
+  page,
+}) => {
+  const id = await createVotedScheduleMeeting(page, "both");
+  await confirmByApi(page, id);
+  await page.goto(`/meetings/${id}/schedule`);
+  await expect(page).toHaveURL(new RegExp(`/meetings/${id}/location/votes$`));
+  await page.goto(`/meetings/${id}/schedule/votes`);
+  await expect(page).toHaveURL(new RegExp(`/meetings/${id}/location/votes$`));
 });

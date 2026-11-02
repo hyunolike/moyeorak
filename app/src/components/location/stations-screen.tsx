@@ -197,7 +197,7 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
       <AppBar
         back={votesPath}
         title="장소"
-        action={<ShareButton meetingId={meeting.id} path={votesPath} />}
+        action={<ShareButton meetingId={meeting.id} />}
       />
       <div className="px-5 pt-1">
         <PageTitle className="[&_h1]:text-h2">어디서 만날까요?</PageTitle>

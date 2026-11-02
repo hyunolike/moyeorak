@@ -1,6 +1,8 @@
 // @vitest-environment node
+
+import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { meetingEvents } from "@/db/schema";
+import { meetingEvents, meetings } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
   deleteDeparture,
@@ -9,7 +11,10 @@ import {
 } from "@/server/location/location-service";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import { createMeeting, joinMeeting } from "@/server/meeting/meeting-service";
-import { ParticipantNotFoundError } from "@/server/schedule/errors";
+import {
+  AlreadyConfirmedError,
+  ParticipantNotFoundError,
+} from "@/server/schedule/errors";
 
 const key = (c: string) => c.repeat(21);
 
@@ -87,4 +92,30 @@ test("listDepartures는 없는 모임이면 MeetingNotFoundError", async () => {
   await expect(listDepartures("x".repeat(21))).rejects.toBeInstanceOf(
     MeetingNotFoundError,
   );
+});
+
+const confirm = (meetingId: string) =>
+  db
+    .update(meetings)
+    .set({ status: "confirmed" })
+    .where(eq(meetings.id, meetingId));
+
+test("약속이 확정된 뒤에는 출발지를 새로 남기거나 고칠 수 없다", async () => {
+  const { meetingId, participantId } = await setup();
+  await upsertDeparture(meetingId, participantId, place);
+  await confirm(meetingId);
+  await expect(
+    upsertDeparture(meetingId, participantId, { ...place, label: "판교역" }),
+  ).rejects.toBeInstanceOf(AlreadyConfirmedError);
+  expect((await listDepartures(meetingId))[0].label).toBe("강남역");
+});
+
+test("약속이 확정된 뒤에는 출발지를 지울 수 없다", async () => {
+  const { meetingId, participantId } = await setup();
+  const { voteId } = await upsertDeparture(meetingId, participantId, place);
+  await confirm(meetingId);
+  await expect(deleteDeparture(meetingId, voteId)).rejects.toBeInstanceOf(
+    AlreadyConfirmedError,
+  );
+  expect(await listDepartures(meetingId)).toHaveLength(1);
 });

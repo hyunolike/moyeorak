@@ -14,14 +14,16 @@ async function copyText(text: string) {
   }
 }
 
-/** 초대 링크를 복사하고 `shared` 이벤트를 남긴다. 결과는 토스트로 알린다. */
+/**
+ * 초대 링크를 복사하고 `shared` 이벤트를 남긴다. 결과는 토스트로 알린다.
+ * 링크는 어느 화면에서든 모임 홈이다. 모임 홈은 지금 단계를 보여 주므로,
+ * 시간을 정한 뒤 장소 단계로 넘어가도 예전에 공유한 링크가 지금 할 일로 이어진다.
+ */
 export function ShareButton({
   meetingId,
-  path,
   label,
 }: {
   meetingId: string;
-  path: string;
   /** 주면 아이콘 버튼 대신 글자가 있는 가로 꽉 찬 주 버튼으로 그린다. */
   label?: string;
 }) {
@@ -29,7 +31,9 @@ export function ShareButton({
 
   const handleClick = async () => {
     shareEvent.mutate();
-    const copied = await copyText(`${window.location.origin}${path}`);
+    const copied = await copyText(
+      `${window.location.origin}/meetings/${meetingId}`,
+    );
     if (copied) toast("복사했어요");
     else toast("복사하지 못했어요. 주소창의 링크를 직접 복사해 주세요");
   };

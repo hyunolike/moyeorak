@@ -37,7 +37,6 @@ export function DepartureManager({
   const count = departures.data?.length ?? 0;
   const enough = count >= MIN_DEPARTURES;
   const stationsPath = `/meetings/${meeting.id}/location/stations`;
-  const votesPath = `/meetings/${meeting.id}/location/votes`;
 
   const status = (text: string) => (
     <p className="text-b4 text-muted px-5 py-6 text-center">{text}</p>
@@ -46,11 +45,10 @@ export function DepartureManager({
   return (
     <MobileLayout>
       <AppBar
-        back={
-          meeting.scope === "both" ? `/meetings/${meeting.id}/schedule` : "/"
-        }
+        // 시간 화면은 장소 단계에서 출발지 화면으로 넘어가므로 뒤로는 모임 홈으로 간다.
+        back={`/meetings/${meeting.id}`}
         title="출발지"
-        action={<ShareButton meetingId={meeting.id} path={votesPath} />}
+        action={<ShareButton meetingId={meeting.id} />}
       />
       <div className="px-5 pt-2">
         <PageTitle eyebrow={`${meeting.hostName}님의 모임`}>
