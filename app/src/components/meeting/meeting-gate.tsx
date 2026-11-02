@@ -5,7 +5,7 @@ import { AppBar } from "@/components/layout/app-bar";
 import { Skeleton } from "@/components/layout/skeleton";
 import { JoinInvite } from "@/components/meeting/join-invite";
 import { MobileLayout } from "@/components/mobile-layout";
-import { useMe, useMeeting } from "@/lib/api";
+import { useInviteViewed, useMe, useMeeting } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 
 type Participant = Meeting["participants"][number];
@@ -42,6 +42,7 @@ export function MeetingGate({
     initialMeeting,
   );
   const { isPending, isError, me } = useMe(meeting);
+  useInviteViewed(meeting.id, !isPending && !isError && !me);
 
   if (isPending) return <GateLoading message="불러오는 중이에요" />;
   if (isError) {
