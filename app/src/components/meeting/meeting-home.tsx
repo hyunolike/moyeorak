@@ -17,7 +17,12 @@ import { NudgeSheet, nudgeWaitingKey } from "@/components/meeting/nudge-sheet";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { buttonVariants } from "@/components/ui/button";
-import { useMe, useMeetingProgress, usePrefetchNudge } from "@/lib/api";
+import {
+  useInviteViewed,
+  useMe,
+  useMeetingProgress,
+  usePrefetchNudge,
+} from "@/lib/api";
 import type { MeetingProgress } from "@/lib/api-types";
 import { homeState, joinWaitingNames, routeStops } from "@/lib/home-state";
 import { nudgeInput } from "@/lib/nudge-template";
@@ -205,10 +210,11 @@ export function MeetingHome({
     initialProgress.meetingId,
     initialProgress,
   );
-  const { isPending, me } = useMe({
+  const { isPending, isError, me } = useMe({
     id: progress.meetingId,
     participants: progress.participants,
   });
+  useInviteViewed(progress.meetingId, !isPending && !isError && !me);
   return (
     <MeetingHomeView
       progress={progress}

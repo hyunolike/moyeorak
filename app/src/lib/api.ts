@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import type {
   Departure,
   Meeting,
@@ -15,6 +16,7 @@ import {
   getStoredParticipantId,
   storeParticipantId,
 } from "@/lib/device-key";
+import { markInviteViewed } from "@/lib/invite-viewed";
 import type { Suggestion } from "@/server/suggest/types";
 
 export class ApiError extends Error {
@@ -305,6 +307,19 @@ export function useShareEvent(meetingId: string) {
         json("POST", { type: "shared" }),
       ),
   });
+}
+
+/** 참여하지 않은 사람이 초대 화면을 봤을 때 한 번 기록한다(퍼널의 "링크 열림"). 실패해도 화면은 그대로다. */
+export function useInviteViewed(meetingId: string, active: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    markInviteViewed(meetingId, (id) => {
+      void apiFetch(
+        `/api/meetings/${id}/events`,
+        json("POST", { type: "invite_viewed" }),
+      ).catch(() => {});
+    });
+  }, [meetingId, active]);
 }
 
 export type NudgeMessage = { tone: "friendly" | "short"; text: string };
