@@ -186,6 +186,7 @@ export const meetingEvents = pgTable("meeting_events", {
       | "vote_done"
       | "departure_done"
       | "shared"
+      | "invite_viewed"
       | "suggestion_viewed"
       | "confirmed"
     >()

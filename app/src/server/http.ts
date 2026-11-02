@@ -10,6 +10,7 @@ import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
+  InvalidPollWindowError,
   MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
@@ -46,6 +47,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [CannotClaimHostError, 403],
   [DeviceAlreadyJoinedError, 409],
   [InvalidSlotsError, 400],
+  [InvalidPollWindowError, 400],
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],

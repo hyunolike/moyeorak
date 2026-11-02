@@ -7,24 +7,29 @@ import {
   schedulePolls,
 } from "@/db/schema";
 import { newId } from "@/lib/nanoid";
+import {
+  type PollWindow,
+  pollWindow,
+  seoulToday,
+  validatePollWindow,
+} from "@/lib/poll-window";
 import { recordEvent } from "@/server/events/record-event";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
+  InvalidPollWindowError,
   MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
 import { ParticipantNotFoundError } from "@/server/schedule/errors";
-
-const POLL_DAYS = 14;
-const POLL_START_MINUTE = 540;
-const POLL_END_MINUTE = 1440;
 
 export type CreateMeetingInput = {
   hostName: string;
   participantCount: number;
   scope: "schedule" | "location" | "both";
   deviceKey: string;
+  /** 시간 투표판의 날짜와 시간대. 없으면 오늘부터 2주, 9시부터 자정이다. */
+  window?: PollWindow;
 };
 
 export type MeetingDetail = {
@@ -45,19 +50,12 @@ export type MeetingDetail = {
   } | null;
 };
 
-/** 서울 기준 오늘부터 days일치 YYYY-MM-DD */
-function seoulDates(days: number): string[] {
-  const fmt = (d: Date) =>
-    d.toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
-  const now = Date.now();
-  return Array.from({ length: days }, (_, i) =>
-    fmt(new Date(now + i * 24 * 60 * 60 * 1000)),
-  );
-}
-
 export async function createMeeting(
   input: CreateMeetingInput,
 ): Promise<{ meetingId: string; participantId: number }> {
+  const today = seoulToday();
+  const window = input.window ?? pollWindow({ preset: "two-weeks" }, today);
+  if (!validatePollWindow(window, today)) throw new InvalidPollWindowError();
   return db.transaction(async (tx) => {
     const meetingId = newId();
     await tx.insert(meetings).values({
@@ -79,9 +77,9 @@ export async function createMeeting(
       .returning({ id: participants.id });
     await tx.insert(schedulePolls).values({
       meetingId,
-      dateOptions: seoulDates(POLL_DAYS),
-      startMinute: POLL_START_MINUTE,
-      endMinute: POLL_END_MINUTE,
+      dateOptions: window.dates,
+      startMinute: window.startMinute,
+      endMinute: window.endMinute,
     });
     await recordEvent(meetingId, "created", tx);
     return { meetingId, participantId: host.id };

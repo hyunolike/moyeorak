@@ -14,6 +14,14 @@ export class MeetingFullError extends Error {
   }
 }
 
+export class InvalidPollWindowError extends Error {
+  readonly code = "INVALID_POLL_WINDOW";
+  constructor() {
+    super("고를 수 없는 날짜나 시간대예요");
+    this.name = "InvalidPollWindowError";
+  }
+}
+
 export class CannotClaimHostError extends Error {
   readonly code = "CANNOT_CLAIM_HOST";
   constructor() {
