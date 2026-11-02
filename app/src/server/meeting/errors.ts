@@ -13,3 +13,19 @@ export class MeetingFullError extends Error {
     this.name = "MeetingFullError";
   }
 }
+
+export class CannotClaimHostError extends Error {
+  readonly code = "CANNOT_CLAIM_HOST";
+  constructor() {
+    super("모임을 만든 사람은 이름으로 이어서 할 수 없어요");
+    this.name = "CannotClaimHostError";
+  }
+}
+
+export class DeviceAlreadyJoinedError extends Error {
+  readonly code = "DEVICE_ALREADY_JOINED";
+  constructor() {
+    super("이 브라우저는 이미 다른 이름으로 참여했어요");
+    this.name = "DeviceAlreadyJoinedError";
+  }
+}

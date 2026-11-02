@@ -8,6 +8,8 @@ import {
 } from "@/server/ai/errors";
 import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
+  CannotClaimHostError,
+  DeviceAlreadyJoinedError,
   MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
@@ -41,6 +43,8 @@ type ErrorClass = new (
 const errorStatus = new Map<ErrorClass, number>([
   [MeetingNotFoundError, 404],
   [MeetingFullError, 409],
+  [CannotClaimHostError, 403],
+  [DeviceAlreadyJoinedError, 409],
   [InvalidSlotsError, 400],
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],

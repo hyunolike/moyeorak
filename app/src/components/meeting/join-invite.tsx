@@ -1,16 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { PageTitle } from "@/components/layout/page-title";
 import { MobileLayout } from "@/components/mobile-layout";
 import { TextField } from "@/components/text-field";
 import { Button } from "@/components/ui/button";
-import { ApiError, useJoin } from "@/lib/api";
+import { ApiError, useClaim, useJoin } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 
 export const NAME_MAX_LENGTH = 4;
+
+function claimErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 409) {
+    return "이 브라우저는 이미 다른 이름으로 참여했어요";
+  }
+  return "이어서 하지 못했어요. 잠시 후 다시 시도해 주세요";
+}
 
 function joinErrorMessage(error: unknown) {
   if (error instanceof ApiError && error.status === 409) {
@@ -28,7 +36,14 @@ export function JoinInvite({
 }) {
   const [name, setName] = useState("");
   const join = useJoin(meeting.id);
+  const claim = useClaim(meeting.id);
   const trimmed = name.trim();
+  // 모임을 만든 사람은 이름으로 이어서 할 수 없다(확정과 재촉 권한이 있다).
+  const friends = meeting.participants.filter((p) => !p.isHost);
+  const [claiming, setClaiming] = useState<(typeof friends)[number] | null>(
+    null,
+  );
+  const takenName = friends.some((p) => p.name === trimmed);
 
   return (
     <MobileLayout>
@@ -60,9 +75,36 @@ export function JoinInvite({
             helperText={
               join.isError
                 ? joinErrorMessage(join.error)
-                : `최대 ${NAME_MAX_LENGTH}자까지 입력할 수 있어요`
+                : takenName
+                  ? "이미 있는 이름이에요. 본인이라면 아래에서 이름을 눌러 주세요"
+                  : `최대 ${NAME_MAX_LENGTH}자까지 입력할 수 있어요`
             }
           />
+          {friends.length > 0 && (
+            <fieldset className="mt-8 min-w-0 border-0 p-0">
+              <legend className="text-b3 text-text">이미 참여했나요?</legend>
+              <p className="text-muted text-c2 mt-1">
+                다른 브라우저에서 이름을 남겼다면 내 이름을 눌러 이어서 해요
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {friends.map((p) => (
+                  <Button
+                    key={p.id}
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setClaiming(p)}
+                  >
+                    {p.name}
+                  </Button>
+                ))}
+              </div>
+              {claim.isError && (
+                <p role="alert" className="text-error text-c2 mt-2 px-1">
+                  {claimErrorMessage(claim.error)}
+                </p>
+              )}
+            </fieldset>
+          )}
         </div>
         <BottomCta
           primary={
@@ -78,6 +120,19 @@ export function JoinInvite({
           }
         />
       </form>
+      {claiming && (
+        <ConfirmModal
+          title={`${claiming.name}님으로 이어서 할까요?`}
+          caption={`${claiming.name}님이 아니라면 다른 사람의 응답을 바꾸게 돼요.`}
+          confirmLabel="이어서 하기"
+          pending={claim.isPending}
+          onConfirm={() => {
+            claim.mutate(claiming.id);
+            setClaiming(null);
+          }}
+          onClose={() => setClaiming(null)}
+        />
+      )}
     </MobileLayout>
   );
 }
