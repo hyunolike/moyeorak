@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/layout/skeleton";
 import { adminTokenFrom, isAdminToken } from "@/server/admin-auth";
 import { computeAiUsage } from "@/server/metrics/ai-usage";
+import { computeFunnel } from "@/server/metrics/compute-funnel";
 import { computeMetrics, type Metrics } from "@/server/metrics/compute-metrics";
 
 const pct = (n: number | null) =>
@@ -51,6 +52,51 @@ async function MetricsTable() {
         ))}
       </tbody>
     </table>
+  );
+}
+
+/**
+ * 최근 30일 모임이 어느 단계에서 멈추는지. "전체 대비"는 생성 대비, "이전 대비"는 바로 앞 단계 대비다.
+ * "링크 열림"은 2026-11-02 배포부터 기록해서 그 전 모임은 0으로 잡힌다.
+ */
+async function FunnelTable() {
+  const to = new Date();
+  const f = await computeFunnel({
+    from: new Date(to.getTime() - 30 * 86_400_000),
+    to,
+  });
+  const created = f.stages[0]?.count ?? 0;
+  const ratio = (n: number, base: number) =>
+    base ? `${((n / base) * 100).toFixed(1)}%` : "–";
+  return (
+    <>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="text-muted text-right">
+            <th className={`${cell} text-left`}>단계</th>
+            <th className={cell}>모임</th>
+            <th className={cell}>전체 대비</th>
+            <th className={cell}>이전 대비</th>
+          </tr>
+        </thead>
+        <tbody>
+          {f.stages.map((s, i) => (
+            <tr key={s.key}>
+              <td className={cell}>{s.label}</td>
+              <td className={num}>{s.count}</td>
+              <td className={num}>{ratio(s.count, created)}</td>
+              <td className={num}>
+                {i === 0 ? "–" : ratio(s.count, f.stages[i - 1].count)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-muted text-c1 mt-2">
+        각 단계는 그 단계나 그 뒤 단계까지 간 모임이에요. 링크를 열어 본 사람 중
+        참여: {pct(f.viewToJoinRate)}
+      </p>
+    </>
   );
 }
 
@@ -125,6 +171,10 @@ async function Content({
       <h1 className="text-h2 text-text mb-4">모임 지표</h1>
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
         <MetricsTable />
+      </Suspense>
+      <h2 className="text-t2 text-text mt-6 mb-2">단계별 이탈(최근 30일)</h2>
+      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+        <FunnelTable />
       </Suspense>
       <h2 className="text-t2 text-text mt-6 mb-2">AI 사용량(최근 30일)</h2>
       <Suspense fallback={<Skeleton className="h-40 w-full" />}>
