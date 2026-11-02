@@ -8,6 +8,7 @@ import {
 } from "@/server/ai/errors";
 import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
+  InvalidPollWindowError,
   MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
@@ -42,6 +43,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [MeetingNotFoundError, 404],
   [MeetingFullError, 409],
   [InvalidSlotsError, 400],
+  [InvalidPollWindowError, 400],
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],

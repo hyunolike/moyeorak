@@ -2,7 +2,11 @@
 import { db } from "@/db/client";
 import { meetingEvents } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
-import { MeetingFullError } from "@/server/meeting/errors";
+import { pollWindow, seoulToday } from "@/lib/poll-window";
+import {
+  InvalidPollWindowError,
+  MeetingFullError,
+} from "@/server/meeting/errors";
 import {
   createMeeting,
   findParticipantByDeviceKey,
@@ -189,4 +193,33 @@ test("me 라우트는 X-Device-Key로 참여자를 돌려주고, 없으면 404, 
 
   expect((await call({ "X-Device-Key": "short" })).status).toBe(401);
   expect((await call({})).status).toBe(401);
+});
+
+test("고른 날짜와 시간대로 투표판을 만든다", async () => {
+  const window = pollWindow({ preset: "weekday-evenings" }, seoulToday());
+  const { meetingId } = await createMeeting({
+    hostName: "현호",
+    participantCount: 4,
+    scope: "schedule",
+    deviceKey: key("a"),
+    window,
+  });
+  const m = await getMeeting(meetingId);
+  expect(m?.schedulePoll).toMatchObject({
+    dateOptions: window.dates,
+    startMinute: 1080,
+    endMinute: 1440,
+  });
+});
+
+test("지난 날짜가 들어간 투표판은 만들지 않는다", async () => {
+  await expect(
+    createMeeting({
+      hostName: "현호",
+      participantCount: 4,
+      scope: "schedule",
+      deviceKey: key("a"),
+      window: { dates: ["2020-01-01"], startMinute: 540, endMinute: 1440 },
+    }),
+  ).rejects.toBeInstanceOf(InvalidPollWindowError);
 });

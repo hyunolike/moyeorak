@@ -1,11 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { PageTitle } from "@/components/layout/page-title";
 import { NAME_MAX_LENGTH } from "@/components/meeting/join-invite";
+import {
+  PollWindowPicker,
+  type Preset,
+} from "@/components/meeting/poll-window-picker";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Stepper } from "@/components/stepper";
 import { TextField } from "@/components/text-field";
@@ -13,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreateMeeting } from "@/lib/api";
 import type { Scope } from "@/lib/api-types";
+import { type DayTime, pollWindow, seoulToday } from "@/lib/poll-window";
 
 export type Flow = "both" | "schedule" | "location";
 
@@ -29,6 +34,16 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
   const [scope, setScope] = useState<Scope>(flow);
   const create = useCreateMeeting();
   const trimmed = name.trim();
+  const today = useMemo(() => seoulToday(), []);
+  const [preset, setPreset] = useState<Preset>("two-weeks");
+  const [customDates, setCustomDates] = useState<string[]>([]);
+  const [time, setTime] = useState<DayTime>("all");
+  const decidesTime = scope !== "location";
+  const window =
+    preset === "custom"
+      ? pollWindow({ preset, dates: customDates, time }, today)
+      : pollWindow({ preset }, today);
+  const ready = !!trimmed && (!decidesTime || window.dates.length > 0);
 
   const handleSubmit = () => {
     create.mutate(
@@ -36,6 +51,7 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
         hostName: trimmed,
         participantCount: count,
         scope,
+        ...(decidesTime ? { window } : {}),
       },
       {
         onSuccess: ({ meetingId }) => router.push(`/meetings/${meetingId}`),
@@ -49,7 +65,7 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
         className="flex flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();
-          if (trimmed) handleSubmit();
+          if (ready) handleSubmit();
         }}
       >
         <AppBar back="/" />
@@ -96,13 +112,24 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
             value={count}
             onChange={setCount}
           />
+          {decidesTime && (
+            <PollWindowPicker
+              today={today}
+              preset={preset}
+              onPresetChange={setPreset}
+              dates={customDates}
+              onDatesChange={setCustomDates}
+              time={time}
+              onTimeChange={setTime}
+            />
+          )}
         </div>
         <BottomCta
           primary={
             <Button
               type="submit"
               size="cta"
-              disabled={!trimmed || create.isPending}
+              disabled={!ready || create.isPending}
             >
               링크 만들기
             </Button>
