@@ -78,3 +78,21 @@ export type MeetingProgress = {
   /** confirmed_locations.name */
   confirmedPlace: string | null;
 };
+
+/** GET /api/me/meetings 한 줄. 이 기기가 참여한 모임이다. */
+export type MyMeeting = {
+  id: string;
+  hostName: string;
+  scope: Scope;
+  status: "scheduling" | "locating" | "confirmed";
+  participantCount: number;
+  joinedCount: number;
+  respondedCount: number;
+  isHost: boolean;
+  myName: string;
+  myResponded: boolean;
+  confirmedStart: string | null;
+  confirmedEnd: string | null;
+  confirmedPlace: string | null;
+  lastActivityAt: string;
+};
