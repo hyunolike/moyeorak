@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -13,6 +14,7 @@ import {
   uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { Purpose } from "@/lib/purposes";
 
 const timestamptz = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
@@ -26,6 +28,11 @@ export const meetings = pgTable("meetings", {
     .$type<"scheduling" | "locating" | "confirmed">()
     .notNull(),
   confirmedAt: timestamptz("confirmed_at"),
+  purposes: text("purposes")
+    .array()
+    .$type<Purpose[]>()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
 });
 
@@ -144,6 +151,18 @@ export const stations = pgTable(
   (t) => [index("idx_stations_geom").using("gist", t.geom)],
 );
 
+/** 역 반경 안의 목적별 가게 수. 추천 순위를 매길 때 쓴다. */
+export const stationVenues = pgTable("station_venues", {
+  stationName: varchar("station_name", { length: 100 }).primaryKey(),
+  meal: integer("meal").notNull().default(0),
+  drink: integer("drink").notNull().default(0),
+  cafe: integer("cafe").notNull().default(0),
+  study: integer("study").notNull().default(0),
+  sight: integer("sight").notNull().default(0),
+  radiusMeters: integer("radius_meters").notNull(),
+  countedAt: timestamptz("counted_at").notNull(),
+});
+
 export const agentSuggestions = pgTable("agent_suggestions", {
   id: serial("id").primaryKey(),
   meetingId: varchar("meeting_id", { length: 21 })
@@ -189,6 +208,7 @@ export const meetingEvents = pgTable("meeting_events", {
       | "invite_viewed"
       | "suggestion_viewed"
       | "confirmed"
+      | "purpose_changed"
     >()
     .notNull(),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
