@@ -1,3 +1,4 @@
+import { ZERO_VENUES } from "@/lib/purposes";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
@@ -20,6 +21,9 @@ test("측정용 이동시간 상세는 애니메이션 프레임 없이 최종 �
         lat: 0,
         lng: 0,
         averageMinutes: 30,
+        maxMinutes: null,
+        venues: ZERO_VENUES,
+        far: false,
         perParticipant: [{ name: "참여자", minutes: 30 }],
       }}
     />,

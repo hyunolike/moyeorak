@@ -1,4 +1,6 @@
-"use client";
+import { ZERO_VENUES } from "@/lib/purposes";
+
+("use client");
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,6 +40,9 @@ const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({
   lat: 0,
   lng: 0,
   averageMinutes: 30,
+  maxMinutes: null,
+  venues: ZERO_VENUES,
+  far: false,
   perParticipant: [],
 }));
 

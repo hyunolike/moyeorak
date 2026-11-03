@@ -9,6 +9,7 @@ import {
   meetingEvents,
 } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
+import { ZERO_VENUES } from "@/lib/purposes";
 import { templateReason } from "@/server/ai/suggest/templates";
 import { ExternalApiError } from "@/server/clients/errors";
 import { computeTransitMatrix } from "@/server/clients/google-routes";
@@ -22,7 +23,7 @@ import {
   getMeeting,
   joinMeeting,
 } from "@/server/meeting/meeting-service";
-import { findStationsNear } from "@/server/midpoint/stations";
+import { findCandidateStations } from "@/server/midpoint/stations";
 import { AlreadyConfirmedError } from "@/server/schedule/errors";
 import {
   confirmSchedule,
@@ -44,10 +45,12 @@ import {
 vi.mock("@/server/clients/google-routes", () => ({
   computeTransitMatrix: vi.fn(),
 }));
-vi.mock("@/server/midpoint/stations", () => ({ findStationsNear: vi.fn() }));
+vi.mock("@/server/midpoint/stations", () => ({
+  findCandidateStations: vi.fn(),
+}));
 
 const matrix = vi.mocked(computeTransitMatrix);
-const near = vi.mocked(findStationsNear);
+const near = vi.mocked(findCandidateStations);
 
 const fakeWrite = vi.fn(
   async (
@@ -259,8 +262,24 @@ test("시간 제안 수락 뒤 both 모임은 locating이고 다음 제안은 �
     });
   }
   near.mockResolvedValue([
-    { id: 1, name: "역1", line: "2호선", lat: 37.5, lng: 127 },
-    { id: 2, name: "역2", line: "2호선", lat: 37.6, lng: 127 },
+    {
+      id: 1,
+      name: "역1",
+      line: "2호선",
+      lat: 37.5,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
+    {
+      id: 2,
+      name: "역2",
+      line: "2호선",
+      lat: 37.6,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
   ]);
   matrix.mockResolvedValue([
     [10, 30],
@@ -308,7 +327,15 @@ test("장소 단계에서 Google 호출이 실패하면 ExternalApiError가 그�
     });
   }
   near.mockResolvedValue([
-    { id: 1, name: "역1", line: "2호선", lat: 37.5, lng: 127 },
+    {
+      id: 1,
+      name: "역1",
+      line: "2호선",
+      lat: 37.5,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
   ]);
   matrix.mockRejectedValue(
     new ExternalApiError(new Error("down"), { status: 500 }),
@@ -366,7 +393,15 @@ test("출발지를 저장하면 열린 장소 제안이 지워진다", async () 
     });
   }
   near.mockResolvedValue([
-    { id: 1, name: "역1", line: "2호선", lat: 37.5, lng: 127 },
+    {
+      id: 1,
+      name: "역1",
+      line: "2호선",
+      lat: 37.5,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
   ]);
   matrix.mockResolvedValue([[10], [20]]);
   expect(
@@ -394,8 +429,24 @@ test("장소 제안을 수락하면 캐시가 없어도 카드의 이동 분이 
   );
   const [a, b] = real.map((r) => Number(r.id));
   near.mockResolvedValue([
-    { id: a as number, name: "역1", line: "2호선", lat: 37.5, lng: 127 },
-    { id: b as number, name: "역2", line: "2호선", lat: 37.6, lng: 127 },
+    {
+      id: a as number,
+      name: "역1",
+      line: "2호선",
+      lat: 37.5,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
+    {
+      id: b as number,
+      name: "역2",
+      line: "2호선",
+      lat: 37.6,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
   ]);
   matrix.mockResolvedValue([
     [10, 30],

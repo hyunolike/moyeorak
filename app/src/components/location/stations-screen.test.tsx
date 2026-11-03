@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { ZERO_VENUES } from "@/lib/purposes";
 import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
@@ -67,6 +68,9 @@ const station = (stationId: number, name: string): Station => ({
   lat: 37.5,
   lng: 127,
   averageMinutes: 30,
+  maxMinutes: null,
+  venues: ZERO_VENUES,
+  far: false,
   perParticipant: [{ name: "현호", minutes: 30 }],
 });
 const meeting = {

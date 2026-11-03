@@ -86,20 +86,21 @@ test("캐시에 그 역 추천이 있으면 travel이 perParticipant와 같다",
   const { meetingId, station } = await setup("locating");
   const perParticipant = [
     { name: "현호", minutes: 20 },
-    { name: "민수", minutes: null },
+    { name: "민수", minutes: 30 },
   ];
   await setCached(
     `midpoint:${meetingId}:abc`,
     {
-      type: "ok",
-      stations: [
+      v: 2,
+      candidates: [
         {
-          stationId: station.id,
+          id: station.id,
           name: station.name,
           line: null,
           lat: station.lat,
           lng: station.lng,
-          averageMinutes: 20,
+          distanceMeters: 0,
+          venues: { meal: 0, drink: 0, cafe: 0, study: 0, sight: 0 },
           perParticipant,
         },
       ],

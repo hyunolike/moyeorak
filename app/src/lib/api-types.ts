@@ -1,5 +1,7 @@
 /** API 응답의 JSON 모양. 서버 타입의 Date는 ISO 문자열로 온다. */
 
+import type { VenueCounts } from "@/lib/purposes";
+
 export type Scope = "schedule" | "location" | "both";
 
 export type Meeting = {
@@ -53,7 +55,10 @@ export type Station = {
   lat: number;
   lng: number;
   averageMinutes: number;
+  maxMinutes: number | null;
   perParticipant: { name: string; minutes: number | null }[];
+  venues: VenueCounts;
+  far: boolean;
 };
 
 export type Midpoint =

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { ZERO_VENUES } from "@/lib/purposes";
 import type { Recommendation } from "@/server/midpoint/midpoint-service";
 import type { BestSlot } from "@/server/schedule/slots";
 import { pickLocation, pickSchedule } from "./pick";
@@ -72,6 +73,9 @@ const rec = (
   lat: 37.5,
   lng: 127,
   averageMinutes,
+  maxMinutes: null,
+  venues: ZERO_VENUES,
+  far: false,
   perParticipant: minutes.map((m, i) => ({ name: `사람${i}`, minutes: m })),
 });
 const depart = at("2026-11-07T14:00");

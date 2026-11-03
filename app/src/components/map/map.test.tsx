@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { ZERO_VENUES } from "@/lib/purposes";
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -97,6 +98,9 @@ const stations: Station[] = [
     lat: 37.534,
     lng: 126.987,
     averageMinutes: 30,
+    maxMinutes: null,
+    venues: ZERO_VENUES,
+    far: false,
     perParticipant: [],
   },
 ];
