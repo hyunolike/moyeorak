@@ -1,8 +1,8 @@
-import { ZERO_VENUES } from "@/lib/purposes";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { StationDetail } from "@/components/location/station-detail";
+import { ZERO_VENUES } from "@/lib/purposes";
 
 afterEach(() => {
   cleanup();

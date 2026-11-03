@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { ZERO_VENUES } from "@/lib/purposes";
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -12,6 +11,7 @@ import {
 } from "@/components/map/simple-map";
 import type { Departure, Station } from "@/lib/api-types";
 import { loadKakaoSdk } from "@/lib/kakao-sdk";
+import { ZERO_VENUES } from "@/lib/purposes";
 
 // SDK는 테스트에서 불러오지 않는다. 끝나지 않는 약속으로 "늦게 오는 SDK"를 흉내 낸다.
 vi.mock("@/lib/kakao-sdk", () => ({ loadKakaoSdk: vi.fn() }));

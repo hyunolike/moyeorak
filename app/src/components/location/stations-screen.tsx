@@ -1,6 +1,4 @@
-import { ZERO_VENUES } from "@/lib/purposes";
-
-("use client");
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,6 +29,7 @@ import {
 import type { Departure, Meeting, Station } from "@/lib/api-types";
 import { cn } from "@/lib/cn";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
+import { ZERO_VENUES } from "@/lib/purposes";
 import { lineName, stationLabel } from "@/lib/summary-text";
 
 const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({

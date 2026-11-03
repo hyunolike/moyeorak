@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { ZERO_VENUES } from "@/lib/purposes";
 import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
@@ -11,6 +10,7 @@ import {
 import { afterEach, expect, test, vi } from "vitest";
 import { StationsScreen } from "@/components/location/stations-screen";
 import type { Meeting, Midpoint, Station } from "@/lib/api-types";
+import { ZERO_VENUES } from "@/lib/purposes";
 
 const confirmMutate = vi.fn();
 let midpointData: Midpoint | undefined = { type: "ok", stations: [] };
