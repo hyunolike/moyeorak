@@ -4,10 +4,22 @@ import postgres from "postgres";
 /**
  * 가게 수는 station_venues 표에서 온다. 모의 모드의 후보 역이 무엇이든 줄이 보이도록
  * 모든 역 이름에 고정 값을 넣는다. 이미 센 값이 있으면 건드리지 않는다.
+ *
+ * 가짜 값이 개발이나 운영 DB에 들어가면 순위가 틀어지므로, 시드는 DATABASE_URL_TEST가
+ * 가리키는 로컬 DB(localhost, 127.0.0.1)에만 넣는다. 개발 서버(reuseExistingServer 포함)는
+ * DATABASE_URL을 읽으므로 두 값이 같아야 화면에서 시드가 보인다. 다르면 여기서 멈춘다.
+ * 실행: set -a; . ./.env.test; DATABASE_URL=$DATABASE_URL_TEST; set +a
  */
 test.beforeAll(async () => {
-  const url = process.env.DATABASE_URL ?? process.env.DATABASE_URL_TEST;
-  if (!url) throw new Error("DATABASE_URL이 없어요");
+  const url = process.env.DATABASE_URL_TEST;
+  if (!url) throw new Error("DATABASE_URL_TEST가 없어요");
+  const host = new URL(url).hostname;
+  if (host !== "localhost" && host !== "127.0.0.1")
+    throw new Error(`테스트 DB가 로컬이 아니에요(${host}). 시드를 넣지 않아요`);
+  if (process.env.DATABASE_URL !== url)
+    throw new Error(
+      "개발 서버가 다른 DB를 볼 수 있어요. DATABASE_URL을 DATABASE_URL_TEST와 같게 맞춰 주세요",
+    );
   const sql = postgres(url, { prepare: false, max: 1 });
   try {
     await sql`
