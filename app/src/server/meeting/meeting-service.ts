@@ -13,6 +13,7 @@ import {
   seoulToday,
   validatePollWindow,
 } from "@/lib/poll-window";
+import { type Purpose, parsePurposes } from "@/lib/purposes";
 import { recordEvent } from "@/server/events/record-event";
 import {
   CannotClaimHostError,
@@ -29,6 +30,8 @@ export type CreateMeetingInput = {
   deviceKey: string;
   /** 시간 투표판의 날짜와 시간대. 없으면 오늘부터 2주, 9시부터 자정이다. */
   window?: PollWindow;
+  /** 모임 목적. 없으면 빈 목록이고, 표 순서로 정리해 저장한다. */
+  purposes?: Purpose[];
 };
 
 export type MeetingDetail = {
@@ -37,6 +40,7 @@ export type MeetingDetail = {
   /** 진행률 분모. 모임장이 정한 예상 인원과 실제 참여자 수 중 큰 값이다. */
   participantCount: number;
   scope: "schedule" | "location" | "both";
+  purposes: Purpose[];
   status: "scheduling" | "locating" | "confirmed";
   confirmedAt: Date | null;
   createdAt: Date;
@@ -63,6 +67,7 @@ export async function createMeeting(
       hostName: input.hostName,
       participantCount: input.participantCount,
       scope: input.scope,
+      purposes: parsePurposes(input.purposes ?? []),
       // 장소만 정하는 모임은 시간 단계 없이 장소 단계에서 시작한다.
       status: input.scope === "location" ? "locating" : "scheduling",
     });
@@ -109,6 +114,7 @@ export async function getMeeting(id: string): Promise<MeetingDetail | null> {
     hostName: meeting.hostName,
     participantCount: Math.max(meeting.participantCount, people.length),
     scope: meeting.scope,
+    purposes: parsePurposes(meeting.purposes),
     status: meeting.status,
     confirmedAt: meeting.confirmedAt,
     createdAt: meeting.createdAt,

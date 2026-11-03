@@ -20,6 +20,7 @@ import {
 import { markInviteViewed } from "@/lib/invite-viewed";
 import { readMyMeetingsCache, writeMyMeetingsCache } from "@/lib/my-meetings";
 import type { PollWindow } from "@/lib/poll-window";
+import type { Purpose } from "@/lib/purposes";
 import type { Suggestion } from "@/server/suggest/types";
 
 export class ApiError extends Error {
@@ -165,6 +166,7 @@ export function useCreateMeeting() {
       participantCount: number;
       scope: Scope;
       window?: PollWindow;
+      purposes?: Purpose[];
     }) => {
       const result = await apiFetch<{
         meetingId: string;
@@ -444,6 +446,23 @@ export function useUnconfirm(meetingId: string) {
         withDeviceKey({ method: "POST" }),
       ),
     onSettled: invalidate,
+  });
+}
+
+/** 모임장 전용. 모임 목적을 바꾸면 추천 순서가 달라지므로 중간지점도 다시 받는다. */
+export function useUpdatePurposes(meetingId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (purposes: Purpose[]) =>
+      apiFetch<{ purposes: Purpose[] }>(
+        `/api/meetings/${meetingId}/purposes`,
+        withDeviceKey(json("PATCH", { purposes })),
+      ),
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: keys.midpoint(meetingId) }),
+        client.invalidateQueries({ queryKey: keys.meeting(meetingId) }),
+      ]),
   });
 }
 

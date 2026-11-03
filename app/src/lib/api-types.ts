@@ -1,6 +1,6 @@
 /** API 응답의 JSON 모양. 서버 타입의 Date는 ISO 문자열로 온다. */
 
-import type { VenueCounts } from "@/lib/purposes";
+import type { Purpose, VenueCounts } from "@/lib/purposes";
 
 export type Scope = "schedule" | "location" | "both";
 
@@ -10,6 +10,7 @@ export type Meeting = {
   /** 진행률 분모. 모임장이 정한 예상 인원과 실제 참여자 수 중 큰 값이다. */
   participantCount: number;
   scope: Scope;
+  purposes: Purpose[];
   status: "scheduling" | "locating" | "confirmed";
   confirmedAt: string | null;
   createdAt: string;

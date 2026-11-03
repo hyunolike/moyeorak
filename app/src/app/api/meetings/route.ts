@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DEVICE_KEY_PATTERN } from "@/lib/device-key";
+import { PURPOSES, type Purpose } from "@/lib/purposes";
 import { readJson, toResponse } from "@/server/http";
 import { createMeeting } from "@/server/meeting/meeting-service";
 
@@ -8,6 +9,10 @@ const body = z.object({
   participantCount: z.number().int().min(2).max(20),
   scope: z.enum(["schedule", "location", "both"]),
   deviceKey: z.string().regex(DEVICE_KEY_PATTERN),
+  purposes: z
+    .array(z.enum(PURPOSES as readonly [Purpose, ...Purpose[]]))
+    .max(5)
+    .optional(),
   // 날짜와 시간대 규칙(지난 날짜, 14일 초과, 30분 단위)은 createMeeting이 검사한다.
   window: z
     .object({

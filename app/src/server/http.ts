@@ -11,6 +11,7 @@ import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
   InvalidPollWindowError,
+  LocationConfirmedError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
 import {
@@ -62,6 +63,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [StationNotFoundError, 404],
   [NobodyWaitingError, 409],
   [NotConfirmedError, 409],
+  [LocationConfirmedError, 409],
 ]);
 
 export function registerError(cls: ErrorClass, status: number) {
