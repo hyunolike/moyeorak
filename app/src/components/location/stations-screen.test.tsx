@@ -12,7 +12,8 @@ import { StationsScreen } from "@/components/location/stations-screen";
 import type { Meeting, Midpoint, Station } from "@/lib/api-types";
 
 const confirmMutate = vi.fn();
-let midpointData: Midpoint = { type: "ok", stations: [] };
+let midpointData: Midpoint | undefined = { type: "ok", stations: [] };
+let midpointError = false;
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
@@ -21,7 +22,7 @@ vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
   return {
     ...actual,
-    useMidpoint: () => ({ data: midpointData, isError: false }),
+    useMidpoint: () => ({ data: midpointData, isError: midpointError }),
     useDepartures: () => ({
       data: [
         {
@@ -56,6 +57,7 @@ afterEach(() => {
   cleanup();
   confirmMutate.mockReset();
   push.mockReset();
+  midpointError = false;
 });
 
 const station = (stationId: number, name: string): Station => ({
@@ -198,4 +200,39 @@ test("장소를 정하면 확정 카드 화면으로 간다", () => {
   };
   options.onSuccess();
   expect(push).toHaveBeenCalledWith("/meetings/m1/summary?just=confirmed");
+});
+
+test("역 후보 로딩 중에는 지도나 가짜 역 버튼을 노출하지 않고 실제 후보가 오면 선택할 수 있다", () => {
+  midpointData = undefined;
+  const { container, rerender } = render(<StationsScreen meeting={meeting} />);
+  expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
+  expect(screen.getByText("중간지점을 찾는 중이에요")).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "중간지점을 찾는 중이에요",
+  );
+  expect(screen.queryByRole("button", { pressed: true })).toBeNull();
+  expect(
+    screen.queryByRole("figure", { name: "출발지와 후보 역 지도" }),
+  ).toBeNull();
+  expect(
+    container.querySelector('[aria-hidden="true"][inert]'),
+  ).toBeInTheDocument();
+
+  midpointData = { type: "ok", stations: [station(1, "합정")] };
+  rerender(<StationsScreen meeting={meeting} />);
+  expect(
+    screen.getByRole("button", { name: /^합정(?!역)/ }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("figure", { name: "출발지와 후보 역 지도" }),
+  ).toBeInTheDocument();
+  expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+});
+
+test("역 후보 요청이 실패하면 로딩을 끝내고 오류를 알린다", () => {
+  midpointData = undefined;
+  midpointError = true;
+  const { container } = render(<StationsScreen meeting={meeting} />);
+  expect(screen.getByText("중간지점을 불러오지 못했어요")).toBeInTheDocument();
+  expect(container.querySelector('[aria-busy="true"]')).toBeNull();
 });

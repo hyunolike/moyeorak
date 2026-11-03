@@ -104,6 +104,23 @@ pnpm e2e
 
 e2e는 개발 서버를 `MOCK_EXTERNAL=1`로 직접 띄우기 때문에 외부 API 키는 필요 없고, `DATABASE_URL`은 있어야 합니다. 기본 시간대는 Asia/Seoul이고, 브라우저가 America/New_York일 때도 서울 기준 슬롯이 맞게 표시되는지 확인하는 테스트가 따로 들어 있습니다.
 
+## 데이터 로딩 화면
+
+출발지 목록과 가운데 역 후보 목록은 [Skullet](https://github.com/lochie/skullet)의 React 어댑터(`skullet@0.0.3`)로 실제 행 구조를 측정합니다. 공통 컴포넌트는 `src/components/layout/data-skeleton.tsx`에 있습니다.
+
+- `DataSkeleton`은 클라이언트 경계 안에서만 쓰고, v4의 밝은 색 토큰과 느린 shimmer를 따릅니다. 움직임 줄이기 설정을 존중하며, 로딩 중 샘플은 `aria-hidden`·`inert`로 숨깁니다. 한국어 안내는 busy 영역 밖의 `role="status"`로 읽어 줍니다. Skullet 0.0.3의 `label`만으로는 실시간 읽기 알림이 생기지 않습니다.
+- 샘플은 가상의 이름과 장소만 씁니다. 지도 SDK·API 훅·분석 이벤트는 측정 대상에서 제외하고, 이동시간 막대도 샘플에서는 애니메이션을 실행하지 않습니다.
+- 0.0.3은 `id`를 생략해도 경로별 모양을 자동 저장하므로 빈 `id=""`로 저장을 끕니다. 브라우저 테스트에서 `skullet:shapes`가 생기지 않는지 확인합니다.
+- 첫 로딩은 출발지 2개·역 후보 3개를 가정합니다. 실제 결과 수나 설명의 줄 수가 다르면 높이가 달라질 수 있고, 개발 모드의 크기 진단도 나올 수 있습니다. 빈 목록은 `empty` 상태로 처리하며, 기존 데이터를 가진 백그라운드 재요청에는 로딩을 강제하지 않습니다.
+
+React 19에서는 Skullet이 SSR 스타일과 측정용 inline script를 제공합니다. 현재 문서에는 CSP가 없고 `/sw.js`의 CSP는 그대로 유지합니다. 향후 문서에 nonce 기반 CSP를 추가하면 요청별 nonce를 `DataSkeleton`의 `SkulletProvider`에도 전달해야 합니다. 정책을 `unsafe-inline`으로 완화하지 않습니다.
+
+```bash
+pnpm e2e e2e/skullet.spec.ts
+```
+
+375px 모바일·320px 움직임 줄이기·데스크톱에서 지연 응답, SSR, 샘플 접근 차단, 중복 요청, 완료 후 수정/역 선택, 오류·빈 결과를 검증하고 각 테스트 결과 폴더에 화면을 저장합니다. 단위 테스트와 e2e는 동일 테스트 DB를 초기화할 수 있으므로 순서대로 실행합니다.
+
 ## 관리자 지표 페이지
 
 ```text
