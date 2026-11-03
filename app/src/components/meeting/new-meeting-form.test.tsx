@@ -128,3 +128,21 @@ test("인원은 예상 인원이라 더 와도 참여할 수 있다고 알린다
     screen.getByText("대략이어도 괜찮아요. 더 와도 참여할 수 있어요"),
   ).toBeTruthy();
 });
+
+test("장소를 정하는 모임에는 목적 칩이 있고 고른 값이 요청에 실린다", () => {
+  render(<NewMeetingForm flow="both" />);
+  expect(screen.getByText("모여서 뭐 해요?")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "술" }));
+  fireEvent.click(screen.getByRole("button", { name: "스터디" }));
+  fillName();
+  submit();
+  expect(mutate.mock.calls[0][0].purposes).toEqual(["drink", "study"]);
+});
+
+test("시간만 정하는 모임에는 목적 칩이 없고 purposes도 보내지 않는다", () => {
+  render(<NewMeetingForm flow="schedule" />);
+  expect(screen.queryByText("모여서 뭐 해요?")).toBeNull();
+  fillName();
+  submit();
+  expect(mutate.mock.calls[0][0].purposes).toBeUndefined();
+});

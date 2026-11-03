@@ -16,6 +16,7 @@ import {
   DecisionSheet,
   decisionSummary,
 } from "@/components/meeting/decision-sheet";
+import { PurposeChips } from "@/components/meeting/purpose-chips";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -25,11 +26,12 @@ import {
   useDepartures,
   useMe,
   useMidpoint,
+  useUpdatePurposes,
 } from "@/lib/api";
 import type { Departure, Meeting, Station } from "@/lib/api-types";
 import { cn } from "@/lib/cn";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
-import { ZERO_VENUES } from "@/lib/purposes";
+import { type Purpose, venueLine, ZERO_VENUES } from "@/lib/purposes";
 import { lineName, stationLabel } from "@/lib/summary-text";
 
 const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({
@@ -75,9 +77,11 @@ function StationRow({
   rank,
   selected,
   onSelect,
+  purposes,
   animateDetail = true,
 }: {
   station: Station;
+  purposes: Purpose[];
   rank: number;
   selected: boolean;
   onSelect: () => void;
@@ -94,7 +98,7 @@ function StationRow({
         type="button"
         aria-pressed={selected}
         onClick={onSelect}
-        className="flex w-full cursor-pointer items-center gap-2.5 px-5 py-4 text-left"
+        className="flex w-full cursor-pointer flex-wrap items-center gap-x-2.5 gap-y-1 px-5 py-4 text-left"
       >
         <span
           aria-hidden="true"
@@ -124,6 +128,14 @@ function StationRow({
           </span>
         )}
         <Average minutes={station.averageMinutes} />
+        <span className="text-muted text-b4 basis-full pl-[34px]">
+          {venueLine(station.venues, purposes)}
+          {station.far && (
+            <span className="text-c1 text-text bg-surface-sunken rounded-pill ml-2 px-2 py-0.5">
+              조금 멀어요
+            </span>
+          )}
+        </span>
       </button>
       {selected && (
         <div className="px-5 pb-4">
@@ -139,7 +151,9 @@ function StationList({
   departures,
   selectedId,
   onSelect,
+  purposes,
 }: {
+  purposes: Purpose[];
   stations: Station[] | undefined;
   /** undefined면 아직 불러오는 중, 빈 배열이면 지도를 그리지 않는다. */
   departures: Departure[] | undefined;
@@ -184,6 +198,7 @@ function StationList({
                 selected={
                   station.stationId === selectedId || (!stations && index === 0)
                 }
+                purposes={purposes}
                 animateDetail={!!stations}
                 onSelect={() => onSelect(station.stationId)}
               />
@@ -200,6 +215,7 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
   const departures = useDepartures(meeting.id);
   const { me } = useMe(meeting);
   const confirm = useConfirmLocation(meeting.id);
+  const updatePurposes = useUpdatePurposes(meeting.id);
   const router = useRouter();
   const [pickedId, setPickedId] = useState<number | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -215,6 +231,9 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
   const alreadyConfirmed =
     meeting.status === "confirmed" ||
     (confirm.error instanceof ApiError && confirm.error.status === 409);
+  const purposes = meeting.purposes ?? [];
+  const canEditPurposes =
+    !!me?.isHost && meeting.status === "locating" && !alreadyConfirmed;
   const votesPath = `/meetings/${meeting.id}/location/votes`;
   const insufficient = data?.type === "insufficient";
   const departureCount =
@@ -251,6 +270,15 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
           </p>
         ) : null}
       </div>
+      {(canEditPurposes || purposes.length > 0) && (
+        <div className="px-5 pt-3">
+          <PurposeChips
+            value={purposes}
+            readOnly={!canEditPurposes}
+            onChange={(next) => updatePurposes.mutate(next)}
+          />
+        </div>
+      )}
       {midpoint.isError ? (
         <Message
           title="중간지점을 불러오지 못했어요"
@@ -272,6 +300,7 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
           departures={departures.isError ? [] : departures.data}
           selectedId={selectedId}
           onSelect={setPickedId}
+          purposes={purposes}
         />
       )}
       {alreadyConfirmed && (

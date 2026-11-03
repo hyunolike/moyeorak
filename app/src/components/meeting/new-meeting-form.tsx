@@ -10,6 +10,7 @@ import {
   PollWindowPicker,
   type Preset,
 } from "@/components/meeting/poll-window-picker";
+import { PurposeChips } from "@/components/meeting/purpose-chips";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Stepper } from "@/components/stepper";
 import { TextField } from "@/components/text-field";
@@ -18,6 +19,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreateMeeting } from "@/lib/api";
 import type { Scope } from "@/lib/api-types";
 import { type DayTime, pollWindow, seoulToday } from "@/lib/poll-window";
+import type { Purpose } from "@/lib/purposes";
 
 export type Flow = "both" | "schedule" | "location";
 
@@ -32,6 +34,7 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
   const [name, setName] = useState("");
   const [count, setCount] = useState(2);
   const [scope, setScope] = useState<Scope>(flow);
+  const [purposes, setPurposes] = useState<Purpose[]>([]);
   const create = useCreateMeeting();
   const trimmed = name.trim();
   const today = useMemo(() => seoulToday(), []);
@@ -39,6 +42,7 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
   const [customDates, setCustomDates] = useState<string[]>([]);
   const [time, setTime] = useState<DayTime>("all");
   const decidesTime = scope !== "location";
+  const decidesPlace = scope !== "schedule";
   const window =
     preset === "custom"
       ? pollWindow({ preset, dates: customDates, time }, today)
@@ -52,6 +56,7 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
         participantCount: count,
         scope,
         ...(decidesTime ? { window } : {}),
+        ...(decidesPlace ? { purposes } : {}),
       },
       {
         onSuccess: ({ meetingId }) => router.push(`/meetings/${meetingId}`),
@@ -92,6 +97,12 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
+          {decidesPlace && (
+            <div className="mt-6">
+              <p className="text-b3 text-text mb-2">모여서 뭐 해요?</p>
+              <PurposeChips value={purposes} onChange={setPurposes} />
+            </div>
+          )}
           <TextField
             className="mt-6"
             label="팀장 이름"
