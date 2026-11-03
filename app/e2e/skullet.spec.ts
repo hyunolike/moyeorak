@@ -124,7 +124,7 @@ for (const display of [
             .locator("[skullet-reveal]")
             .evaluate((node) => node.getBoundingClientRect().height);
           expect(Math.abs(loadedHeight - loadingHeight)).toBeLessThanOrEqual(2);
-          const choices = page.locator("button[aria-pressed]");
+          const choices = page.locator("li > button[aria-pressed]");
           if ((await choices.count()) > 1) {
             await choices.nth(1).click();
             await expect(choices.nth(1)).toHaveAttribute(

@@ -25,6 +25,7 @@ import {
   useConfirmLocation,
   useDepartures,
   useMe,
+  useMeeting,
   useMidpoint,
   useUpdatePurposes,
 } from "@/lib/api";
@@ -210,7 +211,9 @@ function StationList({
   );
 }
 
-export function StationsScreen({ meeting }: { meeting: Meeting }) {
+export function StationsScreen({ meeting: initial }: { meeting: Meeting }) {
+  // 서버가 준 모임으로 시작하되, 목적을 바꾸면 다시 받은 모임으로 칩과 가게 수 줄을 맞춘다.
+  const meeting = useMeeting(initial.id, initial).data ?? initial;
   const midpoint = useMidpoint(meeting.id);
   const departures = useDepartures(meeting.id);
   const { me } = useMe(meeting);

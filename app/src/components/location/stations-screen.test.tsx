@@ -25,6 +25,7 @@ vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
   return {
     ...actual,
+    useMeeting: () => ({ data: undefined }),
     useMidpoint: () => ({ data: midpointData, isError: midpointError }),
     useDepartures: () => ({
       data: [

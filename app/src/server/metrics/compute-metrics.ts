@@ -9,6 +9,8 @@ export type Metrics = {
   reuseRate: number;
   sharesPerMeeting: number;
   suggestionAcceptRate: number | null;
+  /** 장소를 정하는 모임 중 목적을 하나라도 고른 비율. 그런 모임이 없으면 null. */
+  purposeRate: number | null;
 };
 
 export type Range = { from: Date; to: Date };
@@ -111,6 +113,13 @@ export async function computeMetrics(range: Range): Promise<Metrics> {
       JOIN meetings m ON m.id = s.meeting_id
      WHERE ${where}`);
 
+  // 목적을 고른 비율: 장소를 정하는 모임(scope != 'schedule')만 분모로 센다.
+  const purpose = await one<{ total: number; picked: number }>(sql`
+    SELECT count(*)::int AS total,
+           (count(*) FILTER (WHERE cardinality(m.purposes) > 0))::int AS picked
+      FROM meetings m
+     WHERE m.scope <> 'schedule' AND ${where}`);
+
   const meetings = base.meetings;
   const decided = sugg.accepted + sugg.rejected;
   const median4 = num(median.hours);
@@ -124,5 +133,6 @@ export async function computeMetrics(range: Range): Promise<Metrics> {
     reuseRate: reuse.hosts ? round(reuse.reused / reuse.hosts) : 0,
     sharesPerMeeting: meetings ? round(shares.n / meetings) : 0,
     suggestionAcceptRate: decided ? round(sugg.accepted / decided) : null,
+    purposeRate: purpose.total ? round(purpose.picked / purpose.total) : null,
   };
 }

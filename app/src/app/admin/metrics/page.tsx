@@ -22,6 +22,7 @@ const rows: { label: string; value: (m: Metrics) => string }[] = [
   { label: "재사용률", value: (m) => pct(m.reuseRate) },
   { label: "모임당 공유 수", value: (m) => count(m.sharesPerMeeting) },
   { label: "제안 수락률", value: (m) => pct(m.suggestionAcceptRate) },
+  { label: "목적을 고른 모임", value: (m) => pct(m.purposeRate) },
 ];
 
 const cell = "border-border border-b px-2 py-2.5";

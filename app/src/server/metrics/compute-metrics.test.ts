@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { meetings } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
@@ -62,7 +62,33 @@ test("computeMetrics: 모임이 없으면 비율은 0, 중앙값과 수락률은
     reuseRate: 0,
     sharesPerMeeting: 0,
     suggestionAcceptRate: null,
+    purposeRate: null,
   });
+});
+
+test("computeMetrics: 장소를 정하는 모임 4개 중 2개가 목적이 있으면 purposeRate 0.5, 시간 전용 모임은 제외", async () => {
+  const ids: string[] = [];
+  for (const [c, scope] of [
+    ["a", "location"],
+    ["b", "location"],
+    ["c", "both"],
+    ["d", "both"],
+    ["e", "schedule"],
+  ] as const)
+    ids.push((await make(3, c, scope)).meetingId);
+  // 목적은 생성 시에도 넣을 수 있지만, 시간 전용 모임에도 값이 남은 경우를 함께 본다.
+  await db
+    .update(meetings)
+    .set({ purposes: ["drink"] })
+    .where(inArray(meetings.id, [ids[0], ids[2], ids[4]]));
+  const m = await computeMetrics(range());
+  expect(m.purposeRate).toBe(0.5);
+});
+
+test("computeMetrics: 장소를 정하는 모임이 없으면 purposeRate는 null", async () => {
+  await make(3, "a", "schedule");
+  const m = await computeMetrics(range());
+  expect(m.purposeRate).toBeNull();
 });
 
 test("computeMetrics: 정원 4명 중 3명 vote_done이면 participationRate 0.75", async () => {
