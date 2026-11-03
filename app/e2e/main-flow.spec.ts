@@ -12,6 +12,15 @@ function watchConsole(page: Page) {
   page.on("console", (message) => {
     // 의도한 404도 Chrome은 리소스 오류로 찍는다.
     if (EXPECTED_404.test(message.location().url)) return;
+    // 첫 로딩은 출발지 수를 모르므로 샘플과 실제 행 수가 다른 경우만 허용한다.
+    // 고정된 후보/참여자 수의 높이 전환과 샘플 접근 차단은 skullet.spec.ts에서 검증한다.
+    if (
+      message.type() === "warning" &&
+      /^\[skullet\] <Skeleton>'s skeleton was \d+×\d+px but its content is \d+×\d+px, so the layout jumped on reveal\./.test(
+        message.text(),
+      )
+    )
+      return;
     if (message.type() === "error" || message.type() === "warning") {
       consoleErrors.push(`${message.type()}: ${message.text()}`);
     }
@@ -173,8 +182,11 @@ test("출발지 2개를 넣으면 중간지점 결과에 역 이름이 나온다
   await expect(page.getByTestId("departure-item")).toHaveCount(2);
   await page.getByRole("link", { name: "가운데 역 찾기" }).click();
   await expect(page).toHaveURL(/\/location\/stations$/);
-  await expect(page.getByTestId("station-name")).toBeVisible();
-  await expect(page.getByTestId("per-participant")).toHaveCount(2);
+  const selected = page.getByRole("button", { pressed: true });
+  await expect(selected.getByTestId("station-name")).toBeVisible();
+  await expect(
+    selected.locator("..").getByTestId("per-participant"),
+  ).toHaveCount(2);
 });
 
 test("확정된 모임에 투표를 보내면 409이고, 헤더가 없으면 401", async ({

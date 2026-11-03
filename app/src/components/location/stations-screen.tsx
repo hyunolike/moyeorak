@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
+import { DataSkeleton } from "@/components/layout/data-skeleton";
 import { PageTitle } from "@/components/layout/page-title";
 import { Skeleton } from "@/components/layout/skeleton";
 import { formatDuration } from "@/components/location/format";
@@ -26,6 +27,16 @@ import type { Departure, Meeting, Station } from "@/lib/api-types";
 import { cn } from "@/lib/cn";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
 import { lineName, stationLabel } from "@/lib/summary-text";
+
+const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({
+  stationId: -rank,
+  name: "가운데역",
+  line: "2호선",
+  lat: 0,
+  lng: 0,
+  averageMinutes: 30,
+  perParticipant: [],
+}));
 
 function Message({
   title,
@@ -57,11 +68,13 @@ function StationRow({
   rank,
   selected,
   onSelect,
+  animateDetail = true,
 }: {
   station: Station;
   rank: number;
   selected: boolean;
   onSelect: () => void;
+  animateDetail?: boolean;
 }) {
   return (
     <li
@@ -107,7 +120,7 @@ function StationRow({
       </button>
       {selected && (
         <div className="px-5 pb-4">
-          <StationDetail station={station} />
+          <StationDetail station={station} animate={animateDetail} />
         </div>
       )}
     </li>
@@ -120,7 +133,7 @@ function StationList({
   selectedId,
   onSelect,
 }: {
-  stations: Station[];
+  stations: Station[] | undefined;
   /** undefined면 아직 불러오는 중, 빈 배열이면 지도를 그리지 않는다. */
   departures: Departure[] | undefined;
   selectedId: number;
@@ -129,7 +142,7 @@ function StationList({
   return (
     <>
       <div className="px-5 pt-3.5 pb-1.5">
-        {departures === undefined ? (
+        {!stations || departures === undefined ? (
           <Skeleton className="h-44 w-full" />
         ) : departures.length > 0 ? (
           <MeetMap
@@ -139,17 +152,38 @@ function StationList({
           />
         ) : null}
       </div>
-      <ul>
-        {stations.map((station, index) => (
-          <StationRow
-            key={station.stationId}
-            station={station}
-            rank={index + 1}
-            selected={station.stationId === selectedId}
-            onSelect={() => onSelect(station.stationId)}
-          />
-        ))}
-      </ul>
+      <DataSkeleton
+        data={stations}
+        sample={SAMPLE_STATIONS.map((station, index) =>
+          index === 0
+            ? {
+                ...station,
+                perParticipant: Array.from(
+                  { length: departures?.length ?? 2 },
+                  (_, person) => ({ name: `참여자${person + 1}`, minutes: 30 }),
+                ),
+              }
+            : station,
+        )}
+        label="중간지점을 찾는 중이에요"
+      >
+        {(items) => (
+          <ul>
+            {items.map((station, index) => (
+              <StationRow
+                key={station.stationId}
+                station={station}
+                rank={index + 1}
+                selected={
+                  station.stationId === selectedId || (!stations && index === 0)
+                }
+                animateDetail={!!stations}
+                onSelect={() => onSelect(station.stationId)}
+              />
+            ))}
+          </ul>
+        )}
+      </DataSkeleton>
     </>
   );
 }
@@ -212,26 +246,19 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
           title="중간지점을 불러오지 못했어요"
           description="잠시 후 다시 시도해 주세요."
         />
-      ) : !data ? (
-        <div role="status" className="flex flex-col gap-3 px-5 pt-4">
-          <p className="text-b4 text-muted">중간지점을 찾는 중이에요</p>
-          <Skeleton className="h-44 w-full" />
-          <Skeleton className="h-14 w-full" />
-          <Skeleton className="h-14 w-full" />
-        </div>
-      ) : data.type === "insufficient" ? (
+      ) : data?.type === "insufficient" ? (
         <Message
           title="출발지를 2개 이상 등록해 주세요"
           description="팀원에게 링크를 공유하거나 출발지를 추가해 보세요."
         />
-      ) : data.stations.length === 0 ? (
+      ) : data?.stations.length === 0 ? (
         <Message
           title="중간지점을 찾지 못했어요"
           description="출발지가 서로 너무 멀어요. 출발지를 다시 확인해 주세요"
         />
       ) : (
         <StationList
-          stations={data.stations}
+          stations={data?.stations}
           departures={departures.isError ? [] : departures.data}
           selectedId={selectedId}
           onSelect={setPickedId}

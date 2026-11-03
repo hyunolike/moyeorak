@@ -7,25 +7,32 @@ import type { Station } from "@/lib/api-types";
 /** 막대 한 칸이 가득 차는 분. 이보다 오래 걸리는 사람이 있으면 가장 긴 쪽이 가득 찬다. */
 const FULL_MINUTES = 50;
 
-function Bar({ ratio }: { ratio: number }) {
+function Bar({ ratio, animate }: { ratio: number; animate: boolean }) {
   // 처음엔 0에서 시작해 한 프레임 뒤 목표 폭으로 간다. 줄이기 설정이면 토큰이 0ms라 바로 바뀐다.
   const [width, setWidth] = useState(0);
   useEffect(() => {
+    if (!animate) return;
     const frame = requestAnimationFrame(() => setWidth(ratio));
     return () => cancelAnimationFrame(frame);
-  }, [ratio]);
+  }, [ratio, animate]);
   return (
     <span className="bg-bg block h-2 rounded-sm">
       <span
         className="bg-action block h-full rounded-sm transition-[width] duration-(--duration-count) ease-(--ease-standard)"
-        style={{ width: `${Math.round(width * 100)}%` }}
+        style={{ width: `${Math.round((animate ? width : ratio) * 100)}%` }}
       />
     </span>
   );
 }
 
 /** 고른 역 기준 사람별 이동 시간 막대. */
-export function StationDetail({ station }: { station: Station }) {
+export function StationDetail({
+  station,
+  animate = true,
+}: {
+  station: Station;
+  animate?: boolean;
+}) {
   const longest = Math.max(
     FULL_MINUTES,
     ...station.perParticipant.map((p) => p.minutes ?? 0),
@@ -45,7 +52,7 @@ export function StationDetail({ station }: { station: Station }) {
             </span>
           ) : (
             <>
-              <Bar ratio={person.minutes / longest} />
+              <Bar ratio={person.minutes / longest} animate={animate} />
               <span className="text-text min-w-10 text-right font-bold">
                 {formatDuration(person.minutes)}
               </span>

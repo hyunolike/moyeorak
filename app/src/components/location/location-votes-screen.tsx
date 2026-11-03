@@ -5,10 +5,10 @@ import { useState } from "react";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
+import { DataSkeleton } from "@/components/layout/data-skeleton";
 import { GuideLine } from "@/components/layout/guide-line";
 import { PageTitle } from "@/components/layout/page-title";
 import { SectionBand } from "@/components/layout/section-band";
-import { Skeleton } from "@/components/layout/skeleton";
 import { DepartureList } from "@/components/location/departure-list";
 import { PlaceSearch } from "@/components/location/place-search";
 import { MeetingGate } from "@/components/meeting/meeting-gate";
@@ -16,9 +16,28 @@ import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useDeleteDeparture, useDepartures, useSaveDeparture } from "@/lib/api";
-import type { Meeting } from "@/lib/api-types";
+import type { Departure, Meeting } from "@/lib/api-types";
 
 const MIN_DEPARTURES = 2;
+// 실명·주소·외부 리소스가 없는 측정용 데이터. 행 수를 제한해 초기 측정 비용을 줄인다.
+const SAMPLE_DEPARTURES: Departure[] = [
+  {
+    voteId: -1,
+    participantId: -1,
+    name: "참여자",
+    label: "등록한 출발지",
+    lat: 0,
+    lng: 0,
+  },
+  {
+    voteId: -2,
+    participantId: -2,
+    name: "참여자",
+    label: "등록한 출발지",
+    lat: 0,
+    lng: 0,
+  },
+];
 
 export function DepartureManager({
   meeting,
@@ -90,19 +109,22 @@ export function DepartureManager({
       </div>
       {departures.isError ? (
         status("출발지를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.")
-      ) : departures.data ? (
-        <DepartureList
-          departures={departures.data}
-          myParticipantId={me.id}
-          onEdit={() => setEditing(true)}
-          onDelete={setDeletingId}
-        />
       ) : (
-        <div role="status" className="flex flex-col gap-3 px-5 py-3.5">
-          <p className="text-b4 text-muted">출발지를 불러오는 중이에요</p>
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
-        </div>
+        <DataSkeleton
+          data={departures.data}
+          sample={SAMPLE_DEPARTURES}
+          label="출발지를 불러오는 중이에요"
+          empty={departures.data?.length === 0}
+        >
+          {(items) => (
+            <DepartureList
+              departures={items}
+              myParticipantId={departures.data ? me.id : -1}
+              onEdit={() => setEditing(true)}
+              onDelete={setDeletingId}
+            />
+          )}
+        </DataSkeleton>
       )}
       {departures.data && !enough ? (
         <p role="status" className="text-b3 text-muted px-5 pt-2">

@@ -7,7 +7,8 @@ import type { Departure, Meeting, Place } from "@/lib/api-types";
 
 const saveMutate = vi.fn();
 const removeMutate = vi.fn();
-let departureData: Departure[] = [];
+let departureData: Departure[] | undefined = [];
+let departureError = false;
 let placeData: Place[] = [];
 
 vi.mock("@/components/share-button", () => ({ ShareButton: () => null }));
@@ -17,8 +18,8 @@ vi.mock("@/lib/api", async () => {
     ...actual,
     useDepartures: () => ({
       data: departureData,
-      isError: false,
-      isSuccess: true,
+      isError: departureError,
+      isSuccess: departureData !== undefined && !departureError,
     }),
     useSaveDeparture: () => ({
       mutate: saveMutate,
@@ -40,6 +41,7 @@ afterEach(() => {
   saveMutate.mockReset();
   removeMutate.mockReset();
   departureData = [];
+  departureError = false;
   placeData = [];
 });
 
@@ -92,4 +94,44 @@ test("출발지가 2개 이상이면 역 목록으로 가는 링크가 된다", 
     "/meetings/abc/location/stations",
   );
   expect(screen.queryByText("출발지를 2개 이상 등록해 주세요")).toBeNull();
+});
+
+test("출발지 로딩은 샘플 행을 읽거나 조작할 수 없고 응답 뒤에 실제 목록을 보여 준다", () => {
+  departureData = undefined;
+  const { container, rerender } = render(
+    <DepartureManager meeting={meeting} me={me} />,
+  );
+  expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
+  expect(screen.getByText("출발지를 불러오는 중이에요")).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "출발지를 불러오는 중이에요",
+  );
+  expect(screen.queryByRole("list", { name: "등록된 출발지" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "수정" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "삭제" })).toBeNull();
+  expect(
+    container.querySelector('[aria-hidden="true"][inert]'),
+  ).toBeInTheDocument();
+
+  departureData = [departure(1, 1, "현호"), departure(2, 2, "민지")];
+  rerender(<DepartureManager meeting={meeting} me={me} />);
+  expect(
+    screen.getByRole("list", { name: "등록된 출발지" }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "수정" })).toBeInTheDocument();
+  expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+});
+
+test("출발지 빈 결과와 오류는 계속 로딩으로 남지 않는다", () => {
+  const { container, rerender } = render(
+    <DepartureManager meeting={meeting} me={me} />,
+  );
+  expect(screen.getByText("아직 등록된 출발지가 없어요")).toBeInTheDocument();
+  expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+
+  departureData = undefined;
+  departureError = true;
+  rerender(<DepartureManager meeting={meeting} me={me} />);
+  expect(screen.getByText(/출발지를 불러오지 못했어요/)).toBeInTheDocument();
+  expect(container.querySelector('[aria-busy="true"]')).toBeNull();
 });
