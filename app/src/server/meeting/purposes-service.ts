@@ -7,6 +7,7 @@ import {
   LocationConfirmedError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
+import { dropProposed } from "@/server/suggest/store";
 
 export { LocationConfirmedError };
 
@@ -40,6 +41,7 @@ export async function updatePurposes(
       .update(meetings)
       .set({ purposes: next })
       .where(eq(meetings.id, meetingId));
+    await dropProposed(meetingId, "location", tx);
     await recordEvent(meetingId, "purpose_changed", tx);
     return { purposes: next };
   });

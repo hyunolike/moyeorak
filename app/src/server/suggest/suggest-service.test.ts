@@ -529,6 +529,7 @@ test("장소 제안 뒤 목적을 바꾸면 다시 만든 제안으로 바뀌고
   expect(first.items.length).toBeGreaterThan(0);
 
   await updatePurposes(meetingId, ["study"]);
+  expect((await listSuggestions(meetingId)).items).toEqual([]);
   const second = await createSuggestions(meetingId, deps);
   const oldIds = first.items.map((i) => i.id);
   expect(second.items.length).toBeGreaterThan(0);

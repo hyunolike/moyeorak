@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { confirmedLocations, meetingEvents } from "@/db/schema";
+import {
+  agentSuggestions,
+  confirmedLocations,
+  meetingEvents,
+} from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import { createMeeting, getMeeting } from "@/server/meeting/meeting-service";
 import {
@@ -52,4 +56,33 @@ test("장소가 확정된 뒤에는 LocationConfirmedError", async () => {
     LocationConfirmedError,
   );
   expect((await getMeeting(id))?.purposes).toEqual([]);
+});
+
+const seedSuggestion = (meetingId: string) =>
+  db.insert(agentSuggestions).values({
+    meetingId,
+    kind: "location",
+    payload: {},
+  });
+const openCount = async (id: string) =>
+  (
+    await db
+      .select()
+      .from(agentSuggestions)
+      .where(eq(agentSuggestions.meetingId, id))
+  ).length;
+
+test("목적이 바뀌면 열린 장소 제안을 지운다", async () => {
+  const id = await setup();
+  await seedSuggestion(id);
+  await updatePurposes(id, ["drink"]);
+  expect(await openCount(id)).toBe(0);
+});
+
+test("같은 값이면 열린 장소 제안을 그대로 둔다", async () => {
+  const id = await setup();
+  await updatePurposes(id, ["drink"]);
+  await seedSuggestion(id);
+  await updatePurposes(id, ["drink"]);
+  expect(await openCount(id)).toBe(1);
 });
