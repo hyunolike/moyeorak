@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { resetTestDb } from "@/db/test-utils";
 import { ExternalApiError } from "@/server/clients/errors";
-import { searchPlaces } from "@/server/clients/kakao-local";
+import { countVenues, searchPlaces } from "@/server/clients/kakao-local";
 
 beforeEach(async () => {
   await resetTestDb();
@@ -114,4 +114,68 @@ test("searchPlaces는 실패한 응답을 캐시하지 않는다", async () => {
   vi.stubGlobal("fetch", ok);
   await expect(searchPlaces("x")).resolves.toEqual([]);
   expect(ok).toHaveBeenCalledTimes(1);
+});
+
+const totalCount = (n: number) =>
+  new Response(JSON.stringify({ meta: { total_count: n }, documents: [] }), {
+    status: 200,
+  });
+
+test("countVenues는 여섯 번 불러 목적별 가게 수로 합친다", async () => {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(totalCount(10)) // FD6
+    .mockResolvedValueOnce(totalCount(20)) // 술집
+    .mockResolvedValueOnce(totalCount(30)) // CE7
+    .mockResolvedValueOnce(totalCount(40)) // 스터디카페
+    .mockResolvedValueOnce(totalCount(1)) // CT1
+    .mockResolvedValueOnce(totalCount(2)); // AT4
+  vi.stubGlobal("fetch", fetchMock);
+  const counts = await countVenues({ lat: 37.55, lng: 126.92 });
+  expect(counts).toEqual({
+    meal: 10,
+    drink: 20,
+    cafe: 30,
+    study: 40,
+    sight: 3,
+  });
+  expect(fetchMock).toHaveBeenCalledTimes(6);
+  const urls = fetchMock.mock.calls.map((c) => c[0] as string);
+  for (const u of urls) {
+    expect(u).toContain("x=126.92");
+    expect(u).toContain("y=37.55");
+    expect(u).toContain("radius=500");
+    expect(u).toContain("size=1");
+  }
+  expect(urls[0]).toContain("/category.json?category_group_code=FD6");
+  expect(urls[1]).toContain("/keyword.json?");
+  expect(urls[1]).toContain("query=%EC%88%A0%EC%A7%91");
+  expect(urls[2]).toContain("category_group_code=CE7");
+  expect(urls[3]).toContain(
+    "query=%EC%8A%A4%ED%84%B0%EB%94%94%EC%B9%B4%ED%8E%98",
+  );
+  expect(urls[4]).toContain("category_group_code=CT1");
+  expect(urls[5]).toContain("category_group_code=AT4");
+});
+
+test("countVenues는 반경을 바꿀 수 있다", async () => {
+  const fetchMock = vi.fn().mockImplementation(async () => totalCount(0));
+  vi.stubGlobal("fetch", fetchMock);
+  await countVenues({ lat: 37.5, lng: 127 }, 800);
+  expect(fetchMock.mock.calls[0]?.[0]).toContain("radius=800");
+});
+
+test("countVenues는 meta가 없는 응답이면 ExternalApiError", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockImplementation(
+        async () =>
+          new Response(JSON.stringify({ documents: [] }), { status: 200 }),
+      ),
+  );
+  await expect(countVenues({ lat: 37.5, lng: 127 })).rejects.toBeInstanceOf(
+    ExternalApiError,
+  );
 });

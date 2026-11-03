@@ -28,3 +28,9 @@ test("장소 카드는 분 값과 반올림한 평균을 허용한다", () => {
   for (const n of [3, 31, 45, 20, 29]) expect(a.has(n)).toBe(true);
   expect(a.has(30)).toBe(false);
 });
+
+test("장소 카드는 대표 가게 수를 허용하고 다른 수는 거부한다", () => {
+  const a = allowedNumbers(averagePick, 3);
+  expect(numbersAreTrue("술집이 120곳 있어요.", a)).toBe(true);
+  expect(numbersAreTrue("술집이 121곳 있어요.", a)).toBe(false);
+});

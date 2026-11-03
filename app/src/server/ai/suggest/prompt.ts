@@ -23,9 +23,11 @@ function describe(pick: Pick, i: number): string {
     ].join("\n");
   }
   const axis =
-    pick.axis === "average"
-      ? "평균 이동시간이 가장 짧은 역"
-      : "가장 오래 걸리는 사람이 덜 걸리는 역";
+    pick.axis === "venues"
+      ? "모여서 할 거리가 많은 역"
+      : pick.axis === "average"
+        ? "평균 이동시간이 가장 짧은 역"
+        : "가장 오래 걸리는 사람이 덜 걸리는 역";
   const people = pick.perParticipant
     .map((p) => `${p.name} ${p.minutes === null ? "모름" : `${p.minutes}분`}`)
     .join(", ");
@@ -33,6 +35,9 @@ function describe(pick: Pick, i: number): string {
     `${i + 1}. 장소 카드 (${axis})`,
     `   역: ${pick.name}`,
     `   평균 ${Math.round(pick.averageMinutes)}분, 가장 오래 ${pick.maxMinutes === null ? "모름" : `${pick.maxMinutes}분`}`,
+    ...(pick.venue
+      ? [`   목적: ${pick.venue.label}, 근처에 ${pick.venue.count}곳`]
+      : []),
     `   사람별: ${people}`,
   ].join("\n");
 }

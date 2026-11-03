@@ -1,29 +1,35 @@
 // @vitest-environment node
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { externalCache } from "@/db/schema";
+import { externalCache, meetings } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
+import { type VenueCounts, ZERO_VENUES } from "@/lib/purposes";
 import { RateLimitedError } from "@/server/clients/errors";
 import { computeTransitMatrix } from "@/server/clients/google-routes";
 import { upsertDeparture } from "@/server/location/location-service";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import { createMeeting, joinMeeting } from "@/server/meeting/meeting-service";
 import {
+  cachedRecommendation,
   MIDPOINT_DAILY_CAP,
   recommendMidpoint,
 } from "@/server/midpoint/midpoint-service";
-import { findStationsNear } from "@/server/midpoint/stations";
+import { findCandidateStations } from "@/server/midpoint/stations";
 
 vi.mock("@/server/clients/google-routes", () => ({
   computeTransitMatrix: vi.fn(),
 }));
-vi.mock("@/server/midpoint/stations", () => ({ findStationsNear: vi.fn() }));
+vi.mock("@/server/midpoint/stations", () => ({
+  findCandidateStations: vi.fn(),
+}));
 
 const matrix = vi.mocked(computeTransitMatrix);
-const near = vi.mocked(findStationsNear);
+const near = vi.mocked(findCandidateStations);
 const departAt = new Date("2026-11-01T03:00:00Z");
 
-const st = (id: number) => ({
+const st = (id: number, venues: Partial<VenueCounts> = {}) => ({
+  venues: { ...ZERO_VENUES, ...venues },
+  distanceMeters: id * 100,
   id,
   name: `역${id}`,
   line: "2호선",
@@ -196,7 +202,7 @@ test("recommendMidpoint는 하루 상한에 닿으면 살아 있는 가장 최�
   );
   const lastKey = (await db.select().from(externalCache))[0]?.key as string;
   await db.execute(
-    sql`UPDATE external_cache SET created_at = now(), payload = '{"type":"ok","stations":[]}'::jsonb WHERE key = ${lastKey}`,
+    sql`UPDATE external_cache SET created_at = now(), payload = '{"v":2,"candidates":[]}'::jsonb WHERE key = ${lastKey}`,
   );
   const r = await recommendMidpoint(
     id,
@@ -251,4 +257,64 @@ test("월 상한에 닿았고 캐시도 없으면 RateLimitedError", async () =>
   await expect(recommendMidpoint(id, departAt)).rejects.toBeInstanceOf(
     RateLimitedError,
   );
+});
+
+test("목적을 바꿔도 Google을 다시 부르지 않고 순위만 바뀐다", async () => {
+  const id = await setup(2);
+  near.mockResolvedValue([st(1, { drink: 5 }), st(2, { drink: 90 })]);
+  matrix.mockResolvedValue([
+    [10, 12],
+    [10, 12],
+  ]);
+  await recommendMidpoint(id, departAt);
+  await db
+    .update(meetings)
+    .set({ purposes: ["drink"] })
+    .where(eq(meetings.id, id));
+  const r = await recommendMidpoint(id, departAt);
+  expect(matrix).toHaveBeenCalledTimes(1);
+  if (r.type !== "ok") throw new Error("ok 아님");
+  expect(r.stations[0]?.stationId).toBe(2);
+});
+
+test("옛 형식 캐시는 미스로 보고 Google을 부른다", async () => {
+  const id = await setup(2);
+  mockTwoStations();
+  await recommendMidpoint(id, departAt);
+  const [row] = await db.select().from(externalCache);
+  await db.execute(
+    sql`UPDATE external_cache SET payload = '{"type":"ok","stations":[]}'::jsonb`,
+  );
+  expect(row).toBeDefined();
+  matrix.mockClear();
+  const r = await recommendMidpoint(id, departAt);
+  expect(matrix).toHaveBeenCalledTimes(1);
+  if (r.type !== "ok") throw new Error("ok 아님");
+  expect(r.stations).toHaveLength(2);
+});
+
+test("Google에 넘기는 목적지는 후보 10곳 그대로다", async () => {
+  const id = await setup(2);
+  near.mockResolvedValue(Array.from({ length: 10 }, (_, i) => st(i + 1)));
+  matrix.mockResolvedValue([
+    Array.from({ length: 10 }, () => 10),
+    Array.from({ length: 10 }, () => 10),
+  ]);
+  await recommendMidpoint(id, departAt);
+  expect(matrix.mock.calls[0]?.[1]).toHaveLength(10);
+});
+
+test("cachedRecommendation은 화면 3위 밖의 후보 역도 찾는다", async () => {
+  const id = await setup(2);
+  near.mockResolvedValue([st(1), st(2), st(3), st(4), st(5)]);
+  matrix.mockResolvedValue([
+    [10, 11, 12, 13, 14],
+    [10, 11, 12, 13, 14],
+  ]);
+  const r = await recommendMidpoint(id, departAt);
+  if (r.type !== "ok") throw new Error("ok 아님");
+  expect(r.stations).toHaveLength(3);
+  const rec = await cachedRecommendation(id, 5);
+  expect(rec).toMatchObject({ stationId: 5, averageMinutes: 14 });
+  expect(await cachedRecommendation(id, 999)).toBeNull();
 });

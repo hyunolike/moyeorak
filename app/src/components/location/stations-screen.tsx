@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { DataSkeleton } from "@/components/layout/data-skeleton";
@@ -16,6 +17,7 @@ import {
   DecisionSheet,
   decisionSummary,
 } from "@/components/meeting/decision-sheet";
+import { PurposeChips } from "@/components/meeting/purpose-chips";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -24,11 +26,14 @@ import {
   useConfirmLocation,
   useDepartures,
   useMe,
+  useMeeting,
   useMidpoint,
+  useUpdatePurposes,
 } from "@/lib/api";
 import type { Departure, Meeting, Station } from "@/lib/api-types";
 import { cn } from "@/lib/cn";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
+import { type Purpose, venueLine, ZERO_VENUES } from "@/lib/purposes";
 import { lineName, stationLabel } from "@/lib/summary-text";
 
 const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({
@@ -38,6 +43,9 @@ const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({
   lat: 0,
   lng: 0,
   averageMinutes: 30,
+  maxMinutes: null,
+  venues: ZERO_VENUES,
+  far: false,
   perParticipant: [],
 }));
 
@@ -71,14 +79,17 @@ function StationRow({
   rank,
   selected,
   onSelect,
+  purposes,
   animateDetail = true,
 }: {
   station: Station;
+  purposes: Purpose[];
   rank: number;
   selected: boolean;
   onSelect: () => void;
   animateDetail?: boolean;
 }) {
+  const line = venueLine(station.venues, purposes);
   return (
     <li
       className={cn(
@@ -90,7 +101,7 @@ function StationRow({
         type="button"
         aria-pressed={selected}
         onClick={onSelect}
-        className="flex w-full cursor-pointer items-center gap-2.5 px-5 py-4 text-left"
+        className="flex w-full cursor-pointer flex-wrap items-center gap-x-2.5 gap-y-1 px-5 py-4 text-left"
       >
         <span
           aria-hidden="true"
@@ -120,6 +131,21 @@ function StationRow({
           </span>
         )}
         <Average minutes={station.averageMinutes} />
+        {(line || station.far) && (
+          <span className="text-muted text-b4 basis-full pl-[34px]">
+            {line}
+            {station.far && (
+              <span
+                className={cn(
+                  "text-c1 text-text bg-surface-sunken rounded-pill px-2 py-0.5",
+                  line && "ml-2",
+                )}
+              >
+                조금 멀어요
+              </span>
+            )}
+          </span>
+        )}
       </button>
       {selected && (
         <div className="px-5 pb-4">
@@ -135,7 +161,9 @@ function StationList({
   departures,
   selectedId,
   onSelect,
+  purposes,
 }: {
+  purposes: Purpose[];
   stations: Station[] | undefined;
   /** undefined면 아직 불러오는 중, 빈 배열이면 지도를 그리지 않는다. */
   departures: Departure[] | undefined;
@@ -180,6 +208,7 @@ function StationList({
                 selected={
                   station.stationId === selectedId || (!stations && index === 0)
                 }
+                purposes={purposes}
                 animateDetail={!!stations}
                 onSelect={() => onSelect(station.stationId)}
               />
@@ -191,11 +220,14 @@ function StationList({
   );
 }
 
-export function StationsScreen({ meeting }: { meeting: Meeting }) {
+export function StationsScreen({ meeting: initial }: { meeting: Meeting }) {
+  // 서버가 준 모임으로 시작하되, 목적을 바꾸면 다시 받은 모임으로 칩과 가게 수 줄을 맞춘다.
+  const meeting = useMeeting(initial.id, initial).data ?? initial;
   const midpoint = useMidpoint(meeting.id);
   const departures = useDepartures(meeting.id);
   const { me } = useMe(meeting);
   const confirm = useConfirmLocation(meeting.id);
+  const updatePurposes = useUpdatePurposes(meeting.id);
   const router = useRouter();
   const [pickedId, setPickedId] = useState<number | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -211,6 +243,23 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
   const alreadyConfirmed =
     meeting.status === "confirmed" ||
     (confirm.error instanceof ApiError && confirm.error.status === 409);
+  const serverPurposes = meeting.purposes ?? [];
+  // 저장이 끝나기 전에 또 눌러도 방금 고른 값에서 이어지도록 고른 값을 따로 들고 있는다.
+  // null이면 서버 값을 그대로 쓰므로, 저장이 끝나거나 실패하면 서버 값으로 돌아온다.
+  const [pendingPurposes, setPendingPurposes] = useState<Purpose[] | null>(
+    null,
+  );
+  const purposes = pendingPurposes ?? serverPurposes;
+  const changePurposes = (next: Purpose[]) => {
+    setPendingPurposes(next);
+    updatePurposes.mutate(next, {
+      onError: () =>
+        toast("목적을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요"),
+      onSettled: () => setPendingPurposes(null),
+    });
+  };
+  const canEditPurposes =
+    !!me?.isHost && meeting.status === "locating" && !alreadyConfirmed;
   const votesPath = `/meetings/${meeting.id}/location/votes`;
   const insufficient = data?.type === "insufficient";
   const departureCount =
@@ -247,6 +296,15 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
           </p>
         ) : null}
       </div>
+      {(canEditPurposes || purposes.length > 0) && (
+        <div className="px-5 pt-3">
+          <PurposeChips
+            value={purposes}
+            readOnly={!canEditPurposes}
+            onChange={changePurposes}
+          />
+        </div>
+      )}
       {midpoint.isError ? (
         <Message
           title="중간지점을 불러오지 못했어요"
@@ -268,6 +326,7 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
           departures={departures.isError ? [] : departures.data}
           selectedId={selectedId}
           onSelect={setPickedId}
+          purposes={purposes}
         />
       )}
       {alreadyConfirmed && (

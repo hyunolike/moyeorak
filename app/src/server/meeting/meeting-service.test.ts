@@ -324,3 +324,21 @@ describe("claimParticipant: 다른 브라우저에서 내 이름 다시 찾기",
     ).rejects.toBeInstanceOf(ParticipantNotFoundError);
   });
 });
+
+test("createMeeting은 목적을 표 순서로 저장하고 생략하면 빈 배열이다", async () => {
+  const a = await createMeeting({
+    hostName: "현호",
+    participantCount: 3,
+    scope: "location",
+    deviceKey: key("a"),
+    purposes: ["study", "meal"],
+  });
+  expect((await getMeeting(a.meetingId))?.purposes).toEqual(["meal", "study"]);
+  const b = await createMeeting({
+    hostName: "현호",
+    participantCount: 3,
+    scope: "location",
+    deviceKey: key("b"),
+  });
+  expect((await getMeeting(b.meetingId))?.purposes).toEqual([]);
+});

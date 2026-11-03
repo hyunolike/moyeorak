@@ -1,3 +1,4 @@
+import type { VenueCounts } from "@/lib/purposes";
 import { getCached, setCached } from "@/server/cache/external-cache";
 import { ExternalApiError, fetchJson } from "@/server/clients/errors";
 
@@ -46,4 +47,43 @@ async function requestPlaces(keyword: string): Promise<Place[]> {
     lat: Number(d.y),
     lng: Number(d.x),
   }));
+}
+
+const VENUE_COUNT_RADIUS = 500;
+
+async function totalCount(url: string, apiKey: string): Promise<number> {
+  const body = (await fetchJson(url, {
+    headers: { Authorization: `KakaoAK ${apiKey}` },
+  })) as { meta?: { total_count?: unknown } } | null;
+  const total = body?.meta?.total_count;
+  if (typeof total !== "number" || !Number.isFinite(total)) {
+    throw new ExternalApiError();
+  }
+  return total;
+}
+
+/**
+ * 중심 반경 안의 목적별 가게 수. 역마다 한 번 도는 스크립트 전용이라 캐시하지 않는다.
+ * 구경은 문화시설(CT1)과 관광명소(AT4)를 더한다.
+ */
+export async function countVenues(
+  center: { lat: number; lng: number },
+  radiusMeters = VENUE_COUNT_RADIUS,
+): Promise<VenueCounts> {
+  const apiKey = process.env.KAKAO_API_KEY;
+  if (!apiKey) throw new ExternalApiError();
+
+  const geo = `x=${center.lng}&y=${center.lat}&radius=${radiusMeters}&size=1`;
+  const category = (code: string) =>
+    `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=${code}&${geo}`;
+  const keyword = (query: string) =>
+    `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&${geo}`;
+
+  const meal = await totalCount(category("FD6"), apiKey);
+  const drink = await totalCount(keyword("술집"), apiKey);
+  const cafe = await totalCount(category("CE7"), apiKey);
+  const study = await totalCount(keyword("스터디카페"), apiKey);
+  const culture = await totalCount(category("CT1"), apiKey);
+  const attraction = await totalCount(category("AT4"), apiKey);
+  return { meal, drink, cafe, study, sight: culture + attraction };
 }

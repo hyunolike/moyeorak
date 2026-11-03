@@ -9,6 +9,13 @@ function unavailableNames(names: string[]): string {
   return `${names[0]}님 외 ${names.length - 1}명은`;
 }
 
+/** 마지막 글자 받침에 따라 이/가. 한글이 아니면 이. */
+function subject(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (code < 0 || code > 11171) return "이";
+  return code % 28 === 0 ? "가" : "이";
+}
+
 /** 모델 없이 만드는 이유 문장. 모델이 실패하거나 숫자 검사를 넘지 못한 카드에 쓴다. */
 export function templateReason(pick: Pick, respondedCount: number): string {
   if (pick.kind === "schedule") {
@@ -20,8 +27,15 @@ export function templateReason(pick: Pick, respondedCount: number): string {
       return `${respondedCount}명 모두 가능해요.`;
     return `${respondedCount}명 중 ${k}명이 가능해요. ${unavailableNames(pick.unavailable)} 어려워요.`;
   }
+  if (pick.axis === "venues" && pick.venue) {
+    const { label, count } = pick.venue;
+    const head = `${label}${subject(label)} ${count}곳 있`;
+    return pick.maxMinutes === null
+      ? `${head}어요.`
+      : `${head}고, 다들 ${pick.maxMinutes}분 안에 와요.`;
+  }
   const hasUnknown = pick.perParticipant.some((p) => p.minutes === null);
-  if (pick.axis === "average") {
+  if (pick.axis !== "fairness") {
     const avg = Math.round(pick.averageMinutes);
     return hasUnknown
       ? `평균 ${avg}분이면 도착해요.`

@@ -29,3 +29,11 @@ export class DeviceAlreadyJoinedError extends Error {
     this.name = "DeviceAlreadyJoinedError";
   }
 }
+
+export class LocationConfirmedError extends Error {
+  readonly code = "LOCATION_CONFIRMED";
+  constructor() {
+    super("장소가 정해져서 목적을 바꿀 수 없어요");
+    this.name = "LocationConfirmedError";
+  }
+}

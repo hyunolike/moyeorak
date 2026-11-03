@@ -14,23 +14,32 @@ import { computeTransitMatrix } from "@/server/clients/google-routes";
 import { listDepartures } from "@/server/location/location-service";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import { centroid } from "@/server/midpoint/centroid";
-import { findStationsNear } from "@/server/midpoint/stations";
+import {
+  type RankedStation,
+  rankStations,
+  type TravelRow,
+} from "@/server/midpoint/rank";
+import { findCandidateStations } from "@/server/midpoint/stations";
 
-export type Recommendation = {
-  stationId: number;
-  name: string;
-  line: string | null;
-  lat: number;
-  lng: number;
-  averageMinutes: number;
-  perParticipant: { name: string; minutes: number | null }[];
-};
+export type Recommendation = RankedStation;
 
 export type MidpointResult =
   | { type: "ok"; stations: Recommendation[] }
   | { type: "insufficient" };
 
-const TOP = 3;
+/** external_cache에 넣는 값. 순위는 읽을 때마다 목적에 맞게 다시 계산한다. */
+type CachedMidpoint = { v: 2; candidates: TravelRow[] };
+
+async function readCached(key: string): Promise<CachedMidpoint | null> {
+  const c = await getCached<CachedMidpoint>(key);
+  return c?.v === 2 ? c : null;
+}
+
+async function readLatest(prefix: string): Promise<CachedMidpoint | null> {
+  const c = await latestCached<CachedMidpoint>(prefix);
+  return c?.v === 2 ? c : null;
+}
+
 const CACHE_TTL_MS = 60 * 60 * 1000;
 const DEPART_BUCKET_MS = 10 * 60 * 1000;
 
@@ -63,7 +72,7 @@ function cacheKey(
   const bucket =
     Math.floor(departAt.getTime() / DEPART_BUCKET_MS) * DEPART_BUCKET_MS;
   const hash = createHash("sha1")
-    .update(`${pairs.join(";")}|${bucket}`)
+    .update(`v2|${pairs.join(";")}|${bucket}`)
     .digest("hex");
   return `${cachePrefix(meetingId)}${hash}`;
 }
@@ -78,7 +87,7 @@ export async function recommendMidpoint(
   departAt: Date,
 ): Promise<MidpointResult> {
   const [meeting] = await db
-    .select({ id: meetings.id })
+    .select({ id: meetings.id, purposes: meetings.purposes })
     .from(meetings)
     .where(eq(meetings.id, meetingId));
   if (!meeting) throw new MeetingNotFoundError();
@@ -87,30 +96,34 @@ export async function recommendMidpoint(
   if (departures.length < 2) return { type: "insufficient" };
 
   const key = cacheKey(meetingId, departures, departAt);
-  const cached = await getCached<MidpointResult>(key);
-  if (cached) return cached;
+  const rank = (c: CachedMidpoint): MidpointResult => ({
+    type: "ok",
+    stations: rankStations(c.candidates, meeting.purposes),
+  });
+  const cached = await readCached(key);
+  if (cached) return rank(cached);
 
   const prefix = cachePrefix(meetingId);
   const today = await countSince(prefix, seoulDayStart(new Date()));
   if (today >= MIDPOINT_DAILY_CAP) {
-    const latest = await latestCached<MidpointResult>(prefix);
-    if (latest) return latest;
+    const latest = await readLatest(prefix);
+    if (latest) return rank(latest);
     throw new RateLimitedError();
   }
 
-  let result: MidpointResult;
+  let fresh: CachedMidpoint;
   try {
-    result = await compute(departures, departAt);
+    fresh = await compute(departures, departAt);
   } catch (e) {
     // 앱 전체 월 상한에 닿았다. 모임 하루 상한과 같은 경로로 간다.
     if (e instanceof RateLimitedError) {
-      const latest = await latestCached<MidpointResult>(prefix);
-      if (latest) return latest;
+      const latest = await readLatest(prefix);
+      if (latest) return rank(latest);
     }
     throw e;
   }
-  await setCached(key, result, CACHE_TTL_MS);
-  return result;
+  await setCached(key, fresh, CACHE_TTL_MS);
+  return rank(fresh);
 }
 
 /**
@@ -121,17 +134,20 @@ export async function cachedRecommendation(
   meetingId: string,
   stationId: number,
 ): Promise<Recommendation | null> {
-  const latest = await latestCached<MidpointResult>(cachePrefix(meetingId));
-  if (latest?.type !== "ok") return null;
-  return latest.stations.find((s) => s.stationId === stationId) ?? null;
+  const latest = await readLatest(cachePrefix(meetingId));
+  if (!latest) return null;
+  const row = latest.candidates.find((c) => c.id === stationId);
+  if (!row) return null;
+  // 후보 한 곳만 넣어 돌려서 화면 3위 밖의 역도 찾는다.
+  return rankStations([row], [], { top: 1 })[0] ?? null;
 }
 
 async function compute(
   departures: Awaited<ReturnType<typeof listDepartures>>,
   departAt: Date,
-): Promise<MidpointResult> {
-  const stations = await findStationsNear(centroid(departures));
-  if (stations.length === 0) return { type: "ok", stations: [] };
+): Promise<CachedMidpoint> {
+  const stations = await findCandidateStations(centroid(departures));
+  if (stations.length === 0) return { v: 2, candidates: [] };
 
   const matrix = await computeTransitMatrix(
     departures.map((d) => ({ lat: d.lat, lng: d.lng })),
@@ -139,27 +155,12 @@ async function compute(
     departAt,
   );
 
-  const candidates: Recommendation[] = [];
-  stations.forEach((station, col) => {
-    const minutes = departures.map((_, row) => matrix[row]?.[col] ?? null);
-    const known = minutes.filter((m): m is number => m !== null);
-    const nulls = minutes.length - known.length;
-    if (nulls * 2 >= minutes.length) return;
-    const mean = known.reduce((a, b) => a + b, 0) / known.length;
-    candidates.push({
-      stationId: station.id,
-      name: station.name,
-      line: station.line,
-      lat: station.lat,
-      lng: station.lng,
-      averageMinutes: Math.round(mean * 10) / 10,
-      perParticipant: departures.map((d, i) => ({
-        name: d.name,
-        minutes: minutes[i] ?? null,
-      })),
-    });
-  });
-
-  candidates.sort((a, b) => a.averageMinutes - b.averageMinutes);
-  return { type: "ok", stations: candidates.slice(0, TOP) };
+  const candidates: TravelRow[] = stations.map((station, col) => ({
+    ...station,
+    perParticipant: departures.map((d, row) => ({
+      name: d.name,
+      minutes: matrix[row]?.[col] ?? null,
+    })),
+  }));
+  return { v: 2, candidates };
 }

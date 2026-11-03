@@ -11,6 +11,7 @@ import {
 } from "@/components/map/simple-map";
 import type { Departure, Station } from "@/lib/api-types";
 import { loadKakaoSdk } from "@/lib/kakao-sdk";
+import { ZERO_VENUES } from "@/lib/purposes";
 
 // SDK는 테스트에서 불러오지 않는다. 끝나지 않는 약속으로 "늦게 오는 SDK"를 흉내 낸다.
 vi.mock("@/lib/kakao-sdk", () => ({ loadKakaoSdk: vi.fn() }));
@@ -97,6 +98,9 @@ const stations: Station[] = [
     lat: 37.534,
     lng: 126.987,
     averageMinutes: 30,
+    maxMinutes: null,
+    venues: ZERO_VENUES,
+    far: false,
     perParticipant: [],
   },
 ];
