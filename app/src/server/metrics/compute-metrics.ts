@@ -43,11 +43,15 @@ export async function computeMetrics(range: Range): Promise<Metrics> {
       LEFT JOIN schedule_polls sp ON sp.meeting_id = m.id
      WHERE ${where}`);
 
-  // 참여 완료율: 일정 투표한 참가자 수 / 정원, 모임별 평균(최대 1).
+  // 참여 완료율: 일정 투표한 참가자 수 / 예상 인원, 모임별 평균(최대 1).
+  // 예상 인원보다 많이 참여했으면 실제 참여자 수를 분모로 쓴다(화면의 진행률과 같은 기준).
   const part = await one<{ rate: number | null }>(sql`
     SELECT avg(LEAST(v.voters::float8 / v.expected, 1)) AS rate
       FROM (
-        SELECT m.participant_count AS expected,
+        SELECT GREATEST(
+                 m.participant_count,
+                 (SELECT count(*) FROM participants p WHERE p.meeting_id = m.id)
+               ) AS expected,
                (SELECT count(DISTINCT sv.participant_id)
                   FROM schedule_votes sv
                   JOIN participants p ON p.id = sv.participant_id

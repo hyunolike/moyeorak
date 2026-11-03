@@ -1,5 +1,5 @@
 import type { MeetingProgress } from "@/lib/api-types";
-import { confirmedSentence, respondedCount } from "@/lib/home-state";
+import { confirmedSentence, headcount, respondedCount } from "@/lib/home-state";
 
 export type MeetingPreview = {
   title: string;
@@ -22,6 +22,6 @@ export function meetingPreview(p: MeetingProgress): MeetingPreview {
       : "가능한 시간을 남겨 주세요.";
   return {
     title,
-    description: `${ask} ${p.participantCount}명 중 ${n}명이 응답했어요.`,
+    description: `${ask} ${headcount(p)}명 중 ${n}명이 응답했어요.`,
   };
 }

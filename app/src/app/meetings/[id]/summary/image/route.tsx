@@ -1,11 +1,12 @@
 // biome-ignore-all lint/performance/noImgElement: ImageResponse는 next/image를 쓰지 못한다
+
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
 import { formatDuration } from "@/components/location/format";
-import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { INK_900, TANGERINE_500, WHITE } from "@/lib/brand-colors";
 import { drawable } from "@/lib/drawable-text";
+import { formatConfirmedClock, formatConfirmedDay } from "@/lib/home-state";
 import { lineHex, majuDataUri } from "@/lib/maju-svg";
 import { stationLabel } from "@/lib/summary-text";
 import { toResponse } from "@/server/http";
@@ -99,7 +100,7 @@ export async function GET(
         >
           {`${drawable(s.hostName, 10)}님의 모임`}
         </div>
-        {s.start && s.end ? (
+        {s.start ? (
           <div
             style={{
               display: "flex",
@@ -107,15 +108,16 @@ export async function GET(
               ...PAD,
               flexShrink: 0,
               marginTop: 28,
-              fontSize: 112,
+              // 요일까지 쓴 날짜가 오른쪽 위 도장에 닿지 않는 크기.
+              fontSize: 96,
               fontWeight: 800,
               lineHeight: 1.15,
               letterSpacing: -4,
             }}
           >
-            <div style={{ display: "flex" }}>{formatSlotDate(s.start)}</div>
+            <div style={{ display: "flex" }}>{formatConfirmedDay(s.start)}</div>
             <div style={{ display: "flex" }}>
-              {formatSlotRange(s.start, s.end)}
+              {formatConfirmedClock(s.start)}
             </div>
           </div>
         ) : null}
@@ -206,7 +208,11 @@ export async function GET(
                     : drawable(t.name, 7)}
                 </div>
                 <div style={{ display: "flex", flexShrink: 0 }}>
-                  {t.minutes === null ? "" : formatDuration(t.minutes)}
+                  {t.from === null
+                    ? "출발지 없음"
+                    : t.minutes === null
+                      ? ""
+                      : formatDuration(t.minutes)}
                 </div>
               </div>
             ))}

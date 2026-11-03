@@ -18,7 +18,7 @@ export default async function SummaryPage({
 }: PageProps<"/meetings/[id]/summary">) {
   const { id } = await params;
   // 없는 모임은 여기서 404가 된다.
-  await loadProgress(id);
+  const progress = await loadProgress(id);
   let summary: Awaited<ReturnType<typeof getMeetingSummary>>;
   try {
     summary = await getMeetingSummary(id);
@@ -26,5 +26,14 @@ export default async function SummaryPage({
     if (e instanceof NotConfirmedError) redirect(`/meetings/${id}`);
     throw e;
   }
-  return <SummaryCard summary={summary} />;
+  return (
+    <SummaryCard
+      summary={summary}
+      participants={progress.participants.map((p) => ({
+        id: p.id,
+        name: p.name,
+        isHost: p.isHost,
+      }))}
+    />
+  );
 }

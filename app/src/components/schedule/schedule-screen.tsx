@@ -83,6 +83,10 @@ function ScheduleMain({
         hasMyVote={hasMyVote}
         onBestTab={tab === "best"}
         topSlot={summary?.best[0]}
+        waiting={Math.max(
+          0,
+          meeting.participantCount - (summary?.respondedCount ?? 0),
+        )}
       />
     </MobileLayout>
   );

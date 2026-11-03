@@ -13,7 +13,9 @@ import { RouteProgress } from "@/components/layout/route-progress";
 import { SectionBand } from "@/components/layout/section-band";
 import { Skeleton } from "@/components/layout/skeleton";
 import { StatusChip } from "@/components/layout/status-chip";
+import { JoinInvite } from "@/components/meeting/join-invite";
 import { NudgeSheet, nudgeWaitingKey } from "@/components/meeting/nudge-sheet";
+import { UnconfirmButton } from "@/components/meeting/unconfirm-button";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { buttonVariants } from "@/components/ui/button";
@@ -24,7 +26,12 @@ import {
   usePrefetchNudge,
 } from "@/lib/api";
 import type { MeetingProgress } from "@/lib/api-types";
-import { homeState, joinWaitingNames, routeStops } from "@/lib/home-state";
+import {
+  headcount,
+  homeState,
+  joinWaitingNames,
+  routeStops,
+} from "@/lib/home-state";
 import { nudgeInput } from "@/lib/nudge-template";
 
 /**
@@ -49,9 +56,12 @@ function ParticipantRow({
   responded,
   entering,
   respondedKey,
+  waitingLabel = "기다리는 중",
 }: {
   name: string;
   responded: boolean;
+  /** 응답하지 않은 사람의 표시. 확정 뒤에는 더 기다리지 않으므로 다르게 쓴다. */
+  waitingLabel?: string;
   entering: boolean;
   /** 응답한 사람 id를 이은 값. 이 값이 바뀔 때만 행이 자리를 옮긴다(첫 로드에는 움직이지 않는다). */
   respondedKey: string;
@@ -71,13 +81,15 @@ function ParticipantRow({
         title={name}
         trailing={
           <StatusChip tone={responded ? "done" : "waiting"}>
-            {responded ? "응답함" : "기다리는 중"}
+            {responded ? "응답함" : waitingLabel}
           </StatusChip>
         }
       />
     </motion.li>
   );
 }
+
+const secondaryButton = "size-full cursor-pointer";
 
 /** 참여자 id를 아직 모르면(`undefined`) 마주가 확인 중이라고 말하고 버튼은 숨긴다. */
 export function MeetingHomeView({
@@ -88,6 +100,8 @@ export function MeetingHomeView({
   meId: number | null | undefined;
 }) {
   const [nudgeOpen, setNudgeOpen] = useState(false);
+  // 확정 뒤에 늦게 온 친구가 "나도 참여하기"를 누르면 이 자리에서 이름을 받는다.
+  const [joining, setJoining] = useState(false);
   const state = meId === undefined ? null : homeState(progress, meId);
   const nudge = state?.canNudge ? nudgeInput(progress) : null;
   const prefetchNudge = usePrefetchNudge(progress.meetingId);
@@ -98,6 +112,21 @@ export function MeetingHomeView({
   const entering = useNewlyResponded(respondedPeople.map((p) => p.id));
   const respondedKey = respondedPeople.map((p) => p.id).join(",");
   const action = state?.action;
+  const secondary = state?.secondaryAction;
+
+  if (joining && meId === null) {
+    return (
+      <JoinInvite
+        meeting={{
+          id: progress.meetingId,
+          hostName: progress.hostName,
+          participants: progress.participants,
+        }}
+        flow="confirmed"
+        onBack={() => setJoining(false)}
+      />
+    );
+  }
 
   return (
     <MobileLayout>
@@ -108,6 +137,9 @@ export function MeetingHomeView({
         <PageTitle eyebrow={`${progress.hostName}님의 모임`}>
           {state ? state.title : "모임을 확인하고 있어요"}
         </PageTitle>
+        {state?.note ? (
+          <p className="text-text text-b2 mt-2 tabular-nums">{state.note}</p>
+        ) : null}
         {state ? (
           <>
             <div className="mt-6">
@@ -119,7 +151,7 @@ export function MeetingHomeView({
                 className="mt-5"
                 label="응답"
                 value={respondedPeople.length}
-                max={progress.participantCount}
+                max={headcount(progress)}
               />
             )}
             <div className="mt-5" role="status" aria-live="polite">
@@ -150,13 +182,24 @@ export function MeetingHomeView({
             responded={votedNow(p)}
             entering={entering.has(p.id)}
             respondedKey={respondedKey}
+            waitingLabel={
+              progress.status === "confirmed" ? "나중에 참여" : undefined
+            }
           />
         ))}
       </ul>
       {action ? (
         <BottomCta
           primary={
-            action.href === "#share" ? (
+            action.href === "#join" ? (
+              <button
+                type="button"
+                onClick={() => setJoining(true)}
+                className={buttonVariants({ variant: "primary", size: "cta" })}
+              >
+                {action.label}
+              </button>
+            ) : action.href === "#share" ? (
               <ShareButton
                 meetingId={progress.meetingId}
                 label={action.label}
@@ -176,10 +219,19 @@ export function MeetingHomeView({
                 type="button"
                 onPointerDown={() => prefetchNudge(nudgeWaitingKey(nudge))}
                 onClick={() => setNudgeOpen(true)}
-                className="size-full cursor-pointer"
+                className={secondaryButton}
               >
                 재촉하기
               </button>
+            ) : secondary?.href === "#unconfirm" ? (
+              <UnconfirmButton meetingId={progress.meetingId} />
+            ) : secondary ? (
+              <Link
+                href={secondary.href}
+                className="grid size-full place-items-center"
+              >
+                {secondary.label}
+              </Link>
             ) : undefined
           }
         />
@@ -191,7 +243,7 @@ export function MeetingHomeView({
           waitingLabel={
             waitingPeople.length > 0
               ? joinWaitingNames(waitingPeople.map((p) => p.name))
-              : `${progress.participantCount - respondedPeople.length}명`
+              : `${headcount(progress) - respondedPeople.length}명`
           }
           open={nudgeOpen}
           onClose={() => setNudgeOpen(false)}

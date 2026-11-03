@@ -5,6 +5,7 @@ export type Scope = "schedule" | "location" | "both";
 export type Meeting = {
   id: string;
   hostName: string;
+  /** 진행률 분모. 모임장이 정한 예상 인원과 실제 참여자 수 중 큰 값이다. */
   participantCount: number;
   scope: Scope;
   status: "scheduling" | "locating" | "confirmed";
@@ -64,7 +65,7 @@ export type MeetingProgress = {
   hostName: string;
   scope: Scope;
   status: Meeting["status"];
-  /** 호스트가 정한 인원 */
+  /** 진행률 분모. 모임장이 정한 예상 인원과 실제 참여자 수 중 큰 값이다. */
   participantCount: number;
   participants: {
     id: number;

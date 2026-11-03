@@ -2,10 +2,13 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState } from "react";
-import { ConfirmModal } from "@/components/confirm-modal";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { StatusChip } from "@/components/layout/status-chip";
 import { formatDuration } from "@/components/location/format";
+import {
+  DecisionSheet,
+  decisionSummary,
+} from "@/components/meeting/decision-sheet";
 import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -221,8 +224,12 @@ export function SuggestionCard({
 
 function confirmSummary(s: Suggestion) {
   return s.kind === "schedule"
-    ? `${formatSlotDate(s.start)} ${formatSlotRange(s.start, s.end)}`
-    : stationLabel(s.name);
+    ? decisionSummary({ kind: "schedule", start: s.start })
+    : decisionSummary({
+        kind: "location",
+        name: s.name,
+        averageMinutes: s.averageMinutes,
+      });
 }
 
 /**
@@ -234,11 +241,14 @@ export function SuggestionDeck({
   onAccept,
   onNext,
   busy = false,
+  waiting = 0,
 }: {
   suggestions: Suggestion[];
   onAccept: (suggestion: Suggestion) => void;
   onNext: (suggestion: Suggestion) => void;
   busy?: boolean;
+  /** 지금 단계에서 아직 응답하지 않은 자리 수. 확정 시트가 경고한다. */
+  waiting?: number;
 }) {
   const [selectedId, setSelectedId] = useState(suggestions[0]?.id);
   const [asking, setAsking] = useState(false);
@@ -328,15 +338,10 @@ export function SuggestionDeck({
         }
       />
       {asking && (
-        <ConfirmModal
-          title="이걸로 확정할까요?"
+        <DecisionSheet
+          kind={selected.kind}
           summary={confirmSummary(selected)}
-          caption={
-            selected.kind === "schedule"
-              ? "확정하면 시간 투표가 닫혀요"
-              : "확정하면 다른 제안은 닫혀요"
-          }
-          confirmLabel="확정하기"
+          waiting={waiting}
           pending={busy}
           onClose={() => setAsking(false)}
           onConfirm={() => {

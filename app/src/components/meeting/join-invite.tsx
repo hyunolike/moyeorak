@@ -20,19 +20,18 @@ function claimErrorMessage(error: unknown) {
   return "이어서 하지 못했어요. 잠시 후 다시 시도해 주세요";
 }
 
-function joinErrorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 409) {
-    return "모임 인원이 모두 찼어요";
-  }
-  return "참여하지 못했어요. 잠시 후 다시 시도해 주세요";
-}
+const JOIN_ERROR = "참여하지 못했어요. 잠시 후 다시 시도해 주세요";
 
 export function JoinInvite({
   meeting,
   flow,
+  onBack,
 }: {
-  meeting: Meeting;
-  flow: "schedule" | "location";
+  meeting: Pick<Meeting, "id" | "hostName" | "participants">;
+  /** confirmed는 약속이 정해진 뒤 늦게 온 친구가 이름만 남기는 경우다. */
+  flow: "schedule" | "location" | "confirmed";
+  /** 있으면 위쪽 바에 뒤로 버튼을 두고 누르면 부른다. */
+  onBack?: () => void;
 }) {
   const [name, setName] = useState("");
   const join = useJoin(meeting.id);
@@ -54,15 +53,25 @@ export function JoinInvite({
           if (trimmed) join.mutate(trimmed);
         }}
       >
-        <AppBar />
+        <AppBar back={onBack} />
         <div className="flex-1 px-5 pt-2">
           <PageTitle>
-            <span>{meeting.hostName}</span>님이 약속을 잡고 있어요
+            {flow === "confirmed" ? (
+              <>
+                <span>{meeting.hostName}</span>님의 약속에 함께해요
+              </>
+            ) : (
+              <>
+                <span>{meeting.hostName}</span>님이 약속을 잡고 있어요
+              </>
+            )}
           </PageTitle>
           <p className="text-muted text-b1 mt-2">
             {flow === "location"
               ? "모임에 초대되었어요. 출발지를 남기면 가운데 역을 찾아 드려요."
-              : "모임에 초대되었어요. 이름을 남기고 함께 정해요."}
+              : flow === "confirmed"
+                ? "약속은 이미 정해졌어요. 이름을 남기면 약속 카드에 함께 보여요."
+                : "모임에 초대되었어요. 이름을 남기고 함께 정해요."}
           </p>
           <TextField
             className="mt-8"
@@ -74,7 +83,7 @@ export function JoinInvite({
             error={join.isError}
             helperText={
               join.isError
-                ? joinErrorMessage(join.error)
+                ? JOIN_ERROR
                 : takenName
                   ? "이미 있는 이름이에요. 본인이라면 아래에서 이름을 눌러 주세요"
                   : `최대 ${NAME_MAX_LENGTH}자까지 입력할 수 있어요`

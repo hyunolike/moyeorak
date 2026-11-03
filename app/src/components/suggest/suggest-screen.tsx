@@ -16,10 +16,12 @@ import {
   ApiError,
   useAcceptSuggestion,
   useCreateSuggestions,
+  useMeetingProgress,
   useRejectSuggestion,
   useSuggestions,
 } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
+import { waitingCount } from "@/lib/home-state";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
 
 type Kind = "schedule" | "location";
@@ -128,6 +130,9 @@ function SuggestMain({
   const create = useCreateSuggestions(meeting.id);
   const accept = useAcceptSuggestion(meeting.id);
   const reject = useRejectSuggestion(meeting.id);
+  // 확정 시트의 미응답 경고에 쓴다. 아직 못 읽었으면 경고 없이 묻는다.
+  const progress = useMeetingProgress(meeting.id);
+  const waiting = progress.data ? waitingCount(progress.data) : 0;
   const started = useRef(false);
   const [lastKind, setLastKind] = useState<Kind | null>(null);
   // 카드를 한 번이라도 보여 줬는지. 끝 문구와 "후보가 없어요" 문구를 가른다.
@@ -291,6 +296,7 @@ function SuggestMain({
         <SuggestionDeck
           suggestions={items}
           busy={busy}
+          waiting={waiting}
           onNext={(s) => reject.mutate(s.id)}
           onAccept={(s) =>
             accept.mutate(s.id, {

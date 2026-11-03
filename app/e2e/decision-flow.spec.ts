@@ -100,7 +100,7 @@ test("둘 다 모임이 투표에서 제안을 거쳐 요약 카드까지 간다
   );
   const card = page.getByRole("article", { name: "약속 카드" });
   await expect(card).toContainText("현호님의 모임");
-  await expect(card).toContainText(/09:00 ~ \d\d:\d\d/);
+  await expect(card).toContainText(/오전 9시/);
   await expect(card.getByTestId("summary-station")).toContainText(/역$/);
   const lines = card.locator("li");
   await expect(lines).toHaveCount(3);

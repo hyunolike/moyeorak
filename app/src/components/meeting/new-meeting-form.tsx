@@ -108,7 +108,8 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
           />
           <Stepper
             className="mt-6"
-            label="인원 수"
+            label="몇 명이 모이나요?"
+            helperText="대략이어도 괜찮아요. 더 와도 참여할 수 있어요"
             value={count}
             onChange={setCount}
           />

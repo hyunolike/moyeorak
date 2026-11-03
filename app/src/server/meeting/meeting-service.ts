@@ -18,7 +18,6 @@ import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
   InvalidPollWindowError,
-  MeetingFullError,
   MeetingNotFoundError,
 } from "@/server/meeting/errors";
 import { ParticipantNotFoundError } from "@/server/schedule/errors";
@@ -35,6 +34,7 @@ export type CreateMeetingInput = {
 export type MeetingDetail = {
   id: string;
   hostName: string;
+  /** 진행률 분모. 모임장이 정한 예상 인원과 실제 참여자 수 중 큰 값이다. */
   participantCount: number;
   scope: "schedule" | "location" | "both";
   status: "scheduling" | "locating" | "confirmed";
@@ -107,7 +107,7 @@ export async function getMeeting(id: string): Promise<MeetingDetail | null> {
   return {
     id: meeting.id,
     hostName: meeting.hostName,
-    participantCount: meeting.participantCount,
+    participantCount: Math.max(meeting.participantCount, people.length),
     scope: meeting.scope,
     status: meeting.status,
     confirmedAt: meeting.confirmedAt,
@@ -130,9 +130,10 @@ export async function joinMeeting(
   input: { name: string; deviceKey: string },
 ): Promise<{ participantId: number; created: boolean }> {
   return db.transaction(async (tx) => {
-    // 같은 모임의 동시 참여를 직렬화해 정원 검사가 경쟁하지 않게 한다.
+    // 같은 기기의 동시 참여가 두 줄을 만들지 않게 모임 행을 잠근다.
+    // 인원 수는 진행률 분모로 쓰는 예상 인원이라 넘어도 참여할 수 있다. 확정 뒤에도 마찬가지다.
     const [meeting] = await tx
-      .select({ participantCount: meetings.participantCount })
+      .select({ id: meetings.id })
       .from(meetings)
       .where(eq(meetings.id, meetingId))
       .for("update");
@@ -146,13 +147,6 @@ export async function joinMeeting(
     if (existing !== null) {
       return { participantId: existing, created: false };
     }
-
-    const current = await tx
-      .select({ id: participants.id })
-      .from(participants)
-      .where(eq(participants.meetingId, meetingId));
-    if (current.length >= meeting.participantCount)
-      throw new MeetingFullError();
 
     const [row] = await tx
       .insert(participants)

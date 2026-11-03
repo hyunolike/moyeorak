@@ -44,6 +44,7 @@ vi.mock("@/lib/api", () => {
     useCreateSuggestions: mutation,
     useAcceptSuggestion: mutation,
     useRejectSuggestion: mutation,
+    useMeetingProgress: () => ({ data: undefined }),
   };
 });
 

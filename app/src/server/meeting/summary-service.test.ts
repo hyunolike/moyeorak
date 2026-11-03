@@ -54,7 +54,7 @@ test("확정 전이면 NotConfirmedError", async () => {
   );
 });
 
-test("시간만 확정되면 장소와 이동이 비어 있다", async () => {
+test("시간만 확정되면 장소가 비고 참여자는 출발지 없이 담긴다", async () => {
   const { meetingId } = await setup("schedule");
   await db
     .update(schedulePolls)
@@ -65,7 +65,11 @@ test("시간만 확정되면 장소와 이동이 비어 있다", async () => {
     .where(eq(schedulePolls.meetingId, meetingId));
   await confirm(meetingId);
   const s = await getMeetingSummary(meetingId);
-  expect(s).toMatchObject({ hostName: "현호", place: null, travel: [] });
+  expect(s).toMatchObject({ hostName: "현호", place: null });
+  expect(s.travel).toEqual([
+    { name: "현호", from: null, minutes: null },
+    { name: "서연", from: null, minutes: null },
+  ]);
   expect(s.start).toBe("2026-11-07T00:00:00.000Z");
 });
 
@@ -108,16 +112,41 @@ test("travel이 null이면 출발지만 있고 분은 null", async () => {
   await confirm(meetingId);
   expect((await getMeetingSummary(meetingId)).travel).toEqual([
     { name: "현호", from: "수원", minutes: null },
+    { name: "서연", from: null, minutes: null },
   ]);
 });
 
-test("출발지가 없으면 travel은 빈 배열", async () => {
+test("출발지가 없어도 참여자는 모두 담긴다", async () => {
   const { meetingId } = await setup("location");
   await db
     .insert(confirmedLocations)
     .values({ meetingId, name: "강남", lat: 37.5, lng: 127.02, travel: null });
   await confirm(meetingId);
-  expect((await getMeetingSummary(meetingId)).travel).toEqual([]);
+  expect((await getMeetingSummary(meetingId)).travel).toEqual([
+    { name: "현호", from: null, minutes: null },
+    { name: "서연", from: null, minutes: null },
+  ]);
+});
+
+test("확정 뒤에 참여한 사람도 약속 카드 참여자에 담긴다", async () => {
+  const { meetingId, host } = await setup("location");
+  await db
+    .insert(locationVotes)
+    .values({ participantId: host, label: "수원", lat: 37.2, lng: 127 });
+  await db.insert(confirmedLocations).values({
+    meetingId,
+    name: "강남",
+    lat: 37.5,
+    lng: 127.02,
+    travel: [{ name: "현호", minutes: 42 }],
+  });
+  await confirm(meetingId);
+  await joinMeeting(meetingId, { name: "늦은", deviceKey: key("l") });
+  expect((await getMeetingSummary(meetingId)).travel).toEqual([
+    { name: "현호", from: "수원", minutes: 42 },
+    { name: "서연", from: null, minutes: null },
+    { name: "늦은", from: null, minutes: null },
+  ]);
 });
 
 test("확정 뒤 travel에 없는 사람도 요약에서 빠지지 않는다", async () => {

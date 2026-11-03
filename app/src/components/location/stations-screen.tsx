@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ConfirmModal } from "@/components/confirm-modal";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { DataSkeleton } from "@/components/layout/data-skeleton";
@@ -13,6 +12,10 @@ import { formatDuration } from "@/components/location/format";
 import { StationDetail } from "@/components/location/station-detail";
 import { lineColor } from "@/components/map/line-color";
 import { MeetMap } from "@/components/map/meet-map";
+import {
+  DecisionSheet,
+  decisionSummary,
+} from "@/components/meeting/decision-sheet";
 import { MobileLayout } from "@/components/mobile-layout";
 import { ShareButton } from "@/components/share-button";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -212,6 +215,9 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
   const insufficient = data?.type === "insufficient";
   const departureCount =
     departures.data?.length ?? stationList[0]?.perParticipant.length;
+  // 출발지를 아직 남기지 않은 자리. 들어오지 않은 예상 인원도 센다.
+  const departed = new Set(departures.data?.map((d) => d.participantId)).size;
+  const waiting = Math.max(0, meeting.participantCount - departed);
   const manageLabel = insufficient ? "출발지 추가하기" : "출발지 관리하기";
   const manageLink = (primary: boolean) => (
     <Link
@@ -296,11 +302,14 @@ export function StationsScreen({ meeting }: { meeting: Meeting }) {
         }
       />
       {isModalOpen && selected && (
-        <ConfirmModal
-          title={`${stationLabel(selected.name)}으로 정할까요?`}
-          summary={`평균 ${formatDuration(selected.averageMinutes)}`}
-          caption="확정하면 장소 투표가 닫혀요"
-          confirmLabel="확정하기"
+        <DecisionSheet
+          kind="location"
+          summary={decisionSummary({
+            kind: "location",
+            name: selected.name,
+            averageMinutes: selected.averageMinutes,
+          })}
+          waiting={waiting}
           pending={confirm.isPending}
           onConfirm={() =>
             confirm.mutate(selectedId, {

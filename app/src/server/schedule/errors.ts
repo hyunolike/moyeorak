@@ -37,8 +37,8 @@ export class AlreadyConfirmedError extends Error {
 
 export class NotHostError extends Error {
   readonly code = "NOT_HOST";
-  constructor() {
-    super("모임을 만든 사람만 시간을 정할 수 있어요");
+  constructor(message = "모임을 만든 사람만 시간을 정할 수 있어요") {
+    super(message);
     this.name = "NotHostError";
   }
 }

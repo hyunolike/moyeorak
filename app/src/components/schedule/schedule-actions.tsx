@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ConfirmModal } from "@/components/confirm-modal";
 import { BottomCta } from "@/components/layout/bottom-cta";
+import {
+  DecisionSheet,
+  decisionSummary,
+} from "@/components/meeting/decision-sheet";
 import { isAlreadyConfirmed } from "@/components/schedule/natural-time-input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useConfirmSchedule } from "@/lib/api";
@@ -25,12 +28,15 @@ export function ScheduleActions({
   hasMyVote,
   onBestTab,
   topSlot,
+  waiting = 0,
 }: {
   meeting: Meeting;
   isHost: boolean;
   hasMyVote: boolean;
   onBestTab: boolean;
   topSlot: BestSlot | undefined;
+  /** 아직 시간을 남기지 않은 자리 수. 확정 시트가 경고한다. */
+  waiting?: number;
 }) {
   const router = useRouter();
   const [isModalOpen, setModalOpen] = useState(false);
@@ -60,6 +66,9 @@ export function ScheduleActions({
     );
   };
 
+  const summary = topSlot
+    ? decisionSummary({ kind: "schedule", start: topSlot.start })
+    : undefined;
   const canConfirm = isHost && onBestTab && !closed && !!topSlot;
   // 일정이 확정돼 장소 단계로 넘어갔으면 누구에게나 장소 버튼을 보여준다.
   const canGoToLocation = isBoth && ((onBestTab && isHost) || closed);
@@ -107,19 +116,23 @@ export function ScheduleActions({
       />
       {isModalOpen &&
         (isBoth ? (
-          <ConfirmModal
-            title="장소 정하기로 이동할까요?"
-            caption="이동 후에는 일정을 추가하거나 수정할 수 없어요."
-            confirmLabel="이동하기"
+          <DecisionSheet
+            kind="schedule"
+            title="이 시간으로 정하고 장소로 갈까요?"
+            confirmLabel="정하고 이동하기"
+            summary={summary}
+            waiting={waiting}
             pending={confirm.isPending}
             onConfirm={() => confirmTopSlot(locationPath)}
             onClose={() => setModalOpen(false)}
           />
         ) : (
-          <ConfirmModal
+          <DecisionSheet
+            kind="schedule"
             title="이 시간으로 정할까요?"
-            caption="정한 뒤에는 일정을 추가하거나 수정할 수 없어요."
             confirmLabel="정하기"
+            summary={summary}
+            waiting={waiting}
             pending={confirm.isPending}
             // 방금 정했으면 약속 카드로, 다른 기기에서 먼저 정했으면(409) 모임 홈으로 간다.
             onConfirm={() =>

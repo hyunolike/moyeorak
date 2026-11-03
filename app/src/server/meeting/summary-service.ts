@@ -37,10 +37,11 @@ export async function getMeetingSummary(
       .select()
       .from(confirmedLocations)
       .where(eq(confirmedLocations.meetingId, meetingId)),
+    // 확정 뒤에 들어온 사람처럼 출발지가 없는 참여자도 약속 카드에 넣는다.
     db
       .select({ name: participants.name, label: locationVotes.label })
-      .from(locationVotes)
-      .innerJoin(participants, eq(participants.id, locationVotes.participantId))
+      .from(participants)
+      .leftJoin(locationVotes, eq(locationVotes.participantId, participants.id))
       .where(eq(participants.meetingId, meetingId))
       .orderBy(participants.id),
   ]);
@@ -53,16 +54,14 @@ export async function getMeetingSummary(
         .where(eq(stations.id, place.stationId))
     : [];
 
-  // 현재 출발지를 기준으로 줄을 만든다. 이동 분이 없는 사람도 빠지지 않는다.
+  // 참여자마다 한 줄. 이동 분은 출발지가 있는 사람만 확정 때 남긴 값에서 찾는다.
   const minutesOf = (name: string) =>
     place?.travel?.find((t) => t.name === name)?.minutes ?? null;
-  const travel: MeetingSummary["travel"] = !place
-    ? []
-    : departures.map((d) => ({
-        name: d.name,
-        from: d.label,
-        minutes: minutesOf(d.name),
-      }));
+  const travel: MeetingSummary["travel"] = departures.map((d) => ({
+    name: d.name,
+    from: d.label,
+    minutes: d.label ? minutesOf(d.name) : null,
+  }));
 
   return {
     meetingId,

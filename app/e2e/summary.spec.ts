@@ -35,7 +35,7 @@ test("확정된 모임의 요약 카드에 날짜와 두 버튼이 나온다", a
   const id = await createConfirmedMeeting(page, "현호");
   await page.goto(`/meetings/${id}/summary`);
   await expect(page.getByText("현호님의 모임").first()).toBeVisible();
-  await expect(page.getByText(/09:00 ~ 10:00/)).toBeVisible();
+  await expect(page.getByText("오전 9시")).toBeVisible();
   await expect(page.getByRole("button", { name: "글로 복사" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "단톡방에 공유하기" }),

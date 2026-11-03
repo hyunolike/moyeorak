@@ -22,10 +22,14 @@ vi.mock("next/link", () => ({
   ),
 }));
 const prefetchNudge = vi.hoisted(() => vi.fn());
+const unconfirmMutate = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api", () => ({
   useShareEvent: () => ({ mutate: vi.fn() }),
   useNudge: () => ({ isFetching: false, data: undefined }),
   usePrefetchNudge: () => prefetchNudge,
+  useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
+  useJoin: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
+  useClaim: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
   ApiError: class extends Error {},
 }));
 

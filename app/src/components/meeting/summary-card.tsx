@@ -11,10 +11,12 @@ import { BottomCta } from "@/components/layout/bottom-cta";
 import { GuideLine } from "@/components/layout/guide-line";
 import { formatDuration } from "@/components/location/format";
 import { lineColor } from "@/components/map/line-color";
+import { UnconfirmButton } from "@/components/meeting/unconfirm-button";
 import { MobileLayout } from "@/components/mobile-layout";
-import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { Button } from "@/components/ui/button";
-import { useShareEvent } from "@/lib/api";
+import { useMe, useShareEvent } from "@/lib/api";
+import type { Meeting } from "@/lib/api-types";
+import { formatConfirmedClock, formatConfirmedDay } from "@/lib/home-state";
 import {
   lineName,
   type MeetingSummary,
@@ -69,12 +71,15 @@ export function SummaryCardView({
   justConfirmed = false,
   onShare,
   onCopy,
+  unconfirm,
 }: {
   summary: MeetingSummary;
   /** 확정 직후 진입이면 카드가 올라오고 도장이 한 번 강조된다. */
   justConfirmed?: boolean;
   onShare: () => void;
   onCopy: () => void;
+  /** 모임장에게만 넘긴다. 확정 되돌리기 버튼 자리. */
+  unconfirm?: ReactNode;
 }) {
   const reduce = useReducedMotion();
   const play = justConfirmed && !reduce;
@@ -99,12 +104,14 @@ export function SummaryCardView({
             확정
           </Stamped>
           <p className="text-b3 font-bold">{summary.hostName}님의 모임</p>
-          {summary.start && summary.end ? (
+          {summary.start ? (
             <Stamped play={play} className="mt-2 origin-left">
               <h1 className="text-h1 tabular-nums">
-                <span className="block">{formatSlotDate(summary.start)}</span>
                 <span className="block">
-                  {formatSlotRange(summary.start, summary.end)}
+                  {formatConfirmedDay(summary.start)}
+                </span>
+                <span className="block">
+                  {formatConfirmedClock(summary.start)}
                 </span>
               </h1>
             </Stamped>
@@ -141,14 +148,27 @@ export function SummaryCardView({
                         <span className="font-medium">
                           {t.from ? `${t.name} · ${t.from}` : t.name}
                         </span>{" "}
-                        <b>
-                          {t.minutes === null ? "" : formatDuration(t.minutes)}
-                        </b>
+                        {t.from === null ? (
+                          <span className="font-medium">출발지 없음</span>
+                        ) : (
+                          <b>
+                            {t.minutes === null
+                              ? ""
+                              : formatDuration(t.minutes)}
+                          </b>
+                        )}
                       </li>
                     ))}
                   </ul>
                 </>
               ) : null}
+            </>
+          ) : summary.travel.length > 0 ? (
+            <>
+              <div className="border-ink-900 -mx-6 my-5 border-t-2 border-dashed" />
+              <p className="text-b1 font-medium">
+                {summary.travel.map((t) => t.name).join(", ")} 함께해요
+              </p>
             </>
           ) : null}
         </motion.article>
@@ -184,6 +204,9 @@ export function SummaryCardView({
             </a>
           ) : null}
         </div>
+        {unconfirm ? (
+          <div className="flex justify-center">{unconfirm}</div>
+        ) : null}
       </div>
       <BottomCta
         primary={
@@ -199,8 +222,16 @@ export function SummaryCardView({
   );
 }
 
-export function SummaryCard({ summary }: { summary: MeetingSummary }) {
+export function SummaryCard({
+  summary,
+  participants,
+}: {
+  summary: MeetingSummary;
+  /** 모임장인지 알아보는 데 쓴다. */
+  participants: Meeting["participants"];
+}) {
   const shareEvent = useShareEvent(summary.meetingId);
+  const { me } = useMe({ id: summary.meetingId, participants });
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -249,6 +280,15 @@ export function SummaryCard({ summary }: { summary: MeetingSummary }) {
       justConfirmed={justConfirmed}
       onShare={share}
       onCopy={copy}
+      unconfirm={
+        me?.isHost ? (
+          <UnconfirmButton
+            meetingId={summary.meetingId}
+            className="text-muted text-b3 h-10 cursor-pointer px-3 underline underline-offset-4"
+            onDone={() => router.push(`/meetings/${summary.meetingId}`)}
+          />
+        ) : null
+      }
     />
   );
 }

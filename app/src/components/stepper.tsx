@@ -10,8 +10,11 @@ export function Stepper({
   max = 20,
   onChange,
   className,
+  helperText,
 }: {
   label: string;
+  /** 칸 아래 작은 안내 문구. */
+  helperText?: string;
   value: number;
   min?: number;
   max?: number;
@@ -44,6 +47,9 @@ export function Stepper({
           +
         </button>
       </div>
+      {helperText && (
+        <p className="text-muted text-c2 mt-1.5 px-1">{helperText}</p>
+      )}
     </fieldset>
   );
 }

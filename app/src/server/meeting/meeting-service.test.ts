@@ -1,13 +1,14 @@
 // @vitest-environment node
+
+import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { meetingEvents } from "@/db/schema";
+import { meetingEvents, meetings } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import { pollWindow, seoulToday } from "@/lib/poll-window";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
   InvalidPollWindowError,
-  MeetingFullError,
 } from "@/server/meeting/errors";
 import {
   claimParticipant,
@@ -105,7 +106,7 @@ test("joinMeeting은 같은 deviceKey면 기존 참여자를 돌려준다", asyn
   expect((await getMeeting(meetingId))?.participants).toHaveLength(2);
 });
 
-test("joinMeeting은 정원이 차면 MeetingFullError", async () => {
+test("joinMeeting은 예상 인원을 넘어도 참여할 수 있다", async () => {
   const { meetingId } = await createMeeting({
     hostName: "현호",
     participantCount: 2,
@@ -113,12 +114,18 @@ test("joinMeeting은 정원이 차면 MeetingFullError", async () => {
     deviceKey: key("a"),
   });
   await joinMeeting(meetingId, { name: "민수", deviceKey: key("b") });
-  await expect(
-    joinMeeting(meetingId, { name: "영희", deviceKey: key("c") }),
-  ).rejects.toBeInstanceOf(MeetingFullError);
+  const third = await joinMeeting(meetingId, {
+    name: "영희",
+    deviceKey: key("c"),
+  });
+  expect(third.created).toBe(true);
+  const meeting = await getMeeting(meetingId);
+  expect(meeting?.participants).toHaveLength(3);
+  // 진행률 분모는 예상 인원과 실제 참여자 수 중 큰 값이다.
+  expect(meeting?.participantCount).toBe(3);
 });
 
-test("joinMeeting은 동시에 들어와도 정원을 넘기지 않는다", async () => {
+test("joinMeeting은 동시에 들어와도 모두 한 번씩 참여한다", async () => {
   const { meetingId } = await createMeeting({
     hostName: "현호",
     participantCount: 2,
@@ -130,8 +137,26 @@ test("joinMeeting은 동시에 들어와도 정원을 넘기지 않는다", asyn
       joinMeeting(meetingId, { name: c, deviceKey: key(c) }),
     ),
   );
-  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-  expect((await getMeeting(meetingId))?.participants).toHaveLength(2);
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(3);
+  expect((await getMeeting(meetingId))?.participants).toHaveLength(4);
+});
+
+test("joinMeeting은 확정된 모임에도 참여할 수 있다", async () => {
+  const { meetingId } = await createMeeting({
+    hostName: "현호",
+    participantCount: 2,
+    scope: "schedule",
+    deviceKey: key("a"),
+  });
+  await db
+    .update(meetings)
+    .set({ status: "confirmed", confirmedAt: new Date() })
+    .where(eq(meetings.id, meetingId));
+  const late = await joinMeeting(meetingId, {
+    name: "늦은",
+    deviceKey: key("l"),
+  });
+  expect(late.created).toBe(true);
 });
 
 test("getMeeting은 없는 ID에 null", async () => {

@@ -6,14 +6,6 @@ export class MeetingNotFoundError extends Error {
   }
 }
 
-export class MeetingFullError extends Error {
-  readonly code = "MEETING_FULL";
-  constructor() {
-    super("모임 정원이 다 찼어요");
-    this.name = "MeetingFullError";
-  }
-}
-
 export class InvalidPollWindowError extends Error {
   readonly code = "INVALID_POLL_WINDOW";
   constructor() {
