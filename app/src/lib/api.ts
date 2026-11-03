@@ -7,6 +7,7 @@ import type {
   Meeting,
   MeetingProgress,
   Midpoint,
+  MyMeeting,
   Place,
   ScheduleSummary,
   Scope,
@@ -17,6 +18,7 @@ import {
   storeParticipantId,
 } from "@/lib/device-key";
 import { markInviteViewed } from "@/lib/invite-viewed";
+import { readMyMeetingsCache, writeMyMeetingsCache } from "@/lib/my-meetings";
 import type { PollWindow } from "@/lib/poll-window";
 import type { Suggestion } from "@/server/suggest/types";
 
@@ -70,6 +72,7 @@ export const keys = {
   departures: (id: string) => ["departures", id] as const,
   midpoint: (id: string) => ["midpoint", id] as const,
   suggestions: (id: string) => ["suggestions", id] as const,
+  myMeetings: (deviceKey: string) => ["my-meetings", deviceKey] as const,
 };
 
 export type SuggestionSet = {
@@ -133,6 +136,26 @@ export function useMe<P extends { id: number }>(meeting: {
   });
   const me = meeting.participants.find((p) => p.id === query.data) ?? null;
   return { isPending: query.isPending, isError: query.isError, me };
+}
+
+/**
+ * 이 기기가 참여한 모임 목록(첫 화면용). 키를 만들지 않으려고 이미 있는 키를 받는다.
+ * 지난번에 받은 목록을 먼저 보여 주고 바로 새로 받는다.
+ */
+export function useMyMeetings(deviceKey: string) {
+  return useQuery({
+    queryKey: keys.myMeetings(deviceKey),
+    queryFn: async () => {
+      const list = await apiFetch<MyMeeting[]>("/api/me/meetings", {
+        headers: { "X-Device-Key": deviceKey },
+      });
+      writeMyMeetingsCache(list);
+      return list;
+    },
+    initialData: readMyMeetingsCache,
+    // 캐시는 언제 받았는지 모르므로 늘 오래된 것으로 보고 새로 받는다.
+    initialDataUpdatedAt: 0,
+  });
 }
 
 export function useCreateMeeting() {

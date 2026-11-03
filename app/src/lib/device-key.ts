@@ -9,6 +9,21 @@ export const DEVICE_KEY_PATTERN =
   /^(?:[A-Za-z0-9_-]{21}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
 const PARTICIPANTS_KEY = "my_participants";
 
+/**
+ * 이 브라우저에 이미 있는 키. 없으면 만들지 않고 null을 돌려준다(첫 화면의 내 모임 목록처럼
+ * 읽기만 하는 곳에서 쓴다). 저장소를 못 쓰는 브라우저도 null.
+ */
+export function peekDeviceKey(): string | null {
+  try {
+    const saved = window.localStorage.getItem(DEVICE_KEY);
+    if (saved) return saved;
+    const legacy = window.localStorage.getItem(LEGACY_SESSION_KEY);
+    return legacy && DEVICE_KEY_PATTERN.test(legacy) ? legacy : null;
+  } catch {
+    return null;
+  }
+}
+
 /** 이 브라우저를 가리키는 키. 클라이언트에서만 부른다. */
 export function getDeviceKey(): string {
   const saved = window.localStorage.getItem(DEVICE_KEY);

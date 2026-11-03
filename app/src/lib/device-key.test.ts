@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
-import { DEVICE_KEY_PATTERN, getDeviceKey } from "@/lib/device-key";
+import {
+  DEVICE_KEY_PATTERN,
+  getDeviceKey,
+  peekDeviceKey,
+} from "@/lib/device-key";
 
 const LEGACY = "3f2b8c1e-9a4d-4e7b-8c21-5d6f7a8b9c0d";
 
@@ -35,4 +39,16 @@ test("DEVICE_KEY_PATTERN은 21자 키와 UUID만 받는다", () => {
   expect(DEVICE_KEY_PATTERN.test(LEGACY)).toBe(true);
   expect(DEVICE_KEY_PATTERN.test("a".repeat(20))).toBe(false);
   expect(DEVICE_KEY_PATTERN.test(LEGACY.toUpperCase())).toBe(false);
+});
+
+test("peekDeviceKey는 키가 없으면 null이고 새로 만들지 않는다", () => {
+  expect(peekDeviceKey()).toBeNull();
+  expect(window.localStorage.getItem("device_key")).toBeNull();
+});
+
+test("peekDeviceKey는 저장된 키나 옛 앱 키를 돌려준다", () => {
+  window.localStorage.setItem("moyeorak.session", LEGACY);
+  expect(peekDeviceKey()).toBe(LEGACY);
+  window.localStorage.setItem("device_key", "k".repeat(21));
+  expect(peekDeviceKey()).toBe("k".repeat(21));
 });
