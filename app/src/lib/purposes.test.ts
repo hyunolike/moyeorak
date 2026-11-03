@@ -18,6 +18,17 @@ describe("purposes", () => {
     ).toBe("술집 120곳, 스터디 카페 8곳");
   });
 
+  it("보여 줄 수가 모두 0이면 빈 문자열이에요", () => {
+    expect(venueLine(ZERO_VENUES, [])).toBe("");
+    expect(venueLine({ ...ZERO_VENUES, meal: 5 }, ["drink", "study"])).toBe("");
+  });
+
+  it("하나라도 0이 아니면 0곳도 같이 보여요", () => {
+    expect(venueLine({ ...ZERO_VENUES, meal: 5 }, [])).toBe(
+      "음식점 5곳, 카페 0곳",
+    );
+  });
+
   it("알 수 없는 값과 중복은 버려요", () => {
     expect(parsePurposes(["study", "x", "study", "meal"])).toEqual([
       "meal",

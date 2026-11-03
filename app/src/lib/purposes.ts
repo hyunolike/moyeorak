@@ -43,12 +43,16 @@ export function hubScore(v: VenueCounts): number {
   return v.meal + v.cafe;
 }
 
-/** 가게 수 줄. 목적이 없으면 음식점과 카페, 있으면 표 순서 앞의 두 개. */
+/**
+ * 가게 수 줄. 목적이 없으면 음식점과 카페, 있으면 표 순서 앞의 두 개.
+ * 보여 줄 수가 모두 0이면(아직 세지 않았거나 가게가 없는 역) 빈 문자열이다.
+ */
 export function venueLine(v: VenueCounts, purposes: Purpose[]): string {
   const keys: Purpose[] =
     purposes.length === 0
       ? ["meal", "cafe"]
       : PURPOSES.filter((p) => purposes.includes(p)).slice(0, 2);
+  if (keys.every((k) => v[k] === 0)) return "";
   return keys.map((k) => `${PURPOSE_VENUE[k]} ${v[k]}곳`).join(", ");
 }
 

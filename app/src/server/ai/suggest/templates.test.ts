@@ -78,3 +78,12 @@ test("목적 축: 가게 수와 최대 시간", () => {
     "스터디 카페가 3곳 있어요.",
   );
 });
+
+test("목적 축이어도 가게 정보가 없으면 평균 문장으로 간다", () => {
+  const reason = templateReason(
+    { ...averagePick, axis: "venues" as const, venue: null },
+    3,
+  );
+  expect(reason).not.toMatch(/0곳/);
+  expect(reason).toMatch(/분/);
+});

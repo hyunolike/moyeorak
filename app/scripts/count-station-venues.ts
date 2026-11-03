@@ -11,6 +11,8 @@ type Deps = {
   count: typeof countVenues;
   now: () => Date;
   delayMs: number;
+  /** 실패할 때마다 오류를 알려 준다. */
+  onError?: (name: string, error: unknown) => void;
   /** 지정하면 이 이름의 역만 센다. 테스트용. */
   only?: string[];
 };
@@ -54,25 +56,54 @@ export async function countAllStations(
         .values({ stationName: row.name, ...values })
         .onConflictDoUpdate({ target: stationVenues.stationName, set: values });
       counted += 1;
-    } catch {
+    } catch (e) {
       failed.push(row.name);
+      deps.onError?.(row.name, e);
     }
   }
   return { counted, failed };
+}
+
+/** 시작 전에 실행 조건을 확인한다. 문제가 있으면 안내 문구를, 없으면 null을 돌려준다. */
+export function preflightError(
+  env: Record<string, string | undefined>,
+): string | null {
+  if (env.MOCK_EXTERNAL === "1") {
+    return "MOCK_EXTERNAL=1이면 가짜 값이 저장될 수 있어서 실행하지 않아요. 이 값을 끄고 다시 실행해 주세요.";
+  }
+  if (!env.KAKAO_API_KEY) {
+    return "KAKAO_API_KEY가 없어요. 카카오 REST API 키를 설정한 뒤 다시 실행해 주세요.";
+  }
+  return null;
 }
 
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
+  const problem = preflightError(process.env);
+  if (problem) {
+    console.error(problem);
+    process.exit(1);
+  }
+  const errorCounts = new Map<string, number>();
   countAllStations({
     count: countVenues,
     now: () => new Date(),
     delayMs: DEFAULT_DELAY_MS,
+    onError: (_name, e) => {
+      const message = e instanceof Error ? e.message : String(e);
+      errorCounts.set(message, (errorCounts.get(message) ?? 0) + 1);
+    },
   }).then(
     ({ counted, failed }) => {
       console.log(`${counted}개 역을 셌어요.`);
-      if (failed.length > 0) console.error(`실패한 역: ${failed.join(", ")}`);
+      if (failed.length > 0) {
+        console.error(`실패한 역: ${failed.join(", ")}`);
+        for (const [message, n] of errorCounts) {
+          console.error(`오류 ${n}건: ${message}`);
+        }
+      }
       process.exit(failed.length > 0 ? 1 : 0);
     },
     (e) => {

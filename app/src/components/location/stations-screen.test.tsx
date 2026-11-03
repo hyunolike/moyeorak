@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
   within,
 } from "@testing-library/react";
+import { toast } from "sonner";
 import { afterEach, expect, test, vi } from "vitest";
 import { StationsScreen } from "@/components/location/stations-screen";
 import type { Meeting, Midpoint, Station } from "@/lib/api-types";
@@ -17,6 +19,8 @@ let midpointData: Midpoint | undefined = { type: "ok", stations: [] };
 let midpointError = false;
 let isHost = true;
 const updateMutate = vi.fn();
+
+vi.mock("sonner", () => ({ toast: vi.fn() }));
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
@@ -298,7 +302,7 @@ test("모임장은 칩을 바꿔 목적을 저장한다", () => {
   midpointData = { type: "ok", stations: [station(1, "합정")] };
   render(<StationsScreen meeting={{ ...meeting, purposes: [] } as Meeting} />);
   fireEvent.click(screen.getByRole("button", { name: "술" }));
-  expect(updateMutate).toHaveBeenCalledWith(["drink"]);
+  expect(updateMutate).toHaveBeenCalledWith(["drink"], expect.anything());
 });
 
 test("참여자는 칩을 바꿀 수 없다", () => {
@@ -321,4 +325,42 @@ test("장소가 확정되면 모임장도 칩을 바꿀 수 없다", () => {
     />,
   );
   expect(screen.queryByRole("button", { name: "술" })).toBeNull();
+});
+
+test("저장이 끝나기 전에 연달아 눌러도 둘 다 담아 보낸다", () => {
+  midpointData = { type: "ok", stations: [station(1, "합정")] };
+  render(<StationsScreen meeting={{ ...meeting, purposes: [] } as Meeting} />);
+  fireEvent.click(screen.getByRole("button", { name: "밥" }));
+  fireEvent.click(screen.getByRole("button", { name: "술" }));
+  expect(updateMutate).toHaveBeenNthCalledWith(1, ["meal"], expect.anything());
+  expect(updateMutate).toHaveBeenNthCalledWith(
+    2,
+    ["meal", "drink"],
+    expect.anything(),
+  );
+});
+
+test("저장에 실패하면 알리고 서버 값으로 되돌린다", () => {
+  midpointData = { type: "ok", stations: [station(1, "합정")] };
+  render(<StationsScreen meeting={{ ...meeting, purposes: [] } as Meeting} />);
+  const drink = () => screen.getByRole("button", { name: "술" });
+  fireEvent.click(drink());
+  expect(drink()).toHaveAttribute("aria-pressed", "true");
+  const opts = updateMutate.mock.calls[0]?.[1];
+  act(() => {
+    opts.onError(new Error("x"));
+    opts.onSettled();
+  });
+  expect(toast).toHaveBeenCalled();
+  expect(drink()).toHaveAttribute("aria-pressed", "false");
+});
+
+test("보여 줄 가게 수가 모두 0이면 줄을 그리지 않고 멀어요 표시만 남긴다", () => {
+  midpointData = {
+    type: "ok",
+    stations: [station(1, "합정"), { ...station(2, "신촌"), far: true }],
+  };
+  render(<StationsScreen meeting={{ ...meeting, purposes: [] } as Meeting} />);
+  expect(screen.queryByText(/0곳/)).toBeNull();
+  expect(screen.getByText("조금 멀어요")).toBeInTheDocument();
 });

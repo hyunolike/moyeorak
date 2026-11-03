@@ -99,8 +99,11 @@ e2e는 Playwright로 돌립니다. 처음 한 번만 브라우저를 설치합�
 
 ```bash
 pnpm exec playwright install chromium
+set -a; . ./.env.test; DATABASE_URL=$DATABASE_URL_TEST; set +a
 pnpm e2e
 ```
+
+위 환경 변수 줄은 e2e가 운영 DB가 아니라 테스트 DB를 쓰도록 `DATABASE_URL`을 테스트 DB 주소로 바꿉니다. e2e를 돌리기 전에 매번 같은 셸에서 실행합니다.
 
 e2e는 개발 서버를 `MOCK_EXTERNAL=1`로 직접 띄우기 때문에 외부 API 키는 필요 없고, `DATABASE_URL`은 있어야 합니다. 기본 시간대는 Asia/Seoul이고, 브라우저가 America/New_York일 때도 서울 기준 슬롯이 맞게 표시되는지 확인하는 테스트가 따로 들어 있습니다.
 
@@ -205,8 +208,8 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
    delete from meetings where id = '<확인용 id>';
    ```
 
-10. 평가 세트를 채워 모델을 고르고 환경 변수를 교체합니다.
-11. 역마다 주변 가게 수를 세어 둡니다. 운영 DB에 `pnpm stations:venues`를 한 번 실행하고, 이후 한 달에 한 번 다시 실행해 갱신합니다. 카카오 REST API 키가 필요하고, 비워 두면 가게 수가 모두 0곳으로 보입니다.
+10. 역마다 주변 가게 수를 세어 둡니다. 순서가 중요해서 마이그레이션을 먼저 적용하고, 운영 DB에 `pnpm stations:venues`를 한 번 실행한 다음, 그 뒤에 배포합니다. 카카오 REST API 키(`KAKAO_API_KEY`)가 필요하고, 키가 없거나 `MOCK_EXTERNAL=1`이면 스크립트가 시작하자마자 멈춥니다. 이 작업을 하기 전에는 가게 수 표가 비어 있어서 화면에 가게 수 줄이 나오지 않고, 목적을 골라도 붐비는 역이 위로 올라오지 않으며 평균 이동시간 순서로 보입니다. 이후 한 달에 한 번 다시 실행해 갱신합니다.
+11. 평가 세트를 채워 모델을 고르고 환경 변수를 교체합니다.
 
 ### 배포 환경 변수
 

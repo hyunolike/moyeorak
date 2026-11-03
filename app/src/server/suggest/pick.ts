@@ -98,7 +98,11 @@ function toLocationPick(
     averageMinutes: r.averageMinutes,
     maxMinutes: r.maxMinutes,
     perParticipant: r.perParticipant,
-    venue: { label: PURPOSE_VENUE[key], count: r.venues[key] },
+    // 가게 수를 모르거나 0곳이면 "0곳 있어요"라고 말하지 않도록 비운다.
+    venue:
+      r.venues[key] > 0
+        ? { label: PURPOSE_VENUE[key], count: r.venues[key] }
+        : null,
   };
 }
 

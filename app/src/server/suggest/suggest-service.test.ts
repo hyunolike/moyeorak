@@ -508,7 +508,7 @@ test("장소 제안 뒤 목적을 바꾸면 다시 만든 제안으로 바뀌고
       line: "2호선",
       lat: 37.5,
       lng: 127,
-      venues: ZERO_VENUES,
+      venues: { ...ZERO_VENUES, study: 5, drink: 5, meal: 5 },
       distanceMeters: 0,
     },
     {
@@ -517,7 +517,7 @@ test("장소 제안 뒤 목적을 바꾸면 다시 만든 제안으로 바뀌고
       line: "2호선",
       lat: 37.6,
       lng: 127,
-      venues: ZERO_VENUES,
+      venues: { ...ZERO_VENUES, study: 5, drink: 5, meal: 5 },
       distanceMeters: 0,
     },
   ]);

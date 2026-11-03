@@ -145,4 +145,13 @@ describe("pickLocation", () => {
       count: 7,
     });
   });
+
+  test("고른 목적의 가게가 0곳이면 venue는 null이다", () => {
+    const a = rec(1, 30, [20, 40], { venues: { ...ZERO_VENUES, meal: 7 } });
+    expect(pickLocation([a], depart, ["study"])[0].venue).toBeNull();
+    expect(pickLocation([a], depart, [])[0].venue).toEqual({
+      label: "음식점",
+      count: 7,
+    });
+  });
 });

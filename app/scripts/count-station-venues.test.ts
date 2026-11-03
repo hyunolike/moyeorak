@@ -3,7 +3,7 @@ import { inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { stations, stationVenues } from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
-import { countAllStations } from "./count-station-venues";
+import { countAllStations, preflightError } from "./count-station-venues";
 
 const NAMES = ["테스트역A", "테스트역B"];
 const NOW = new Date("2026-11-03T00:00:00Z");
@@ -90,4 +90,27 @@ test("두 번 돌려도 행은 2개이고 값이 갱신된다", async () => {
     .where(inArray(stationVenues.stationName, NAMES));
   expect(rows).toHaveLength(2);
   expect(rows.every((r) => r.meal === 99)).toBe(true);
+});
+
+test("실패한 역의 오류를 onError로 알려 준다", async () => {
+  const onError = vi.fn();
+  await countAllStations({
+    count: vi.fn().mockRejectedValue(new Error("401 unauthorized")),
+    now: () => NOW,
+    delayMs: 0,
+    only: NAMES,
+    onError,
+  });
+  expect(onError).toHaveBeenCalledTimes(2);
+  expect(onError.mock.calls[0]?.[1]).toMatchObject({
+    message: "401 unauthorized",
+  });
+});
+
+test("키가 없거나 MOCK_EXTERNAL=1이면 시작 전에 막는다", () => {
+  expect(preflightError({})).toMatch(/KAKAO_API_KEY/);
+  expect(preflightError({ KAKAO_API_KEY: "k", MOCK_EXTERNAL: "1" })).toMatch(
+    /MOCK_EXTERNAL/,
+  );
+  expect(preflightError({ KAKAO_API_KEY: "k" })).toBeNull();
 });

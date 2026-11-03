@@ -36,7 +36,7 @@ function describe(pick: Pick, i: number): string {
     `   역: ${pick.name}`,
     `   평균 ${Math.round(pick.averageMinutes)}분, 가장 오래 ${pick.maxMinutes === null ? "모름" : `${pick.maxMinutes}분`}`,
     ...(pick.venue
-      ? [`   목적: ${pick.venue.label}, 반경 500m에 ${pick.venue.count}곳`]
+      ? [`   목적: ${pick.venue.label}, 근처에 ${pick.venue.count}곳`]
       : []),
     `   사람별: ${people}`,
   ].join("\n");

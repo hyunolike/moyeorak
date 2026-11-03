@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { DataSkeleton } from "@/components/layout/data-skeleton";
@@ -88,6 +89,7 @@ function StationRow({
   onSelect: () => void;
   animateDetail?: boolean;
 }) {
+  const line = venueLine(station.venues, purposes);
   return (
     <li
       className={cn(
@@ -129,14 +131,21 @@ function StationRow({
           </span>
         )}
         <Average minutes={station.averageMinutes} />
-        <span className="text-muted text-b4 basis-full pl-[34px]">
-          {venueLine(station.venues, purposes)}
-          {station.far && (
-            <span className="text-c1 text-text bg-surface-sunken rounded-pill ml-2 px-2 py-0.5">
-              조금 멀어요
-            </span>
-          )}
-        </span>
+        {(line || station.far) && (
+          <span className="text-muted text-b4 basis-full pl-[34px]">
+            {line}
+            {station.far && (
+              <span
+                className={cn(
+                  "text-c1 text-text bg-surface-sunken rounded-pill px-2 py-0.5",
+                  line && "ml-2",
+                )}
+              >
+                조금 멀어요
+              </span>
+            )}
+          </span>
+        )}
       </button>
       {selected && (
         <div className="px-5 pb-4">
@@ -234,7 +243,21 @@ export function StationsScreen({ meeting: initial }: { meeting: Meeting }) {
   const alreadyConfirmed =
     meeting.status === "confirmed" ||
     (confirm.error instanceof ApiError && confirm.error.status === 409);
-  const purposes = meeting.purposes ?? [];
+  const serverPurposes = meeting.purposes ?? [];
+  // 저장이 끝나기 전에 또 눌러도 방금 고른 값에서 이어지도록 고른 값을 따로 들고 있는다.
+  // null이면 서버 값을 그대로 쓰므로, 저장이 끝나거나 실패하면 서버 값으로 돌아온다.
+  const [pendingPurposes, setPendingPurposes] = useState<Purpose[] | null>(
+    null,
+  );
+  const purposes = pendingPurposes ?? serverPurposes;
+  const changePurposes = (next: Purpose[]) => {
+    setPendingPurposes(next);
+    updatePurposes.mutate(next, {
+      onError: () =>
+        toast("목적을 바꾸지 못했어요. 잠시 후 다시 시도해 주세요"),
+      onSettled: () => setPendingPurposes(null),
+    });
+  };
   const canEditPurposes =
     !!me?.isHost && meeting.status === "locating" && !alreadyConfirmed;
   const votesPath = `/meetings/${meeting.id}/location/votes`;
@@ -278,7 +301,7 @@ export function StationsScreen({ meeting: initial }: { meeting: Meeting }) {
           <PurposeChips
             value={purposes}
             readOnly={!canEditPurposes}
-            onChange={(next) => updatePurposes.mutate(next)}
+            onChange={changePurposes}
           />
         </div>
       )}
