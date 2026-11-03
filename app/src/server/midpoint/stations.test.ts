@@ -39,6 +39,16 @@ test("chooseCandidates는 상권 상위 7곳과 가까운 3곳을 겹치지 않�
   expect(out.slice(7).map((r) => r.id)).toEqual([5, 4, 3]);
 });
 
+test("chooseCandidates는 가게가 모두 0이면 가장 가까운 10곳", () => {
+  const rows = Array.from({ length: 15 }, (_, k) =>
+    row(k + 1, 0, (15 - k) * 100),
+  );
+  const out = chooseCandidates(rows);
+  expect(out.map((r) => r.id).sort((a, b) => a - b)).toEqual([
+    6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  ]);
+});
+
 test("chooseCandidates는 행이 적으면 있는 만큼만", () => {
   expect(chooseCandidates([row(1, 5, 10), row(2, 1, 20)])).toHaveLength(2);
 });
@@ -104,6 +114,7 @@ test("findStationsNear는 가까운 역부터 반경 안에서 limit개를 돌�
   expect(list.length).toBeGreaterThan(0);
   expect(list.length).toBeLessThanOrEqual(5);
   expect(list[0]?.name).toContain("합정");
+  expect(typeof list[0]?.lat).toBe("number");
 });
 
 test("findStationsNear는 반경 밖이면 빈 배열", async () => {

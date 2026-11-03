@@ -50,7 +50,11 @@ export function chooseCandidates(
   near = 3,
 ): CandidateStation[] {
   const byHub = [...rows]
-    .sort((a, b) => hubScore(b.venues) - hubScore(a.venues))
+    .sort(
+      (a, b) =>
+        hubScore(b.venues) - hubScore(a.venues) ||
+        a.distanceMeters - b.distanceMeters,
+    )
     .slice(0, hub);
   const taken = new Set(byHub.map((r) => r.id));
   const byNear = [...rows]
