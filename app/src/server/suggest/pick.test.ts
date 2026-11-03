@@ -66,27 +66,32 @@ const rec = (
   stationId: number,
   averageMinutes: number,
   minutes: (number | null)[],
-): Recommendation => ({
-  stationId,
-  name: `역${stationId}`,
-  line: "2호선",
-  lat: 37.5,
-  lng: 127,
-  averageMinutes,
-  maxMinutes: null,
-  venues: ZERO_VENUES,
-  far: false,
-  perParticipant: minutes.map((m, i) => ({ name: `사람${i}`, minutes: m })),
-});
+  extra: Partial<Recommendation> = {},
+): Recommendation => {
+  const known = minutes.filter((m): m is number => m !== null);
+  return {
+    stationId,
+    name: `역${stationId}`,
+    line: "2호선",
+    lat: 37.5,
+    lng: 127,
+    averageMinutes,
+    maxMinutes: known.length ? Math.max(...known) : null,
+    venues: ZERO_VENUES,
+    far: false,
+    perParticipant: minutes.map((m, i) => ({ name: `사람${i}`, minutes: m })),
+    ...extra,
+  };
+};
 const depart = at("2026-11-07T14:00");
 
 describe("pickLocation", () => {
-  test("평균 최소 역과 가장 먼 사람 최소 역을 따로 고른다", () => {
+  test("1번은 첫 역(venues 축), 2번은 fairness 규칙으로 고른다", () => {
     const a = rec(1, 30, [10, 50]);
     const b = rec(2, 35, [34, 36]);
-    const picks = pickLocation([a, b], depart);
+    const picks = pickLocation([a, b], depart, []);
     expect(picks.map((p) => [p.axis, p.stationId])).toEqual([
-      ["average", 1],
+      ["venues", 1],
       ["fairness", 2],
     ]);
     expect(picks[0].maxMinutes).toBe(50);
@@ -94,11 +99,11 @@ describe("pickLocation", () => {
     expect(picks[0].departAt).toEqual(depart);
   });
 
-  test("두 기준이 같은 역이면 평균 2순위를 fairness로", () => {
+  test("fairness 1순위가 첫 역과 같으면 다음 역을 쓴다", () => {
     const a = rec(1, 30, [29, 31]);
     const b = rec(2, 33, [20, 46]);
     const c = rec(3, 40, [40, 40]);
-    const picks = pickLocation([c, b, a], depart);
+    const picks = pickLocation([a, b, c], depart, []);
     expect(picks.map((p) => p.stationId)).toEqual([1, 2]);
     expect(picks[1].axis).toBe("fairness");
   });
@@ -107,10 +112,37 @@ describe("pickLocation", () => {
     const a = rec(1, 30, [20, 40]);
     const b = rec(2, 31, [null, 10]);
     const c = rec(3, 50, [35, 35]);
-    const picks = pickLocation([a, b, c], depart);
+    const picks = pickLocation([a, b, c], depart, []);
     expect(picks[1].stationId).toBe(3);
-    const only = pickLocation([rec(4, 10, [null, null])], depart);
+    const only = pickLocation([rec(4, 10, [null, null])], depart, []);
     expect(only).toHaveLength(1);
     expect(only[0].maxMinutes).toBeNull();
+  });
+
+  test("far 역은 제안하지 않고, 남은 역이 1곳이면 제안도 1개", () => {
+    const a = rec(1, 30, [20, 40]);
+    const b = rec(2, 20, [20, 20], { far: true });
+    const c = rec(3, 20, [20, 20], { far: true });
+    const picks = pickLocation([a, b, c], depart, []);
+    expect(picks).toHaveLength(1);
+    expect(picks[0]).toMatchObject({ axis: "venues", stationId: 1 });
+    expect(pickLocation([b, c], depart, [])).toEqual([]);
+  });
+
+  test("venue 라벨은 목적 순서 첫 목적, 없으면 음식점", () => {
+    const venues = { ...ZERO_VENUES, meal: 7, study: 8, drink: 120 };
+    const a = rec(1, 30, [20, 40], { venues });
+    expect(pickLocation([a], depart, ["study"])[0].venue).toEqual({
+      label: "스터디 카페",
+      count: 8,
+    });
+    expect(pickLocation([a], depart, ["study", "drink"])[0].venue).toEqual({
+      label: "술집",
+      count: 120,
+    });
+    expect(pickLocation([a], depart, [])[0].venue).toEqual({
+      label: "음식점",
+      count: 7,
+    });
   });
 });

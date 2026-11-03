@@ -28,6 +28,7 @@ export function allowedNumbers(
     if (p.minutes !== null) set.add(p.minutes);
   }
   set.add(pick.perParticipant.length);
+  if (pick.venue) set.add(pick.venue.count);
   return set;
 }
 

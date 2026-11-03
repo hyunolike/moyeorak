@@ -124,7 +124,7 @@ export async function createSuggestions(
   const departAt = meeting.schedulePoll?.confirmedStart ?? new Date();
   const result = await recommendMidpoint(meetingId, departAt);
   if (result.type === "insufficient") throw new NotEnoughResponsesError();
-  const picks = pickLocation(result.stations, departAt);
+  const picks = pickLocation(result.stations, departAt, meeting.purposes);
   const departures = result.stations[0]?.perParticipant.length ?? 0;
   const reasons = await write(meetingId, picks, departures);
   return saveIfFresh(
@@ -154,6 +154,10 @@ async function fingerprint(
       .orderBy(scheduleVotes.participantId);
     return JSON.stringify(rows);
   }
+  const [m] = await q
+    .select({ purposes: meetings.purposes })
+    .from(meetings)
+    .where(eq(meetings.id, meetingId));
   const rows = await q
     .select({
       id: locationVotes.id,
@@ -165,7 +169,7 @@ async function fingerprint(
     .innerJoin(participants, eq(participants.id, locationVotes.participantId))
     .where(eq(participants.meetingId, meetingId))
     .orderBy(locationVotes.id);
-  return JSON.stringify(rows);
+  return JSON.stringify({ votes: rows, purposes: m?.purposes ?? [] });
 }
 
 /**

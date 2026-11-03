@@ -27,6 +27,7 @@ export const averagePick: LocationPick = {
   departAt: new Date("2026-11-14T18:00:00+09:00"),
   averageMinutes: 31.4,
   maxMinutes: 45,
+  venue: { label: "술집", count: 120 },
   perParticipant: [
     { name: "현호", minutes: 20 },
     { name: "민수", minutes: 45 },

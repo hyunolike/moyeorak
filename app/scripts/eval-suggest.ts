@@ -77,7 +77,7 @@ function cardLabel(p: SchedulePick | LocationPick): string {
     const axis = p.axis === "most" ? "가장 많이" : "가장 빨리";
     return `${seoulParts(p.start).date} ${hm(p.start)}~${hm(p.end)} (${axis})`;
   }
-  const axis = p.axis === "average" ? "평균 최단" : "고른 이동";
+  const axis = p.axis === "fairness" ? "고른 이동" : "할 거리";
   return `${p.name} (${axis})`;
 }
 
@@ -91,7 +91,7 @@ export async function evalCase(
   if (c.best) {
     picks = pickSchedule(c.best, c.respondedCount);
   } else if (c.stations) {
-    picks = pickLocation(c.stations, c.departAt ?? new Date());
+    picks = pickLocation(c.stations, c.departAt ?? new Date(), []);
     responded = c.stations[0]?.perParticipant.length ?? 0;
   }
   if (picks.length === 0) {

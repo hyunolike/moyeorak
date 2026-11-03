@@ -59,3 +59,22 @@ test("문장 틀: 장소 공정성", () => {
     "이동 거리가 가장 고른 역이에요.",
   );
 });
+
+test("목적 축: 가게 수와 최대 시간", () => {
+  const v = (label: string, count: number, maxMinutes: number | null) => ({
+    ...averagePick,
+    axis: "venues" as const,
+    venue: { label, count },
+    maxMinutes,
+  });
+  expect(templateReason(v("술집", 120, 40), 3)).toBe(
+    "술집이 120곳 있고, 다들 40분 안에 와요.",
+  );
+  expect(templateReason(v("카페", 8, null), 3)).toBe("카페가 8곳 있어요.");
+  expect(templateReason(v("음식점", 5, 30), 3)).toBe(
+    "음식점이 5곳 있고, 다들 30분 안에 와요.",
+  );
+  expect(templateReason(v("스터디 카페", 3, null), 3)).toBe(
+    "스터디 카페가 3곳 있어요.",
+  );
+});

@@ -18,6 +18,7 @@ import type { Suggestion } from "@/server/suggest/types";
 const AXIS_LABEL: Record<Suggestion["axis"], string> = {
   most: "가장 많이 되는 시간",
   soonest: "가장 빨리 모이는 날",
+  venues: "모여서 할 거리가 많은 역",
   average: "모두에게 고르게 가까운 역",
   fairness: "가장 먼 사람이 덜 힘든 역",
 };

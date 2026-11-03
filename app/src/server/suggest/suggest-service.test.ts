@@ -23,6 +23,7 @@ import {
   getMeeting,
   joinMeeting,
 } from "@/server/meeting/meeting-service";
+import { updatePurposes } from "@/server/meeting/purposes-service";
 import { findCandidateStations } from "@/server/midpoint/stations";
 import { AlreadyConfirmedError } from "@/server/schedule/errors";
 import {
@@ -283,7 +284,7 @@ test("시간 제안 수락 뒤 both 모임은 locating이고 다음 제안은 �
   ]);
   matrix.mockResolvedValue([
     [10, 30],
-    [50, 30],
+    [35, 30],
   ]);
   const set = await createSuggestions(meetingId, deps);
   expect(set.kind).toBe("location");
@@ -450,7 +451,7 @@ test("장소 제안을 수락하면 캐시가 없어도 카드의 이동 분이 
   ]);
   matrix.mockResolvedValue([
     [10, 30],
-    [50, 30],
+    [35, 30],
   ]);
   const { items } = await createSuggestions(meetingId, deps);
   const card = items[0];
@@ -489,4 +490,62 @@ test("같은 카드를 동시에 수락하고 거절해도 결과가 어긋나�
       expect(rej.status).toBe("fulfilled");
     }
   }
+});
+
+test("장소 제안 뒤 목적을 바꾸면 다시 만든 제안으로 바뀌고 옛 제안은 남지 않는다", async () => {
+  const { meetingId, ids } = await setup("location");
+  for (const [i, id] of ids.slice(0, 2).entries()) {
+    await upsertDeparture(meetingId, id, {
+      label: `출발${i}`,
+      lat: 37.5 + i / 100,
+      lng: 127,
+    });
+  }
+  near.mockResolvedValue([
+    {
+      id: 1,
+      name: "역1",
+      line: "2호선",
+      lat: 37.5,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
+    {
+      id: 2,
+      name: "역2",
+      line: "2호선",
+      lat: 37.6,
+      lng: 127,
+      venues: ZERO_VENUES,
+      distanceMeters: 0,
+    },
+  ]);
+  matrix.mockResolvedValue([
+    [10, 30],
+    [35, 30],
+  ]);
+  const first = await createSuggestions(meetingId, deps);
+  expect(first.items.length).toBeGreaterThan(0);
+
+  await updatePurposes(meetingId, ["study"]);
+  const second = await createSuggestions(meetingId, deps);
+  const oldIds = first.items.map((i) => i.id);
+  expect(second.items.length).toBeGreaterThan(0);
+  expect(second.items.some((i) => oldIds.includes(i.id))).toBe(false);
+  const rows = await proposed(meetingId);
+  expect(rows.some((r) => oldIds.includes(r.id))).toBe(false);
+  const card = second.items[0];
+  expect(card?.kind === "location" && card.venue?.label).toBe("스터디 카페");
+
+  // 모델을 부르는 동안 목적이 바뀌면 낡은 제안은 저장하지 않는다.
+  fakeWrite.mockImplementationOnce(async (_id, picks, n) => {
+    await updatePurposes(meetingId, ["drink"]);
+    return picks.map((p) => ({
+      reason: templateReason(p, n),
+      source: "rule" as const,
+    }));
+  });
+  const stale = await createSuggestions(meetingId, deps);
+  expect(stale.items).toEqual([]);
 });

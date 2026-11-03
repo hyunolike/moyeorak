@@ -15,7 +15,7 @@ export const SchedulePayload = z.object({
 
 export const LocationPayload = z.object({
   kind: z.literal("location"),
-  axis: z.enum(["average", "fairness"]),
+  axis: z.enum(["venues", "average", "fairness"]),
   stationId: z.number().int(),
   name: z.string(),
   line: z.string().nullable(),
@@ -27,6 +27,8 @@ export const LocationPayload = z.object({
   perParticipant: z.array(
     z.object({ name: z.string(), minutes: z.number().nullable() }),
   ),
+  // 옛 저장 제안에는 없다.
+  venue: z.object({ label: z.string(), count: z.number() }).nullish(),
   reason: z.string(),
   source,
 });
