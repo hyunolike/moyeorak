@@ -2,7 +2,6 @@
 import {
   classify,
   distanceMeters,
-  parseSeed,
   pickStation,
   stationQuery,
   toUpdateSql,
@@ -14,19 +13,6 @@ const doc = (place_name: string, lat: number, lng: number) => ({
   y: String(lat),
 });
 
-test("시드 SQL에서 역 이름, 노선, 좌표를 읽는다", () => {
-  const sql = [
-    "-- 경춘선",
-    "INSERT INTO stations (name, line, geom) VALUES",
-    "('마석', '경춘선', ST_SetSRID(ST_MakePoint(127.2748, 37.7615), 4326)),",
-    "('춘천', '경춘선', ST_SetSRID(ST_MakePoint(127.7350, 37.8853), 4326));",
-  ].join("\n");
-  expect(parseSeed(sql)).toEqual([
-    { name: "마석", line: "경춘선", lat: 37.7615, lng: 127.2748 },
-    { name: "춘천", line: "경춘선", lat: 37.8853, lng: 127.735 },
-  ]);
-});
-
 test("거리는 미터 단위다", () => {
   const d = distanceMeters({ lat: 37.5, lng: 127 }, { lat: 37.501, lng: 127 });
   expect(d).toBeGreaterThan(105);
@@ -36,6 +22,7 @@ test("거리는 미터 단위다", () => {
 test("이름이 이미 역으로 끝나면 역을 붙이지 않는다", () => {
   expect(stationQuery("서울역")).toBe("서울역");
   expect(stationQuery("강남")).toBe("강남역");
+  expect(stationQuery("양평(경기)")).toBe("양평역");
 });
 
 test("노선이 같은 문서를 고른다", () => {

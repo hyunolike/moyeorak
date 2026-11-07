@@ -1,14 +1,16 @@
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { sql } from "drizzle-orm";
+import { db } from "@/db/client";
 import { ExternalApiError, fetchJson } from "@/server/clients/errors";
 
 /**
- * 0001 시드의 역 좌표를 카카오 지하철역 검색(SW8)과 비교한다.
- * DB는 건드리지 않고, 보고서와 고칠 UPDATE 문만 파일로 쓴다.
+ * DB에 있는 역 좌표를 카카오 지하철역 검색(SW8)과 비교한다.
+ * DB는 읽기만 하고, 보고서와 고칠 UPDATE 문만 파일로 쓴다.
  */
 
-export type SeedStation = {
+export type StationRow = {
   name: string;
   line: string;
   lat: number;
@@ -26,17 +28,6 @@ export type Match = {
 export const FIX_THRESHOLD_METERS = 200;
 const DELAY_MS = 100;
 
-const ROW =
-  /^\('([^']+)', '([^']+)', ST_SetSRID\(ST_MakePoint\(([\d.]+), ([\d.]+)\), 4326\)\)/;
-
-export function parseSeed(sql: string): SeedStation[] {
-  return sql.split("\n").flatMap((line) => {
-    const m = ROW.exec(line.trim());
-    if (!m) return [];
-    return [{ name: m[1], line: m[2], lng: Number(m[3]), lat: Number(m[4]) }];
-  });
-}
-
 export function distanceMeters(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number },
@@ -50,8 +41,11 @@ export function distanceMeters(
   return 2 * 6371000 * Math.asin(Math.sqrt(h));
 }
 
-export const stationQuery = (name: string) =>
-  name.endsWith("역") ? name : `${name}역`;
+/** "양평(경기)"처럼 괄호로 구분한 이름은 괄호를 떼고 찾는다. */
+export const stationQuery = (name: string) => {
+  const base = name.replace(/\(.*\)$/, "");
+  return base.endsWith("역") ? base : `${base}역`;
+};
 
 const normalizeLine = (s: string) =>
   s.replace(/\s+/g, "").replace(/^수도권/, "");
@@ -101,13 +95,15 @@ export function pickStation(
     : null;
 }
 
-export type ReportRow = SeedStation & {
+export type ReportRow = StationRow & {
   status: "ok" | "fix" | "unmatched";
   match?: Match;
+  /** 못 찾은 역에서 카카오가 돌려준 문서. 이름이 바뀐 역을 알아보는 데 쓴다. */
+  candidates?: string[];
   distance?: number;
 };
 
-export function classify(station: SeedStation, match: Match | null): ReportRow {
+export function classify(station: StationRow, match: Match | null): ReportRow {
   if (!match) return { ...station, status: "unmatched" };
   const distance = Math.round(distanceMeters(station, match));
   return {
@@ -150,11 +146,11 @@ async function main(outDir: string) {
     );
     process.exit(1);
   }
-  const seed = readFileSync(
-    resolve(import.meta.dirname, "../drizzle/0001_seed_stations.sql"),
-    "utf8",
-  );
-  const stations = parseSeed(seed);
+  const stations = (
+    await db.execute<StationRow>(
+      sql`SELECT name, line, ST_Y(geom) AS lat, ST_X(geom) AS lng FROM stations ORDER BY id`,
+    )
+  ).map((r) => ({ ...r, lat: Number(r.lat), lng: Number(r.lng) }));
   const cache = new Map<string, KakaoDoc[]>();
   const rows: ReportRow[] = [];
   const errors: string[] = [];
@@ -165,7 +161,12 @@ async function main(outDir: string) {
         await new Promise((r) => setTimeout(r, DELAY_MS));
         cache.set(query, await searchSubway(query, apiKey));
       }
-      rows.push(classify(s, pickStation(s, cache.get(query)!)));
+      const docs = cache.get(query)!;
+      const row = classify(s, pickStation(s, docs));
+      if (row.status === "unmatched") {
+        row.candidates = docs.map((d) => `${d.place_name} (${d.y}, ${d.x})`);
+      }
+      rows.push(row);
     } catch (e) {
       errors.push(
         `${s.name}(${s.line}): ${e instanceof Error ? e.message : String(e)}`,
@@ -194,8 +195,11 @@ if (
     console.error("사용: pnpm stations:coords <결과를 쓸 폴더>");
     process.exit(2);
   }
-  main(resolve(outDir)).catch((e) => {
-    console.error(e instanceof Error ? e.message : e);
-    process.exit(1);
-  });
+  main(resolve(outDir)).then(
+    () => process.exit(0),
+    (e) => {
+      console.error(e instanceof Error ? e.message : e);
+      process.exit(1);
+    },
+  );
 }
