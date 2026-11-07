@@ -50,6 +50,13 @@
       "when": 1794092654846,
       "tag": "0006_fix_station_coords",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794093792978,
+      "tag": "0007_fix_station_names",
+      "breakpoints": true
     }
   ]
 }
