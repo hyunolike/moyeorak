@@ -13,6 +13,7 @@
     "eval:time-parse": "tsx scripts/eval-time-parse.ts",
     "eval:suggest": "tsx scripts/eval-suggest.ts",
     "stations:venues": "tsx scripts/count-station-venues.ts",
+    "stations:coords": "tsx scripts/verify-station-coords.ts",
     "migrate:legacy": "tsx scripts/migrate-legacy.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

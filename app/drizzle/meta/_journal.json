@@ -43,6 +43,13 @@
       "when": 1793716524910,
       "tag": "0005_flaky_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794092654846,
+      "tag": "0006_fix_station_coords",
+      "breakpoints": true
     }
   ]
 }
