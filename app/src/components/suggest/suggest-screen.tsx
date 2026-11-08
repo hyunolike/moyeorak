@@ -199,6 +199,7 @@ function SuggestMain({
           : null
       }
       pending={create.isPending}
+      purposesPending={updatePurposes.isPending}
       onPurposesChange={(next) => updatePurposes.mutate(next)}
       onSubmit={resuggest}
       onClose={() => {

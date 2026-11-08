@@ -8,7 +8,8 @@ import type { Meeting } from "@/lib/api-types";
 let items: unknown[] = [];
 let pending = false;
 let createMutate = vi.fn();
-const createError: Error | null = null;
+let createError: Error | null = null;
+let purposesPending = false;
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("next/link", () => ({
@@ -57,14 +58,19 @@ vi.mock("@/lib/api", () => {
       mutate: createMutate,
       error: createError,
     }),
-    useUpdatePurposes: mutation,
+    useUpdatePurposes: () => ({ ...mutation(), isPending: purposesPending }),
     useAcceptSuggestion: mutation,
     useRejectSuggestion: mutation,
     useMeetingProgress: () => ({ data: undefined }),
   };
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  createMutate = vi.fn();
+  createError = null;
+  purposesPending = false;
+});
 
 const meeting = {
   id: "m1",
@@ -105,19 +111,20 @@ test("만드는 동안에만 마주가 생각하고, 제안이 나오면 기본 
   expect(faces[0]?.getAttribute("data-expression")).toBe("default");
 });
 
-test("NO_MATCH면 시트 안에 안내 문구를 보여 준다", async () => {
+const SERVER_MESSAGE = "맞는 후보가 없어요";
+
+test("NO_MATCH면 시트 안에 안내 문구를 보여 주고 기존 제안은 그대로 둔다", async () => {
   const { ApiError } = await import("@/lib/api");
+  const noMatch = new (ApiError as never as new (...a: unknown[]) => Error)(
+    409,
+    "NO_MATCH",
+    SERVER_MESSAGE,
+  );
   pending = false;
   items = [suggestion];
-  createMutate = vi.fn((_vars, opts) =>
-    opts?.onError?.(
-      new (ApiError as never as new (...a: unknown[]) => Error)(
-        409,
-        "NO_MATCH",
-        "맞는 후보가 없어요",
-      ),
-    ),
-  );
+  // 훅은 실패 뒤에 error를 들고 있다. 화면이 NO_MATCH를 오류 화면으로 만들면 안 된다.
+  createError = noMatch;
+  createMutate = vi.fn((_vars, opts) => opts?.onError?.(noMatch));
   render(<SuggestScreen initialMeeting={meeting} />);
   fireEvent.click(screen.getByRole("button", { name: "조건 바꿔 다시 받기" }));
   fireEvent.click(await screen.findByRole("button", { name: "주말" }));
@@ -128,8 +135,34 @@ test("NO_MATCH면 시트 안에 안내 문구를 보여 준다", async () => {
     ),
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "다시 받기" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "이걸로 확정", hidden: true }),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(SERVER_MESSAGE)).toBeNull();
+  expect(
+    screen.queryByText("제안을 처리하지 못했어요. 잠시 후 다시 시도해 주세요."),
+  ).toBeNull();
   expect(createMutate).toHaveBeenCalledWith(
     { conditions: { days: "weekend" } },
     expect.anything(),
   );
+});
+
+test("열린 제안이 없으면 조건 없이 한 번만 자동으로 만든다", () => {
+  pending = false;
+  items = [];
+  const { rerender } = render(<SuggestScreen initialMeeting={meeting} />);
+  rerender(<SuggestScreen initialMeeting={meeting} />);
+  expect(createMutate).toHaveBeenCalledTimes(1);
+  expect(createMutate).toHaveBeenCalledWith();
+});
+
+test("새로 제안 받기는 조건 없이 만든다", () => {
+  pending = false;
+  items = [];
+  render(<SuggestScreen initialMeeting={meeting} />);
+  createMutate.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "새로 제안 받기" }));
+  expect(createMutate).toHaveBeenCalledTimes(1);
+  expect(createMutate).toHaveBeenCalledWith(undefined);
 });

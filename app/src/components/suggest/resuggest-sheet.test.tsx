@@ -90,3 +90,18 @@ test("안내 문구를 시트 안에 보여 준다", () => {
     screen.getByText("고른 조건에 맞는 시간이 없어요. 조건을 줄여 볼까요?"),
   ).toBeInTheDocument();
 });
+
+test("목적을 저장하는 동안에는 다시 받기가 비활성이다", () => {
+  render(
+    <ResuggestSheet
+      kind="location"
+      openStationIds={[101]}
+      purposes={[]}
+      purposesPending
+      onSubmit={() => {}}
+      onClose={() => {}}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "지금 제안한 역 말고" }));
+  expect(screen.getByRole("button", { name: "다시 받기" })).toBeDisabled();
+});

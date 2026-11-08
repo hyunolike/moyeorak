@@ -81,6 +81,7 @@ export function ResuggestSheet({
   purposes,
   message,
   pending = false,
+  purposesPending = false,
   onPurposesChange,
   onSubmit,
   onClose,
@@ -91,6 +92,8 @@ export function ResuggestSheet({
   purposes: Purpose[];
   message?: string | null;
   pending?: boolean;
+  /** 목적을 저장하는 중이면 다시 받기를 막는다. 저장이 끝나기 전에 받으면 옛 목적으로 고른다. */
+  purposesPending?: boolean;
   onPurposesChange?: (next: Purpose[]) => void;
   onSubmit: (conditions: SuggestConditions) => void;
   onClose: () => void;
@@ -197,7 +200,7 @@ export function ResuggestSheet({
           <Button
             type="button"
             size="cta"
-            disabled={!canSubmit || pending}
+            disabled={!canSubmit || pending || purposesPending}
             onClick={() => onSubmit(conditions)}
           >
             다시 받기
