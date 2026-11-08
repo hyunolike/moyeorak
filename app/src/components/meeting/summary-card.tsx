@@ -277,16 +277,23 @@ export function SummaryCard({
       `${window.location.origin}/meetings/${summary.meetingId}`,
     );
 
-  const copy = async () => {
+  /** 복사하고 토스트로 알린다. 복사했는지 돌려준다. */
+  const copyWithToast = async () => {
     const copied = await copyText(text());
-    if (copied) {
-      sendEvent("shared");
-      toast("복사했어요");
-    } else toast("복사하지 못했어요");
+    toast(copied ? "복사했어요" : "복사하지 못했어요");
+    return copied;
   };
 
-  /** 카드, Web Share, 복사 중 하나로 바로 간다. 그 앞에서 아무것도 기다리지 않는다. */
+  const copy = async () => {
+    if (await copyWithToast()) sendEvent("shared");
+  };
+
+  /**
+   * 카드, Web Share, 복사 중 하나로 바로 간다. 그 앞에서 아무것도 기다리지 않는다.
+   * `shared`는 초대 링크 버튼처럼 누르는 순간 남기고, 카드로 보내면 `kakao_shared`를 더한다.
+   */
   const shareOnce = async () => {
+    sendEvent("shared");
     const origin = window.location.origin;
     const when = summary.start
       ? `${formatConfirmedDay(summary.start)} ${formatConfirmedClock(summary.start)}`
@@ -301,21 +308,19 @@ export function SummaryCard({
       url: `${url}/summary`,
     });
     if (sent) {
-      sendEvent("shared");
       sendEvent("kakao_shared");
       return;
     }
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text: text() });
-        sendEvent("shared");
         return;
       } catch (e) {
         // 공유 창을 닫은 것은 실패가 아니다.
         if (e instanceof DOMException && e.name === "AbortError") return;
       }
     }
-    await copy();
+    await copyWithToast();
   };
 
   const share = async () => {

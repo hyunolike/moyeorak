@@ -264,7 +264,7 @@ describe("복사와 공유", () => {
       }),
     );
     expect(writeText).not.toHaveBeenCalled();
-    expect(mutate).toHaveBeenCalledWith("kakao_shared");
+    expect(mutate.mock.calls).toEqual([["shared"], ["kakao_shared"]]);
   });
 
   test("공유는 Web Share가 있으면 그것을 쓴다", async () => {
@@ -281,10 +281,10 @@ describe("복사와 공유", () => {
     });
     expect(share).toHaveBeenCalledOnce();
     expect(writeText).not.toHaveBeenCalled();
-    expect(mutate).toHaveBeenCalledOnce();
+    expect(mutate.mock.calls).toEqual([["shared"]]);
   });
 
-  test("공유 창을 닫으면 아무 일도 없다", async () => {
+  test("공유 창을 닫아도 누른 순간 남긴 shared 말고는 아무 일도 없다", async () => {
     const share = vi
       .fn()
       .mockRejectedValue(new DOMException("cancel", "AbortError"));
@@ -300,7 +300,7 @@ describe("복사와 공유", () => {
     });
     expect(writeText).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
-    expect(mutate).not.toHaveBeenCalled();
+    expect(mutate.mock.calls).toEqual([["shared"]]);
   });
 
   test("그릴 때 카카오 SDK를 미리 불러 둔다", () => {
@@ -358,6 +358,18 @@ describe("복사와 공유", () => {
     });
     expect(writeText).toHaveBeenCalledOnce();
     expect(toast).toHaveBeenCalledWith("복사했어요");
+    // 복사로 내려가도 shared는 누른 순간 한 번만 남는다.
+    expect(mutate.mock.calls).toEqual([["shared"]]);
+  });
+
+  test("공유는 무엇으로 보내든 누르는 순간 shared를 남긴다", () => {
+    Object.defineProperty(navigator, "share", {
+      value: () => new Promise(() => {}),
+      configurable: true,
+    });
+    render(<SummaryCard summary={summary} participants={participants} />);
+    fireEvent.click(screen.getByRole("button", { name: "단톡방에 공유하기" }));
+    expect(mutate.mock.calls).toEqual([["shared"]]);
   });
 });
 
