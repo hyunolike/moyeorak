@@ -93,10 +93,12 @@ async function createConfirmedBothMeeting(page: Page) {
   return id;
 }
 
-test("카카오 키가 없으면 카카오톡으로 보내기가 링크를 복사한다", async ({
+test("카카오 SDK를 못 불러오면 카카오톡으로 보내기가 링크를 복사한다", async ({
   page,
   context,
 }) => {
+  // 키가 있든 없든 SDK를 막아, 어느 환경에서나 복사로 끝나게 한다.
+  await page.route("https://t1.kakaocdn.net/**", (route) => route.abort());
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/new/schedule");
   await page.getByLabel("팀장 이름").fill("현호");
