@@ -302,3 +302,18 @@ test("60분이 넘는 이동 시간은 시간과 분으로 보인다", () => {
   expect(screen.getByText("1시간 15분")).toBeTruthy();
   expect(screen.queryByText("75분")).toBeNull();
 });
+
+test("시작 시각이 없으면 캘린더 타일이 없다", () => {
+  const { rerender } = render(
+    <SummaryCardView summary={summary} onShare={noop} onCopy={noop} />,
+  );
+  expect(screen.getByRole("button", { name: "캘린더" })).toBeTruthy();
+  rerender(
+    <SummaryCardView
+      summary={{ ...summary, start: null, end: null }}
+      onShare={noop}
+      onCopy={noop}
+    />,
+  );
+  expect(screen.queryByRole("button", { name: "캘린더" })).toBeNull();
+});

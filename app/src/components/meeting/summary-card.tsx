@@ -11,6 +11,7 @@ import { BottomCta } from "@/components/layout/bottom-cta";
 import { GuideLine } from "@/components/layout/guide-line";
 import { formatDuration } from "@/components/location/format";
 import { lineColor } from "@/components/map/line-color";
+import { CalendarAction } from "@/components/meeting/calendar-action";
 import { UnconfirmButton } from "@/components/meeting/unconfirm-button";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Button } from "@/components/ui/button";
@@ -189,6 +190,11 @@ export function SummaryCardView({
             </span>
             글로 복사
           </button>
+          <CalendarAction
+            summary={summary}
+            tileClassName={actionTile}
+            iconClassName={actionIcon}
+          />
           {summary.place ? (
             <a
               className={actionTile}
