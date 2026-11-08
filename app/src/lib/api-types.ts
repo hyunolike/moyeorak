@@ -103,3 +103,17 @@ export type MyMeeting = {
   confirmedPlace: string | null;
   lastActivityAt: string;
 };
+
+export type NearbyPlace = {
+  name: string;
+  category: string;
+  distanceMeters: number;
+  url: string;
+};
+
+/** 확정 역 근처 장소를 모임 목적별로 묶은 것. label은 화면에 보이는 종류 이름이다. */
+export type NearbyGroup = {
+  purpose: Purpose;
+  label: string;
+  places: NearbyPlace[];
+};

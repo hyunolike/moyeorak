@@ -26,6 +26,7 @@ const unconfirmMutate = vi.fn();
 let meIsHost = false;
 vi.mock("@/lib/api", () => ({
   useMeetingEvent: () => mutate,
+  useNearbyPlaces: () => ({ data: undefined }),
   useMe: () => ({
     isPending: false,
     isError: false,
@@ -316,4 +317,20 @@ test("시작 시각이 없으면 캘린더 타일이 없다", () => {
     />,
   );
   expect(screen.queryByRole("button", { name: "캘린더" })).toBeNull();
+});
+
+test("근처 장소 섹션은 약속 카드 아래에 놓인다", () => {
+  render(
+    <SummaryCardView
+      summary={summary}
+      onShare={noop}
+      onCopy={noop}
+      nearby={<section aria-label="근처 자리" />}
+    />,
+  );
+  const card = screen.getByRole("article", { name: "약속 카드" });
+  const nearby = screen.getByRole("region", { name: "근처 자리" });
+  expect(
+    card.compareDocumentPosition(nearby) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
 });

@@ -1,7 +1,11 @@
 // @vitest-environment node
 import { resetTestDb } from "@/db/test-utils";
 import { ExternalApiError } from "@/server/clients/errors";
-import { countVenues, searchPlaces } from "@/server/clients/kakao-local";
+import {
+  countVenues,
+  searchNearbyPlaces,
+  searchPlaces,
+} from "@/server/clients/kakao-local";
 
 beforeEach(async () => {
   await resetTestDb();
@@ -178,4 +182,139 @@ test("countVenues는 meta가 없는 응답이면 ExternalApiError", async () => 
   await expect(countVenues({ lat: 37.5, lng: 127 })).rejects.toBeInstanceOf(
     ExternalApiError,
   );
+});
+
+const doc = (id: string, name: string, distance: number) => ({
+  id,
+  place_name: name,
+  category_name: "음식점 > 한식 > 육류,고기",
+  distance: String(distance),
+  place_url: `http://place.map.kakao.com/${id}`,
+  x: "126.98",
+  y: "37.53",
+});
+
+const nearbyFetch = () =>
+  vi.fn().mockImplementation(async (url: string) => {
+    const u = new URL(url);
+    const code = u.searchParams.get("category_group_code");
+    const query = u.searchParams.get("query");
+    const documents =
+      code === "CT1"
+        ? [doc("ct1", "전시관", 300), doc("ct2", "극장", 100)]
+        : code === "AT4"
+          ? [doc("at1", "공원", 200)]
+          : code
+            ? [doc(`${code}-1`, `${code} 가게`, 120)]
+            : [doc(`kw-${query}`, `${query} 집`, 80)];
+    return new Response(JSON.stringify({ documents }), { status: 200 });
+  });
+
+const center = { lat: 37.53, lng: 126.98 };
+
+test("밥 목적이면 FD6 카테고리로 반경 500m 3곳을 정확도순으로 찾아 정리한다", async () => {
+  const fetchMock = nearbyFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  const places = await searchNearbyPlaces(center, "meal");
+  expect(places).toEqual([
+    {
+      name: "FD6 가게",
+      category: "육류,고기",
+      distanceMeters: 120,
+      url: "https://place.map.kakao.com/FD6-1",
+    },
+  ]);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+  const parsed = new URL(url);
+  expect(parsed.origin + parsed.pathname).toBe(
+    "https://dapi.kakao.com/v2/local/search/category.json",
+  );
+  expect(parsed.searchParams.get("category_group_code")).toBe("FD6");
+  expect(parsed.searchParams.get("x")).toBe("126.98");
+  expect(parsed.searchParams.get("y")).toBe("37.53");
+  expect(parsed.searchParams.get("radius")).toBe("500");
+  expect(parsed.searchParams.get("sort")).toBe("accuracy");
+  expect(parsed.searchParams.get("size")).toBe("3");
+  expect((init.headers as Record<string, string>).Authorization).toBe(
+    "KakaoAK kakao-key",
+  );
+});
+
+test("카페 목적이면 CE7 카테고리로 찾는다", async () => {
+  const fetchMock = nearbyFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  await searchNearbyPlaces(center, "cafe");
+  const [url] = fetchMock.mock.calls[0] as [string];
+  expect(new URL(url).searchParams.get("category_group_code")).toBe("CE7");
+});
+
+test("술 목적이면 술집 키워드로 찾는다", async () => {
+  const fetchMock = nearbyFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  const places = await searchNearbyPlaces(center, "drink");
+  const [url] = fetchMock.mock.calls[0] as [string];
+  const parsed = new URL(url);
+  expect(parsed.pathname).toBe("/v2/local/search/keyword.json");
+  expect(parsed.searchParams.get("query")).toBe("술집");
+  expect(parsed.searchParams.get("radius")).toBe("500");
+  expect(parsed.searchParams.get("sort")).toBe("accuracy");
+  expect(places[0]?.name).toBe("술집 집");
+});
+
+test("공부 목적이면 스터디카페 키워드로 찾는다", async () => {
+  const fetchMock = nearbyFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  await searchNearbyPlaces(center, "study");
+  const [url] = fetchMock.mock.calls[0] as [string];
+  expect(new URL(url).searchParams.get("query")).toBe("스터디카페");
+});
+
+test("구경 목적이면 CT1과 AT4를 합쳐 거리순 3곳이다", async () => {
+  const fetchMock = nearbyFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  const places = await searchNearbyPlaces(center, "sight");
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(places.map((p) => p.name)).toEqual(["극장", "공원", "전시관"]);
+  expect(places.map((p) => p.distanceMeters)).toEqual([100, 200, 300]);
+});
+
+test("같은 목적과 좌표는 캐시에서 돌려주고 목적이 다르면 따로 찾는다", async () => {
+  const fetchMock = nearbyFetch();
+  vi.stubGlobal("fetch", fetchMock);
+  const first = await searchNearbyPlaces(center, "meal");
+  const second = await searchNearbyPlaces(
+    { lat: 37.530001, lng: 126.980001 },
+    "meal",
+  );
+  expect(second).toEqual(first);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  await searchNearbyPlaces(center, "cafe");
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+test("카카오 실패는 캐시하지 않는다", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response("no", { status: 500 })),
+  );
+  await expect(searchNearbyPlaces(center, "meal")).rejects.toBeInstanceOf(
+    ExternalApiError,
+  );
+  const ok = nearbyFetch();
+  vi.stubGlobal("fetch", ok);
+  await searchNearbyPlaces(center, "meal");
+  expect(ok).toHaveBeenCalledTimes(1);
+});
+
+test("MOCK_EXTERNAL=1이면 fetch 없이 목적별 고정 3곳이다", async () => {
+  vi.stubEnv("MOCK_EXTERNAL", "1");
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  const meal = await searchNearbyPlaces(center, "meal");
+  const drink = await searchNearbyPlaces(center, "drink");
+  expect(meal).toHaveLength(3);
+  expect(drink).toHaveLength(3);
+  expect(meal[0]?.name).not.toBe(drink[0]?.name);
+  expect(fetchMock).not.toHaveBeenCalled();
 });

@@ -8,6 +8,7 @@ import type {
   MeetingProgress,
   Midpoint,
   MyMeeting,
+  NearbyGroup,
   Place,
   ScheduleSummary,
   Scope,
@@ -334,6 +335,22 @@ export function usePlaceSearch(keyword: string) {
     queryFn: () =>
       apiFetch<Place[]>(`/api/places/search?q=${encodeURIComponent(keyword)}`),
     enabled: keyword.length > 0,
+  });
+}
+
+/** 확정된 역 근처에서 모임 목적에 맞는 장소. 실패해도 다시 묻지 않고 화면은 섹션을 숨긴다. */
+export function useNearbyPlaces(meetingId: string) {
+  return useQuery({
+    queryKey: ["nearby", meetingId],
+    queryFn: async () =>
+      (
+        await apiFetch<{ groups: NearbyGroup[] }>(
+          `/api/meetings/${meetingId}/nearby`,
+          withDeviceKey({}),
+        )
+      ).groups,
+    retry: false,
+    staleTime: 60 * 60 * 1000,
   });
 }
 

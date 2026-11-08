@@ -12,6 +12,7 @@ import { GuideLine } from "@/components/layout/guide-line";
 import { formatDuration } from "@/components/location/format";
 import { lineColor } from "@/components/map/line-color";
 import { CalendarAction } from "@/components/meeting/calendar-action";
+import { NearbyPlacesSection } from "@/components/meeting/nearby-places";
 import { UnconfirmButton } from "@/components/meeting/unconfirm-button";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,7 @@ export function SummaryCardView({
   onShare,
   onCopy,
   unconfirm,
+  nearby,
 }: {
   summary: MeetingSummary;
   /** 확정 직후 진입이면 카드가 올라오고 도장이 한 번 강조된다. */
@@ -81,6 +83,8 @@ export function SummaryCardView({
   onCopy: () => void;
   /** 모임장에게만 넘긴다. 확정 되돌리기 버튼 자리. */
   unconfirm?: ReactNode;
+  /** 카드 아래 근처 장소 섹션 자리. 확정 장소가 있을 때만 넘긴다. */
+  nearby?: ReactNode;
 }) {
   const reduce = useReducedMotion();
   const play = justConfirmed && !reduce;
@@ -213,6 +217,7 @@ export function SummaryCardView({
         {unconfirm ? (
           <div className="flex justify-center">{unconfirm}</div>
         ) : null}
+        {nearby}
       </div>
       <BottomCta
         primary={
@@ -286,6 +291,14 @@ export function SummaryCard({
       justConfirmed={justConfirmed}
       onShare={share}
       onCopy={copy}
+      nearby={
+        summary.place ? (
+          <NearbyPlacesSection
+            meetingId={summary.meetingId}
+            stationName={stationLabel(summary.place.name)}
+          />
+        ) : null
+      }
       unconfirm={
         me?.isHost ? (
           <UnconfirmButton
