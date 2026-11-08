@@ -13,6 +13,7 @@ import { RouteProgress } from "@/components/layout/route-progress";
 import { SectionBand } from "@/components/layout/section-band";
 import { Skeleton } from "@/components/layout/skeleton";
 import { StatusChip } from "@/components/layout/status-chip";
+import { DeadlineSheet } from "@/components/meeting/deadline-sheet";
 import { JoinInvite } from "@/components/meeting/join-invite";
 import { NudgeSheet, nudgeWaitingKey } from "@/components/meeting/nudge-sheet";
 import { UnconfirmButton } from "@/components/meeting/unconfirm-button";
@@ -33,6 +34,7 @@ import {
   routeStops,
 } from "@/lib/home-state";
 import { nudgeInput } from "@/lib/nudge-template";
+import { isPast, respondByText } from "@/lib/respond-by";
 
 /**
  * 이전 렌더보다 새로 응답한 참여자 id. 첫 렌더에는 비어 있다.
@@ -89,6 +91,14 @@ function ParticipantRow({
   );
 }
 
+/** 확정 전이고 마감이 아직 안 지났으면 진행 카드에 쓸 한 줄. */
+function deadlineLine(p: MeetingProgress): string | null {
+  if (p.status === "confirmed" || !p.respondBy) return null;
+  const at = new Date(p.respondBy);
+  const now = new Date();
+  return isPast(at, now) ? null : `${respondByText(at, now)} 응답해 주세요`;
+}
+
 const secondaryButton = "size-full cursor-pointer";
 
 /** 참여자 id를 아직 모르면(`undefined`) 마주가 확인 중이라고 말하고 버튼은 숨긴다. */
@@ -102,6 +112,7 @@ export function MeetingHomeView({
   const [nudgeOpen, setNudgeOpen] = useState(false);
   // 확정 뒤에 늦게 온 친구가 "나도 참여하기"를 누르면 이 자리에서 이름을 받는다.
   const [joining, setJoining] = useState(false);
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
   const state = meId === undefined ? null : homeState(progress, meId);
   const nudge = state?.canNudge ? nudgeInput(progress) : null;
   const prefetchNudge = usePrefetchNudge(progress.meetingId);
@@ -111,6 +122,7 @@ export function MeetingHomeView({
   const waitingPeople = progress.participants.filter((p) => !votedNow(p));
   const entering = useNewlyResponded(respondedPeople.map((p) => p.id));
   const respondedKey = respondedPeople.map((p) => p.id).join(",");
+  const deadlineText = deadlineLine(progress);
   const action = state?.action;
   const secondary = state?.secondaryAction;
 
@@ -140,6 +152,9 @@ export function MeetingHomeView({
         {state?.note ? (
           <p className="text-text text-b2 mt-2 tabular-nums">{state.note}</p>
         ) : null}
+        {deadlineText ? (
+          <p className="text-text text-b2 mt-2 tabular-nums">{deadlineText}</p>
+        ) : null}
         {state ? (
           <>
             <div className="mt-6">
@@ -159,6 +174,18 @@ export function MeetingHomeView({
                 {state.message}
               </GuideLine>
             </div>
+            {state.deadlineNotice ? (
+              <p className="text-muted text-b3 mt-2">{state.deadlineNotice}</p>
+            ) : null}
+            {state.deadlineAction ? (
+              <button
+                type="button"
+                onClick={() => setDeadlineOpen(true)}
+                className="text-muted text-b3 mt-3 cursor-pointer underline"
+              >
+                {state.deadlineAction}
+              </button>
+            ) : null}
           </>
         ) : (
           <div className="mt-6 flex flex-col gap-5">
@@ -234,6 +261,14 @@ export function MeetingHomeView({
               </Link>
             ) : undefined
           }
+        />
+      ) : null}
+      {state?.deadlineAction ? (
+        <DeadlineSheet
+          meetingId={progress.meetingId}
+          hasDeadline={!!progress.respondBy}
+          open={deadlineOpen}
+          onClose={() => setDeadlineOpen(false)}
         />
       ) : null}
       {nudge ? (

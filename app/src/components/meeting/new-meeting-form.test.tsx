@@ -146,3 +146,14 @@ test("시간만 정하는 모임에는 목적 칩이 없고 purposes도 보내�
   submit();
   expect(mutate.mock.calls[0][0].purposes).toBeUndefined();
 });
+
+test("응답 마감을 고르면 respondBy를 보낸다", () => {
+  render(<NewMeetingForm flow="schedule" />);
+  fillName();
+  submit();
+  expect(mutate.mock.calls[0][0].respondBy).toBeUndefined();
+  mutate.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "내일 밤 10시" }));
+  submit();
+  expect(mutate.mock.calls[0][0].respondBy).toBe("2026-11-03T13:00:00.000Z");
+});

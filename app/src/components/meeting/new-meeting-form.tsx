@@ -11,6 +11,7 @@ import {
   type Preset,
 } from "@/components/meeting/poll-window-picker";
 import { PurposeChips } from "@/components/meeting/purpose-chips";
+import { RespondByPicker } from "@/components/meeting/respond-by-picker";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Stepper } from "@/components/stepper";
 import { TextField } from "@/components/text-field";
@@ -20,6 +21,7 @@ import { useCreateMeeting } from "@/lib/api";
 import type { Scope } from "@/lib/api-types";
 import { type DayTime, pollWindow, seoulToday } from "@/lib/poll-window";
 import type { Purpose } from "@/lib/purposes";
+import { type RespondByOption, respondByOptions } from "@/lib/respond-by";
 
 export type Flow = "both" | "schedule" | "location";
 
@@ -47,6 +49,17 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
     preset === "custom"
       ? pollWindow({ preset, dates: customDates, time }, today)
       : pollWindow({ preset }, today);
+  const lastPollDate = decidesTime
+    ? (window.dates.reduce<string | null>(
+        (max, d) => (max === null || d > max ? d : max),
+        null,
+      ) ?? null)
+    : null;
+  const [respondBy, setRespondBy] = useState<RespondByOption["key"] | null>(
+    null,
+  );
+  const respondByChoices = respondByOptions(new Date(), lastPollDate);
+  const chosenRespondBy = respondByChoices.find((o) => o.key === respondBy);
   const ready = !!trimmed && (!decidesTime || window.dates.length > 0);
 
   const handleSubmit = () => {
@@ -57,6 +70,9 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
         scope,
         ...(decidesTime ? { window } : {}),
         ...(decidesPlace ? { purposes } : {}),
+        ...(chosenRespondBy
+          ? { respondBy: chosenRespondBy.at.toISOString() }
+          : {}),
       },
       {
         onSuccess: ({ meetingId }) => router.push(`/meetings/${meetingId}`),
@@ -135,6 +151,14 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
               onTimeChange={setTime}
             />
           )}
+          <div className="mt-6">
+            <p className="text-b3 text-text mb-2">응답 마감</p>
+            <RespondByPicker
+              value={chosenRespondBy ? respondBy : null}
+              options={respondByChoices}
+              onChange={setRespondBy}
+            />
+          </div>
         </div>
         <BottomCta
           primary={

@@ -28,6 +28,7 @@ vi.mock("@/lib/api", () => ({
   useMeetingProgress: () => ({ data: undefined }),
   useNudge: () => ({ isFetching: false, data: undefined }),
   usePrefetchNudge: () => prefetchNudge,
+  useSetDeadline: () => ({ mutate: vi.fn(), isPending: false }),
   useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
   useJoin: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
   useClaim: () => ({ mutate: vi.fn(), isError: false, isPending: false }),

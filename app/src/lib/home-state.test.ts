@@ -532,3 +532,64 @@ test("routeStops: 장소를 모으는 중이면 시간은 지났고 장소가 �
   const s = homeState(progress({ scope: "both", status: "locating" }), 1);
   expect(routeStops(s).map((x) => x.state)).toEqual(["done", "now", "todo"]);
 });
+
+describe("응답 마감", () => {
+  const now = new Date("2026-11-10T14:00:00Z");
+  const past = "2026-11-09T13:00:00Z";
+  const two = (over: Partial<MeetingProgress> = {}) =>
+    progress({
+      participantCount: 5,
+      respondBy: past,
+      participants: [
+        person(1, "현호", voted),
+        person(2, "서연", voted),
+        person(3, "민준"),
+      ],
+      ...over,
+    });
+
+  test("마감이 지난 호스트 홈의 주 버튼은 제안 받기다", () => {
+    const s = homeState(two(), 1, now);
+    expect(s.action).toEqual({
+      label: "마감이 지났어요. 지금 응답으로 제안 받기",
+      href: "/meetings/m1/suggest",
+    });
+  });
+
+  test("응답이 한 명뿐이면 주 버튼을 바꾸지 않는다", () => {
+    const p = two({
+      participants: [
+        person(1, "현호", voted),
+        person(2, "서연"),
+        person(3, "민준"),
+      ],
+    });
+    expect(homeState(p, 1, now).action?.label).not.toBe(
+      "마감이 지났어요. 지금 응답으로 제안 받기",
+    );
+  });
+
+  test("참여자에게는 아직 응답할 수 있다고 알린다", () => {
+    const s = homeState(two(), 3, now);
+    expect(s.deadlineNotice).toBe("마감이 지났지만 아직 응답할 수 있어요");
+    expect(s.action?.label).toBe("가능한 시간 남기기");
+  });
+
+  test("마감 전이거나 확정 뒤에는 안내하지 않는다", () => {
+    expect(
+      homeState(two({ respondBy: "2026-11-12T13:00:00Z" }), 3, now)
+        .deadlineNotice,
+    ).toBeNull();
+    expect(
+      homeState(two({ status: "confirmed" }), 3, now).deadlineNotice,
+    ).toBeNull();
+  });
+
+  test("호스트에게만 마감 버튼 문구를 준다", () => {
+    expect(homeState(two({ respondBy: null }), 1, now).deadlineAction).toBe(
+      "응답 마감 정하기",
+    );
+    expect(homeState(two(), 1, now).deadlineAction).toBe("응답 마감 바꾸기");
+    expect(homeState(two(), 3, now).deadlineAction).toBeNull();
+  });
+});

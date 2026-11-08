@@ -170,6 +170,7 @@ export function useCreateMeeting() {
       scope: Scope;
       window?: PollWindow;
       purposes?: Purpose[];
+      respondBy?: string;
     }) => {
       const result = await apiFetch<{
         meetingId: string;
@@ -181,6 +182,23 @@ export function useCreateMeeting() {
       storeParticipantId(result.meetingId, result.participantId);
       return result;
     },
+  });
+}
+
+/** 모임장 전용. 응답 마감을 정하거나(ISO) 없앤다(null). 홈 진행 상태를 다시 읽는다. */
+export function useSetDeadline(meetingId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (respondBy: string | null) =>
+      apiFetch<{ respondBy: string | null }>(
+        `/api/meetings/${meetingId}/deadline`,
+        withDeviceKey(json("PATCH", { respondBy })),
+      ),
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: keys.meeting(meetingId) }),
+        client.invalidateQueries({ queryKey: keys.progress(meetingId) }),
+      ]),
   });
 }
 
