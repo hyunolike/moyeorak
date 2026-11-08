@@ -23,6 +23,7 @@ import {
 } from "@/server/schedule/errors";
 import {
   NobodyWaitingError,
+  NoMatchError,
   NotConfirmedError,
   NotEnoughResponsesError,
   StationNotFoundError,
@@ -58,6 +59,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [AiConfigError, 500],
   [ParseFailedError, 422],
   [NotEnoughResponsesError, 409],
+  [NoMatchError, 409],
   [SuggestionNotFoundError, 404],
   [SuggestionClosedError, 409],
   [StationNotFoundError, 404],

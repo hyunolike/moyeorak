@@ -49,7 +49,10 @@ test("모델 응답이 맞으면 모두 ai", async () => {
   const generate = sequence({
     reasons: ["세 명 중 두 명이 편해요.", "가장 빨라요. 2명이 가능해요."],
   });
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(r.map((x) => x.source)).toEqual(["ai", "ai"]);
   const rows = await logs();
   expect(rows).toHaveLength(1);
@@ -66,7 +69,10 @@ test("모델이 틀린 숫자를 쓴 카드만 문장 틀로 바뀐다", async (
   const generate = sequence({
     reasons: ["3명 중 2명이 가능해요.", "5명 모두 가능해요."],
   });
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(r).toEqual([
     { reason: "3명 중 2명이 가능해요.", source: "ai" },
     { reason: rule[1], source: "rule" },
@@ -76,7 +82,10 @@ test("모델이 틀린 숫자를 쓴 카드만 문장 틀로 바뀐다", async (
 test("모델이 스키마를 두 번 어기면 모두 문장 틀, 호출 기록 2줄(ok=false)", async () => {
   const meetingId = await newMeeting();
   const generate = sequence({ nope: 1 }, { reasons: [""] });
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(r.map((x) => x.reason)).toEqual(rule);
   expect(r.every((x) => x.source === "rule")).toBe(true);
   expect((await logs()).map((x) => x.ok)).toEqual([false, false]);
@@ -85,7 +94,10 @@ test("모델이 스키마를 두 번 어기면 모두 문장 틀, 호출 기록 
 test("첫 응답이 스키마를 어기고 두 번째가 맞으면 ai", async () => {
   const meetingId = await newMeeting();
   const generate = sequence({ nope: 1 }, { reasons: ["좋아요.", "빨라요."] });
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(r.map((x) => x.source)).toEqual(["ai", "ai"]);
   expect((await logs()).map((x) => x.ok)).toEqual([false, true]);
 });
@@ -104,7 +116,10 @@ test("상한에 닿으면 모델을 부르지 않고 문장 틀", async () => {
     })),
   );
   const generate = sequence({ reasons: ["a", "b"] });
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(generate).not.toHaveBeenCalled();
   expect(r.map((x) => x.reason)).toEqual(rule);
 });
@@ -112,14 +127,20 @@ test("상한에 닿으면 모델을 부르지 않고 문장 틀", async () => {
 test("reasons 길이가 카드 수와 다르면 모두 문장 틀", async () => {
   const meetingId = await newMeeting();
   const generate = sequence({ reasons: ["하나뿐이에요."] });
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(r.map((x) => x.source)).toEqual(["rule", "rule"]);
 });
 
 test("모델 호출이 터지면(타임아웃, 네트워크) 던지지 않고 문장 틀, 다시 부르지 않는다", async () => {
   const meetingId = await newMeeting();
   const generate = sequence(new Error("timeout"));
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(generate).toHaveBeenCalledTimes(1);
   expect(r.map((x) => x.reason)).toEqual(rule);
   expect((await logs()).map((x) => x.ok)).toEqual([false]);
@@ -155,7 +176,7 @@ test("카드가 없으면 모델을 부르지 않는다", async () => {
   const meetingId = await newMeeting();
   const generate = sequence({ reasons: [] });
   expect(
-    await writeReasons(meetingId, [], 3, { generate, model: "m" }),
+    await writeReasons(meetingId, [], 3, undefined, { generate, model: "m" }),
   ).toEqual([]);
   expect(generate).not.toHaveBeenCalled();
 });
@@ -187,7 +208,10 @@ test("불가능한 사람이 있는데 모두 가능하다고 쓰면 그 카드�
   const generate = sequence({
     reasons: ["세 명 모두 가능해요.", "가장 빨라요. 2명이 가능해요."],
   });
-  const r = await writeReasons(meetingId, picks, 3, { generate, model: "m" });
+  const r = await writeReasons(meetingId, picks, 3, undefined, {
+    generate,
+    model: "m",
+  });
   expect(r.map((x) => x.source)).toEqual(["rule", "ai"]);
   expect(r[0]?.reason).toBe(rule[0]);
 });
@@ -202,9 +226,20 @@ test("이동 분을 모르는 사람이 있는데 모두 도착한다고 쓰면 
     ],
   };
   const generate = sequence({ reasons: ["평균 20분이면 모두 도착해요."] });
-  const r = await writeReasons(meetingId, [unknown], 2, {
+  const r = await writeReasons(meetingId, [unknown], 2, undefined, {
     generate,
     model: "m",
   });
   expect(r[0]?.source).toBe("rule");
+});
+
+test("조건이 있으면 프롬프트 user 메시지에 다시 고른 조건 한 줄이 들어간다", () => {
+  const withConditions = buildReasonsPrompt([mostPick], 3, {
+    days: "weekend",
+    time: "evening",
+  });
+  expect(withConditions.user).toContain("다시 고른 조건: 주말 저녁");
+  expect(buildReasonsPrompt([mostPick], 3).user).not.toContain(
+    "다시 고른 조건",
+  );
 });

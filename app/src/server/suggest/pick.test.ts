@@ -14,6 +14,14 @@ const slot = (
 
 const four = ["가", "나", "다", "라"];
 
+test("주말 조건이면 평일 칸을 고르지 않는다", () => {
+  const weekday = slot("2026-11-06T14:00", "2026-11-06T16:00", four);
+  const weekend = slot("2026-11-07T10:00", "2026-11-07T10:30", ["가", "나"]);
+  const picks = pickSchedule([weekday, weekend], 4, { days: "weekend" });
+  expect(picks.map((p) => p.start)).toEqual([weekend.start]);
+  expect(pickSchedule([weekday], 4, { days: "weekend" })).toEqual([]);
+});
+
 describe("pickSchedule", () => {
   test("가능 인원이 같으면 60분 이상 묶음이 앞선다", () => {
     const short = slot("2026-11-07T10:00", "2026-11-07T10:30", four);
@@ -154,4 +162,16 @@ describe("pickLocation", () => {
       count: 7,
     });
   });
+});
+
+test("제외한 역은 고르지 않는다", () => {
+  const a = rec(1, 30, [29, 31]);
+  const b = rec(2, 33, [20, 46]);
+  const c = rec(3, 40, [40, 40]);
+  const picks = pickLocation([a, b, c], depart, [], {
+    excludeStationIds: [1],
+  });
+  expect(picks.map((p) => p.stationId)).not.toContain(1);
+  expect(picks).toHaveLength(2);
+  expect(pickLocation([a], depart, [], { excludeStationIds: [1] })).toEqual([]);
 });

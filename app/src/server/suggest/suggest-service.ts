@@ -7,7 +7,12 @@ import {
   participants,
   scheduleVotes,
 } from "@/db/schema";
+import {
+  isEmptyConditions,
+  type SuggestConditions,
+} from "@/lib/suggest-conditions";
 import { writeReasons as defaultWriteReasons } from "@/server/ai/suggest/write-reasons";
+import { recordEvent } from "@/server/events/record-event";
 import { confirmLocation } from "@/server/location/confirm-location";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import {
@@ -21,6 +26,7 @@ import {
   getScheduleSummary,
 } from "@/server/schedule/schedule-service";
 import {
+  NoMatchError,
   NotEnoughResponsesError,
   SuggestionClosedError,
   SuggestionNotFoundError,
@@ -67,9 +73,11 @@ async function loadMeeting(meetingId: string): Promise<MeetingDetail> {
 function schedulePayload(
   pick: SchedulePick,
   w: { reason: string; source: "ai" | "rule" },
+  conditions?: SuggestConditions,
 ): SuggestionPayload {
   return {
     ...pick,
+    ...(conditions ? { conditions } : {}),
     start: pick.start.toISOString(),
     end: pick.end.toISOString(),
     reason: w.reason,
@@ -80,9 +88,11 @@ function schedulePayload(
 function locationPayload(
   pick: LocationPick,
   w: { reason: string; source: "ai" | "rule" },
+  conditions?: SuggestConditions,
 ): SuggestionPayload {
   return {
     ...pick,
+    ...(conditions ? { conditions } : {}),
     departAt: pick.departAt.toISOString(),
     reason: w.reason,
     source: w.source,
@@ -92,6 +102,20 @@ function locationPayload(
 export async function createSuggestions(
   meetingId: string,
   deps: { writeReasons?: typeof defaultWriteReasons } = {},
+  conditions: SuggestConditions = {},
+): Promise<SuggestionSet> {
+  const active = isEmptyConditions(conditions) ? undefined : conditions;
+  const set = await buildSuggestions(meetingId, deps, active);
+  if (active && set.items.length > 0) {
+    await recordEvent(meetingId, "resuggested");
+  }
+  return set;
+}
+
+async function buildSuggestions(
+  meetingId: string,
+  deps: { writeReasons?: typeof defaultWriteReasons },
+  conditions: SuggestConditions | undefined,
 ): Promise<SuggestionSet> {
   const write = deps.writeReasons ?? defaultWriteReasons;
   const meeting = await loadMeeting(meetingId);
@@ -106,8 +130,18 @@ export async function createSuggestions(
     if (summary.respondedCount < MIN_RESPONSES) {
       throw new NotEnoughResponsesError();
     }
-    const picks = pickSchedule(summary.best, summary.respondedCount);
-    const reasons = await write(meetingId, picks, summary.respondedCount);
+    const picks = pickSchedule(
+      summary.best,
+      summary.respondedCount,
+      conditions,
+    );
+    if (conditions && picks.length === 0) throw new NoMatchError();
+    const reasons = await write(
+      meetingId,
+      picks,
+      summary.respondedCount,
+      conditions,
+    );
     return saveIfFresh(
       meetingId,
       kind,
@@ -116,6 +150,7 @@ export async function createSuggestions(
         schedulePayload(
           p,
           reasons[i] as { reason: string; source: "ai" | "rule" },
+          conditions,
         ),
       ),
     );
@@ -124,9 +159,15 @@ export async function createSuggestions(
   const departAt = meeting.schedulePoll?.confirmedStart ?? new Date();
   const result = await recommendMidpoint(meetingId, departAt);
   if (result.type === "insufficient") throw new NotEnoughResponsesError();
-  const picks = pickLocation(result.stations, departAt, meeting.purposes);
+  const picks = pickLocation(
+    result.stations,
+    departAt,
+    meeting.purposes,
+    conditions,
+  );
+  if (conditions && picks.length === 0) throw new NoMatchError();
   const departures = result.stations[0]?.perParticipant.length ?? 0;
-  const reasons = await write(meetingId, picks, departures);
+  const reasons = await write(meetingId, picks, departures, conditions);
   return saveIfFresh(
     meetingId,
     kind,
@@ -135,6 +176,7 @@ export async function createSuggestions(
       locationPayload(
         p,
         reasons[i] as { reason: string; source: "ai" | "rule" },
+        conditions,
       ),
     ),
   );
@@ -255,7 +297,10 @@ export async function rejectSuggestion(
       )
       .returning({ id: agentSuggestions.id });
   });
-  if (rows.length > 0) return;
+  if (rows.length > 0) {
+    await recordEvent(meetingId, "suggestion_skipped");
+    return;
+  }
   const existing = await getSuggestion(meetingId, id);
   if (!existing) throw new SuggestionNotFoundError();
   throw new SuggestionClosedError();

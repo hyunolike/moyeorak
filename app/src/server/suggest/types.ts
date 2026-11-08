@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SuggestConditionsSchema } from "@/lib/suggest-conditions";
 
 const source = z.enum(["ai", "rule"]);
 
@@ -11,6 +12,7 @@ export const SchedulePayload = z.object({
   unavailable: z.array(z.string()),
   reason: z.string(),
   source,
+  conditions: SuggestConditionsSchema.optional(),
 });
 
 export const LocationPayload = z.object({
@@ -31,6 +33,7 @@ export const LocationPayload = z.object({
   venue: z.object({ label: z.string(), count: z.number() }).nullish(),
   reason: z.string(),
   source,
+  conditions: SuggestConditionsSchema.optional(),
 });
 
 export const SuggestionPayload = z.discriminatedUnion("kind", [

@@ -45,3 +45,11 @@ export class NotConfirmedError extends Error {
     this.name = "NotConfirmedError";
   }
 }
+
+export class NoMatchError extends Error {
+  readonly code = "NO_MATCH";
+  constructor() {
+    super("고른 조건에 맞는 제안이 없어요. 조건을 줄여 볼까요?");
+    this.name = "NoMatchError";
+  }
+}

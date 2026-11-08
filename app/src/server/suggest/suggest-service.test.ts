@@ -31,6 +31,7 @@ import {
   saveScheduleVote,
 } from "@/server/schedule/schedule-service";
 import {
+  NoMatchError,
   NotEnoughResponsesError,
   SuggestionClosedError,
   SuggestionNotFoundError,
@@ -58,6 +59,7 @@ const fakeWrite = vi.fn(
     _id: string,
     picks: Parameters<typeof templateReason>[0][],
     n: number,
+    _conditions?: unknown,
   ) =>
     picks.map((p) => ({
       reason: templateReason(p, n),
@@ -549,4 +551,41 @@ test("장소 제안 뒤 목적을 바꾸면 다시 만든 제안으로 바뀌고
   });
   const stale = await createSuggestions(meetingId, deps);
   expect(stale.items).toEqual([]);
+});
+
+test("조건에 맞는 시간이 없으면 NoMatchError이고 기존 제안이 남아 있다", async () => {
+  const { meetingId } = await setup("schedule");
+  const first = await createSuggestions(meetingId, deps);
+  // 투표는 모두 낮 시간이라 저녁 조건에는 맞는 칸이 없다.
+  await expect(
+    createSuggestions(meetingId, deps, { time: "evening" }),
+  ).rejects.toBeInstanceOf(NoMatchError);
+  const rows = await proposed(meetingId);
+  expect(rows.filter((r) => r.status === "proposed").map((r) => r.id)).toEqual(
+    first.items.map((i) => i.id),
+  );
+  const events = await db.select().from(meetingEvents);
+  expect(events.filter((e) => e.type === "resuggested")).toHaveLength(0);
+});
+
+test("조건을 넣어 만들면 payload에 conditions가 있고 resuggested가 남는다", async () => {
+  const { meetingId } = await setup("schedule");
+  const set = await createSuggestions(meetingId, deps, { time: "day" });
+  expect(set.items.length).toBeGreaterThan(0);
+  for (const item of set.items) {
+    expect(item.kind === "schedule" && item.conditions).toEqual({
+      time: "day",
+    });
+  }
+  expect(fakeWrite.mock.calls[0]?.[3]).toEqual({ time: "day" });
+  const events = await db.select().from(meetingEvents);
+  expect(events.filter((e) => e.type === "resuggested")).toHaveLength(1);
+});
+
+test("조건 없이 만들면 resuggested가 남지 않는다", async () => {
+  const { meetingId } = await setup("schedule");
+  const set = await createSuggestions(meetingId, deps, {});
+  expect(set.items[0] && "conditions" in set.items[0]).toBe(false);
+  const events = await db.select().from(meetingEvents);
+  expect(events.filter((e) => e.type === "resuggested")).toHaveLength(0);
 });
