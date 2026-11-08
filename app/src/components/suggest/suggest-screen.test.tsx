@@ -142,6 +142,11 @@ test("NO_MATCH면 시트 안에 안내 문구를 보여 주고 기존 제안은 
   expect(
     screen.queryByText("제안을 처리하지 못했어요. 잠시 후 다시 시도해 주세요."),
   ).toBeNull();
+  expect(
+    screen.queryByText(
+      "이미 정해졌거나 닫힌 제안이에요. 모임 홈에서 확인해 주세요.",
+    ),
+  ).toBeNull();
   expect(createMutate).toHaveBeenCalledWith(
     { conditions: { days: "weekend" } },
     expect.anything(),
