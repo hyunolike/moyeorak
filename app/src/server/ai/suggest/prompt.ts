@@ -1,5 +1,5 @@
 import {
-  conditionsLabel,
+  conditionsPhrase,
   type SuggestConditions,
 } from "@/lib/suggest-conditions";
 import type { Pick } from "@/server/ai/suggest/templates";
@@ -51,12 +51,10 @@ export function buildReasonsPrompt(
   respondedCount: number,
   conditions?: SuggestConditions,
 ): { system: string; user: string } {
-  const label = conditions ? conditionsLabel(conditions) : null;
+  const label = conditions ? conditionsPhrase(conditions) : null;
   const user = [
     `응답한 사람 ${respondedCount}명, 카드 ${picks.length}장`,
-    ...(label
-      ? [`다시 고른 조건: ${label.replace("으로 다시 고른 제안", "")}`]
-      : []),
+    ...(label ? [`다시 고른 조건: ${label}`] : []),
     ...picks.map(describe),
   ].join("\n");
   return { system: SYSTEM, user };

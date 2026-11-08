@@ -55,6 +55,21 @@ describe("conditionsLabel", () => {
     expect(conditionsLabel({ days: "weekday", minHours: 2 })).toBe(
       "평일 2시간 이상으로 다시 고른 제안",
     );
+  });
+
+  test("마지막 말에 받침이 없거나 ㄹ이면 '로', 다른 받침이면 '으로'를 붙인다", () => {
+    expect(conditionsLabel({ days: "weekday" })).toBe("평일로 다시 고른 제안");
+    expect(conditionsLabel({ days: "weekend" })).toBe("주말로 다시 고른 제안");
+    expect(conditionsLabel({ time: "evening" })).toBe(
+      "저녁으로 다시 고른 제안",
+    );
+    expect(conditionsLabel({ time: "day" })).toBe("낮으로 다시 고른 제안");
+    expect(conditionsLabel({ minHours: 2 })).toBe(
+      "2시간 이상으로 다시 고른 제안",
+    );
+    expect(conditionsLabel({ time: "evening", days: "weekend" })).toBe(
+      "주말 저녁으로 다시 고른 제안",
+    );
     expect(conditionsLabel({ excludeStationIds: [1] })).toBe(
       "다른 역으로 다시 고른 제안",
     );

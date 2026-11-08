@@ -238,7 +238,14 @@ test("조건이 있으면 프롬프트 user 메시지에 다시 고른 조건 �
     days: "weekend",
     time: "evening",
   });
-  expect(withConditions.user).toContain("다시 고른 조건: 주말 저녁");
+  expect(withConditions.user).toContain("다시 고른 조건: 주말 저녁\n");
+  // '로'로 끝나는 라벨도 조사 없이 조건만 넣는다.
+  expect(buildReasonsPrompt([mostPick], 3, { days: "weekday" }).user).toContain(
+    "다시 고른 조건: 평일\n",
+  );
+  expect(
+    buildReasonsPrompt([mostPick], 3, { excludeStationIds: [1] }).user,
+  ).toContain("다시 고른 조건: 다른 역\n");
   expect(buildReasonsPrompt([mostPick], 3).user).not.toContain(
     "다시 고른 조건",
   );
