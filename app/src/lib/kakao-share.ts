@@ -93,12 +93,28 @@ export type KakaoCard = {
   url: string;
 };
 
-/** 피드 카드를 카카오톡으로 보낸다. 키가 없거나 SDK를 못 쓰면 false라서, 부르는 쪽이 복사로 내려간다. */
-export async function sendKakaoCard(card: KakaoCard): Promise<boolean> {
+/** 키가 있으면 SDK를 미리 불러 둔다. 누를 때 기다리면 Safari가 사용자 동작을 잃어 공유 창이 막힌다. */
+export function preloadKakaoShare(): void {
+  const key = kakaoJsKey();
+  if (!key) return;
+  loadKakaoShare(key).catch(() => {});
+}
+
+/**
+ * 피드 카드를 카카오톡으로 보낸다. 기다리지 않고 바로 끝나서, 누른 동작 안에서 부를 수 있다.
+ * 키가 없거나 SDK가 아직 준비되지 않았거나 보내다 막히면 false라서, 부르는 쪽이 바로 복사로 내려간다.
+ * 준비가 안 됐으면 불러오기를 다시 시작해 다음 누름에 쓴다.
+ */
+export function sendKakaoCard(card: KakaoCard): boolean {
   const key = kakaoJsKey();
   if (!key) return false;
+  const sdk = window.Kakao;
+  if (!sdk) {
+    preloadKakaoShare();
+    return false;
+  }
   try {
-    const sdk = await loadKakaoShare(key);
+    if (!sdk.isInitialized()) sdk.init(key);
     const link = { mobileWebUrl: card.url, webUrl: card.url };
     sdk.Share.sendDefault({
       objectType: "feed",

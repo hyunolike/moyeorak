@@ -35,25 +35,65 @@ test("키는 JS 키, 지도 키 순으로 고른다", async () => {
   expect(kakaoJsKey()).toBe("js");
 });
 
-test("키가 없으면 false다", async () => {
-  const { sendKakaoCard } = await load();
-  expect(await sendKakaoCard(card)).toBe(false);
+test("키가 없으면 false이고 SDK를 부르지 않는다", async () => {
+  const { sendKakaoCard, preloadKakaoShare } = await load();
+  preloadKakaoShare();
+  expect(sendKakaoCard(card)).toBe(false);
   expect(document.head.querySelector("script")).toBeNull();
 });
 
-test("3초 안에 SDK가 안 뜨면 false다", async () => {
+test("3초 안에 SDK가 안 뜨면 불러오기가 거절된다", async () => {
   vi.useFakeTimers();
-  vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", "js");
-  const { sendKakaoCard } = await load();
-  const result = sendKakaoCard(card);
+  const { loadKakaoShare } = await load();
+  const result = loadKakaoShare("js");
+  const settled = result.catch((e: Error) => e.message);
   const script = document.head.querySelector("script");
   await vi.advanceTimersByTimeAsync(3000);
-  expect(await result).toBe(false);
+  expect(await settled).toBe("kakao share sdk timed out");
   expect(script?.src).toBe(
     "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js",
   );
   expect(script?.integrity).toMatch(/^sha384-/);
   expect(script?.crossOrigin).toBe("anonymous");
+});
+
+test("불러오기가 실패하면 다음 시도에서 새로 불러온다", async () => {
+  const { loadKakaoShare } = await load();
+  const first = loadKakaoShare("js");
+  const firstScript = document.head.querySelector("script");
+  firstScript?.dispatchEvent(new Event("error"));
+  await expect(first).rejects.toThrow("kakao share sdk failed to load");
+  expect(document.head.querySelector("script")).toBeNull();
+
+  const second = loadKakaoShare("js");
+  expect(second).not.toBe(first);
+  const secondScript = document.head.querySelector("script");
+  expect(secondScript).not.toBeNull();
+  const init = vi.fn();
+  window.Kakao = {
+    init,
+    isInitialized: () => false,
+    Share: { sendDefault: vi.fn() },
+  };
+  secondScript?.dispatchEvent(new Event("load"));
+  await expect(second).resolves.toBe(window.Kakao);
+  expect(init).toHaveBeenCalledWith("js");
+});
+
+test("SDK가 아직 없으면 기다리지 않고 바로 false를 주고 불러오기를 시작한다", async () => {
+  vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", "js");
+  const { sendKakaoCard } = await load();
+  const result = sendKakaoCard(card);
+  expect(result).toBe(false);
+  expect(document.head.querySelector("script")?.src).toContain("kakao.min.js");
+});
+
+test("미리 불러오기는 키가 있으면 스크립트를 붙인다", async () => {
+  vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", "js");
+  const { preloadKakaoShare } = await load();
+  preloadKakaoShare();
+  preloadKakaoShare();
+  expect(document.head.querySelectorAll("script")).toHaveLength(1);
 });
 
 test("sendDefault가 던지면 false다", async () => {
@@ -68,10 +108,10 @@ test("sendDefault가 던지면 false다", async () => {
     },
   };
   const { sendKakaoCard } = await load();
-  expect(await sendKakaoCard(card)).toBe(false);
+  expect(sendKakaoCard(card)).toBe(false);
 });
 
-test("피드 템플릿에 제목과 버튼 주소를 넣는다", async () => {
+test("SDK가 준비돼 있으면 같은 호출 안에서 바로 카드를 보낸다", async () => {
   vi.stubEnv("NEXT_PUBLIC_KAKAO_JS_KEY", "js");
   const sendDefault = vi.fn();
   const init = vi.fn();
@@ -81,7 +121,8 @@ test("피드 템플릿에 제목과 버튼 주소를 넣는다", async () => {
     Share: { sendDefault },
   };
   const { sendKakaoCard } = await load();
-  expect(await sendKakaoCard(card)).toBe(true);
+  // 기다리지 않고 돌려받은 값이 true이고, 그때 이미 sendDefault가 불렸다.
+  expect(sendKakaoCard(card)).toBe(true);
   expect(init).toHaveBeenCalledWith("js");
   const link = { mobileWebUrl: card.url, webUrl: card.url };
   expect(sendDefault).toHaveBeenCalledWith({

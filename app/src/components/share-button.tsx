@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useMeetingEvent, useMeetingProgress } from "@/lib/api";
-import { sendKakaoCard } from "@/lib/kakao-share";
+import { preloadKakaoShare, sendKakaoCard } from "@/lib/kakao-share";
 import { meetingPreview } from "@/lib/meeting-preview";
 
 async function copyText(text: string) {
@@ -19,6 +20,8 @@ async function copyText(text: string) {
 /**
  * 초대 링크를 카카오톡 카드로 보내고 `shared` 이벤트를 남긴다(카드로 보내면 `kakao_shared`도).
  * 카드를 못 보내면 링크를 복사하고 토스트로 알린다. 옆의 "링크 복사"는 처음부터 복사만 한다.
+ * SDK는 그릴 때 미리 불러 두고, 누른 뒤에는 아무것도 기다리지 않고 카드나 복사로 바로 간다.
+ * 기다리는 사이 Safari가 사용자 동작을 잃으면 공유 창도 복사도 막히기 때문이다.
  * 링크는 어느 화면에서든 모임 홈이다. 모임 홈은 지금 단계를 보여 주므로,
  * 시간을 정한 뒤 장소 단계로 넘어가도 예전에 공유한 링크가 지금 할 일로 이어진다.
  */
@@ -32,6 +35,12 @@ export function ShareButton({
 }) {
   const sendEvent = useMeetingEvent(meetingId);
   const { data: progress } = useMeetingProgress(meetingId);
+  // 복사가 끝나기 전에 또 누르면 한 번만 처리한다.
+  const busy = useRef(false);
+
+  useEffect(() => {
+    preloadKakaoShare();
+  }, []);
 
   const copyLink = async () => {
     const copied = await copyText(
@@ -47,20 +56,27 @@ export function ShareButton({
   };
 
   const handleSend = async () => {
-    sendEvent("shared");
-    const origin = window.location.origin;
-    const url = `${origin}/meetings/${meetingId}`;
-    const sent = progress
-      ? await sendKakaoCard({
-          title: meetingPreview(progress).title,
-          description: meetingPreview(progress).description,
-          imageUrl: `${url}/opengraph-image`,
-          buttonTitle: "참여하기",
-          url,
-        })
-      : false;
-    if (sent) sendEvent("kakao_shared");
-    else await copyLink();
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      sendEvent("shared");
+      const origin = window.location.origin;
+      const url = `${origin}/meetings/${meetingId}`;
+      const preview = progress ? meetingPreview(progress) : null;
+      const sent = preview
+        ? sendKakaoCard({
+            title: preview.title,
+            description: preview.description,
+            imageUrl: `${url}/opengraph-image`,
+            buttonTitle: "참여하기",
+            url,
+          })
+        : false;
+      if (sent) sendEvent("kakao_shared");
+      else await copyLink();
+    } finally {
+      busy.current = false;
+    }
   };
 
   const text = label ?? "카카오톡으로 보내기";

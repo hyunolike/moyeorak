@@ -5,7 +5,7 @@ import {
   SummaryCard,
   SummaryCardView,
 } from "@/components/meeting/summary-card";
-import { sendKakaoCard } from "@/lib/kakao-share";
+import { preloadKakaoShare, sendKakaoCard } from "@/lib/kakao-share";
 import type { MeetingSummary } from "@/lib/summary-text";
 
 const replace = vi.fn();
@@ -41,7 +41,8 @@ vi.mock("motion/react", async (orig) => ({
 }));
 vi.mock("sonner", () => ({ toast: vi.fn() }));
 vi.mock("@/lib/kakao-share", () => ({
-  sendKakaoCard: vi.fn().mockResolvedValue(false),
+  sendKakaoCard: vi.fn(() => false),
+  preloadKakaoShare: vi.fn(),
 }));
 
 const summary: MeetingSummary = {
@@ -213,6 +214,7 @@ describe("복사와 공유", () => {
   const writeText = vi.fn().mockResolvedValue(undefined);
   beforeEach(() => {
     writeText.mockClear();
+    vi.mocked(sendKakaoCard).mockClear();
     vi.stubGlobal("isSecureContext", true);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
@@ -246,7 +248,7 @@ describe("복사와 공유", () => {
   });
 
   test("카카오 카드로 보내면 복사나 Web Share는 쓰지 않는다", async () => {
-    vi.mocked(sendKakaoCard).mockResolvedValueOnce(true);
+    vi.mocked(sendKakaoCard).mockReturnValueOnce(true);
     render(<SummaryCard summary={summary} participants={participants} />);
     await act(async () => {
       fireEvent.click(
@@ -299,6 +301,52 @@ describe("복사와 공유", () => {
     expect(writeText).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
     expect(mutate).not.toHaveBeenCalled();
+  });
+
+  test("그릴 때 카카오 SDK를 미리 불러 둔다", () => {
+    render(<SummaryCard summary={summary} participants={participants} />);
+    expect(preloadKakaoShare).toHaveBeenCalled();
+  });
+
+  test("카드가 준비돼 있으면 누른 그 자리에서 바로 보낸다", () => {
+    vi.mocked(sendKakaoCard).mockReturnValueOnce(true);
+    render(<SummaryCard summary={summary} participants={participants} />);
+    fireEvent.click(screen.getByRole("button", { name: "단톡방에 공유하기" }));
+    expect(sendKakaoCard).toHaveBeenCalledOnce();
+    expect(mutate).toHaveBeenCalledWith("kakao_shared");
+  });
+
+  test("카드를 못 보내면 기다리지 않고 누른 그 자리에서 Web Share를 연다", () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "share", {
+      value: share,
+      configurable: true,
+    });
+    render(<SummaryCard summary={summary} participants={participants} />);
+    fireEvent.click(screen.getByRole("button", { name: "단톡방에 공유하기" }));
+    expect(share).toHaveBeenCalledOnce();
+  });
+
+  test("공유 창이 떠 있는 동안 또 누르면 한 번만 연다", async () => {
+    let close = () => {};
+    const share = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          close = resolve;
+        }),
+    );
+    Object.defineProperty(navigator, "share", {
+      value: share,
+      configurable: true,
+    });
+    render(<SummaryCard summary={summary} participants={participants} />);
+    const button = screen.getByRole("button", { name: "단톡방에 공유하기" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(share).toHaveBeenCalledOnce();
+    await act(async () => close());
+    fireEvent.click(button);
+    expect(share).toHaveBeenCalledTimes(2);
   });
 
   test("Web Share가 없으면 복사로 대신한다", async () => {

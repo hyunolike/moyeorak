@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useMe, useMeetingEvent } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 import { formatConfirmedClock, formatConfirmedDay } from "@/lib/home-state";
-import { sendKakaoCard } from "@/lib/kakao-share";
+import { preloadKakaoShare, sendKakaoCard } from "@/lib/kakao-share";
 import {
   lineName,
   type MeetingSummary,
@@ -255,6 +255,13 @@ export function SummaryCard({
   const params = useSearchParams();
   // 처음 그릴 때의 표시만 믿는다. 표시를 지운 뒤 다시 그려도 움직임은 다시 시작하지 않는다.
   const [justConfirmed] = useState(() => params.get("just") === "confirmed");
+  // 공유 창이나 복사가 끝나기 전에 또 누르면 한 번만 처리한다.
+  const sharing = useRef(false);
+
+  // 누른 뒤에 SDK를 기다리면 Safari가 사용자 동작을 잃어 공유 창이 막힌다. 미리 불러 둔다.
+  useEffect(() => {
+    preloadKakaoShare();
+  }, []);
 
   // 표시는 한 번만 지운다. router가 바뀔 때마다 다시 지우면 이동이 끝나지 않는다.
   const cleared = useRef(false);
@@ -278,14 +285,15 @@ export function SummaryCard({
     } else toast("복사하지 못했어요");
   };
 
-  const share = async () => {
+  /** 카드, Web Share, 복사 중 하나로 바로 간다. 그 앞에서 아무것도 기다리지 않는다. */
+  const shareOnce = async () => {
     const origin = window.location.origin;
     const when = summary.start
       ? `${formatConfirmedDay(summary.start)} ${formatConfirmedClock(summary.start)}`
       : "";
     const station = summary.place ? stationLabel(summary.place.name) : "";
     const url = `${origin}/meetings/${summary.meetingId}`;
-    const sent = await sendKakaoCard({
+    const sent = sendKakaoCard({
       title: `${summary.hostName}님의 모임이 정해졌어요`,
       description: [when, station].filter(Boolean).join(" "),
       imageUrl: `${url}/opengraph-image`,
@@ -308,6 +316,16 @@ export function SummaryCard({
       }
     }
     await copy();
+  };
+
+  const share = async () => {
+    if (sharing.current) return;
+    sharing.current = true;
+    try {
+      await shareOnce();
+    } finally {
+      sharing.current = false;
+    }
   };
 
   return (
