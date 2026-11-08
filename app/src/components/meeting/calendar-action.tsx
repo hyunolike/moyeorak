@@ -16,17 +16,8 @@ import {
 } from "@/components/ui/drawer";
 import { useMeetingEvent } from "@/lib/api";
 import { calendarEvent, googleCalendarUrl } from "@/lib/calendar";
+import { formatConfirmedClock } from "@/lib/home-state";
 import type { MeetingSummary } from "@/lib/summary-text";
-
-/** 서울 시각 HH:mm. */
-function seoulTime(date: Date): string {
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(date);
-}
 
 const optionIcon =
   "bg-surface-sunken text-text grid size-9 flex-none place-items-center rounded-md";
@@ -75,7 +66,8 @@ export function CalendarAction({
               캘린더에 추가하기
             </DrawerTitle>
             <DrawerDescription>
-              {seoulTime(event.start)}부터 {seoulTime(event.end)}까지 넣어요
+              {formatConfirmedClock(event.start)}부터{" "}
+              {formatConfirmedClock(event.end)}까지 넣어요
             </DrawerDescription>
           </DrawerHeader>
           {open ? <CalendarOptions summary={summary} /> : null}

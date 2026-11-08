@@ -43,7 +43,9 @@ test("캘린더를 누르면 파일 받기와 구글 캘린더 두 갈래가 나
   expect(url.searchParams.get("details")).toContain("/meetings/m1");
   expect(google).toHaveAttribute("target", "_blank");
   // 들어갈 시간을 미리 알려 준다.
-  expect(screen.getByText(/18:00부터 19:00까지/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/오후 6시부터 오후 7시까지 넣어요/),
+  ).toBeInTheDocument();
 });
 
 test("확정 시작 시각이 없으면 버튼을 그리지 않는다", () => {
