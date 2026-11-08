@@ -23,6 +23,8 @@ const body = z.object({
     .optional(),
   // 지금보다 뒤이고 28일 안인지는 createMeeting이 검사한다.
   respondBy: z.string().datetime({ offset: true }).optional(),
+  // 지난 모임의 참여자일 때만 createMeeting이 받아들인다.
+  sourceMeetingId: z.string().length(21).optional(),
 });
 
 export async function POST(req: Request) {

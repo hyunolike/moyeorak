@@ -120,3 +120,19 @@ export type NearbyGroup = {
   label: string;
   places: NearbyPlace[];
 };
+
+/** 같은 멤버로 또 모일 때 새 모임 폼을 채울 지난 모임의 값. */
+export type RegatherDraft = {
+  scope: Scope;
+  purposes: Purpose[];
+  /** 지난 모임의 표시 인원. 예상 인원과 실제 참여자 수 중 큰 값이고 최대 20이다. */
+  participantCount: number;
+  /** 누른 사람의 지난 모임 이름 */
+  myName: string;
+};
+
+/** 새 모임 초대 화면에 보여 줄 지난번 멤버 이름. */
+export type PreviousMembers = {
+  names: string[];
+  mine: string | null;
+};
