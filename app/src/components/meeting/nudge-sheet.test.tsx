@@ -105,6 +105,7 @@ describe("NudgeSheet: 문장 틀 먼저, AI는 나중에", () => {
     stage: "가능한 시간",
     waitingNames: ["민지"],
     notJoined: 0,
+    respondBy: null,
   };
   const link = `${window.location.origin}/meetings/m1`;
   const ruleFriendly = `현호님의 모임 가능한 시간을 모으고 있어요. 민지님 시간 될 때 남겨 주세요!\n${link}`;

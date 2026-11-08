@@ -10,6 +10,7 @@ import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
+  InvalidDeadlineError,
   InvalidPollWindowError,
   LocationConfirmedError,
   MeetingNotFoundError,
@@ -48,6 +49,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [DeviceAlreadyJoinedError, 409],
   [InvalidSlotsError, 400],
   [InvalidPollWindowError, 400],
+  [InvalidDeadlineError, 400],
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],

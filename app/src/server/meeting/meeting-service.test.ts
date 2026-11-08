@@ -8,6 +8,7 @@ import { pollWindow, seoulToday } from "@/lib/poll-window";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
+  InvalidDeadlineError,
   InvalidPollWindowError,
 } from "@/server/meeting/errors";
 import {
@@ -341,4 +342,47 @@ test("createMeeting은 목적을 표 순서로 저장하고 생략하면 빈 배
     deviceKey: key("b"),
   });
   expect((await getMeeting(b.meetingId))?.purposes).toEqual([]);
+});
+
+test("respondBy를 넣어 만들면 저장된다", async () => {
+  const at = new Date(Date.now() + 24 * 3_600_000);
+  const { meetingId } = await createMeeting({
+    hostName: "현호",
+    participantCount: 3,
+    scope: "both",
+    deviceKey: key("a"),
+    respondBy: at,
+  });
+  expect((await getMeeting(meetingId))?.respondBy?.toISOString()).toBe(
+    at.toISOString(),
+  );
+  const [row] = await db
+    .select()
+    .from(meetings)
+    .where(eq(meetings.id, meetingId));
+  expect(row.respondBy?.toISOString()).toBe(at.toISOString());
+});
+
+test("29일 뒤 마감은 InvalidDeadlineError다", async () => {
+  await expect(
+    createMeeting({
+      hostName: "현호",
+      participantCount: 3,
+      scope: "both",
+      deviceKey: key("a"),
+      respondBy: new Date(Date.now() + 29 * 24 * 3_600_000),
+    }),
+  ).rejects.toBeInstanceOf(InvalidDeadlineError);
+});
+
+test("지난 시각 마감으로는 만들 수 없다", async () => {
+  await expect(
+    createMeeting({
+      hostName: "현호",
+      participantCount: 3,
+      scope: "both",
+      deviceKey: key("a"),
+      respondBy: new Date(Date.now() - 1000),
+    }),
+  ).rejects.toBeInstanceOf(InvalidDeadlineError);
 });

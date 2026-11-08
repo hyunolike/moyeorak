@@ -13,6 +13,7 @@ export type Meeting = {
   purposes: Purpose[];
   status: "scheduling" | "locating" | "confirmed";
   confirmedAt: string | null;
+  respondBy: string | null;
   createdAt: string;
   participants: { id: number; name: string; isHost: boolean }[];
   schedulePoll: {
@@ -84,6 +85,8 @@ export type MeetingProgress = {
   confirmedEnd: string | null;
   /** confirmed_locations.name */
   confirmedPlace: string | null;
+  /** 응답 마감. 확정되면 화면에 쓰지 않는다. */
+  respondBy: string | null;
 };
 
 /** GET /api/me/meetings 한 줄. 이 기기가 참여한 모임이다. */

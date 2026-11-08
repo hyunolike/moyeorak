@@ -47,6 +47,7 @@ const progress = (voted: number[]): MeetingProgress => ({
   confirmedStart: null,
   confirmedEnd: null,
   confirmedPlace: null,
+  respondBy: null,
 });
 
 const rows = () =>

@@ -144,7 +144,10 @@ export async function writeNudges(
   const p = await getMeetingProgress(meetingId);
   if (!p) throw new MeetingNotFoundError();
   if (p.status === "confirmed") throw new NobodyWaitingError();
-  const input = nudgeInput(p);
+  const input = nudgeInput({
+    ...p,
+    respondBy: p.respondBy?.toISOString() ?? null,
+  });
   if (!input) throw new NobodyWaitingError();
   const known = [...p.participants.map((x) => x.name), p.hostName];
   const link = `${siteUrl().origin}/meetings/${meetingId}`;

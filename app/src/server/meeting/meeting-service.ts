@@ -15,6 +15,7 @@ import {
 } from "@/lib/poll-window";
 import { type Purpose, parsePurposes } from "@/lib/purposes";
 import { recordEvent } from "@/server/events/record-event";
+import { assertValidDeadline } from "@/server/meeting/deadline-service";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
@@ -32,6 +33,8 @@ export type CreateMeetingInput = {
   window?: PollWindow;
   /** 모임 목적. 없으면 빈 목록이고, 표 순서로 정리해 저장한다. */
   purposes?: Purpose[];
+  /** 응답 마감. 지금보다 뒤이고 28일 안이어야 한다. */
+  respondBy?: Date;
 };
 
 export type MeetingDetail = {
@@ -43,6 +46,7 @@ export type MeetingDetail = {
   purposes: Purpose[];
   status: "scheduling" | "locating" | "confirmed";
   confirmedAt: Date | null;
+  respondBy: Date | null;
   createdAt: Date;
   participants: { id: number; name: string; isHost: boolean }[];
   schedulePoll: {
@@ -60,6 +64,7 @@ export async function createMeeting(
   const today = seoulToday();
   const window = input.window ?? pollWindow({ preset: "two-weeks" }, today);
   if (!validatePollWindow(window, today)) throw new InvalidPollWindowError();
+  if (input.respondBy) assertValidDeadline(input.respondBy, new Date());
   return db.transaction(async (tx) => {
     const meetingId = newId();
     await tx.insert(meetings).values({
@@ -68,6 +73,7 @@ export async function createMeeting(
       participantCount: input.participantCount,
       scope: input.scope,
       purposes: parsePurposes(input.purposes ?? []),
+      respondBy: input.respondBy ?? null,
       // 장소만 정하는 모임은 시간 단계 없이 장소 단계에서 시작한다.
       status: input.scope === "location" ? "locating" : "scheduling",
     });
@@ -117,6 +123,7 @@ export async function getMeeting(id: string): Promise<MeetingDetail | null> {
     purposes: parsePurposes(meeting.purposes),
     status: meeting.status,
     confirmedAt: meeting.confirmedAt,
+    respondBy: meeting.respondBy,
     createdAt: meeting.createdAt,
     participants: people,
     schedulePoll: poll

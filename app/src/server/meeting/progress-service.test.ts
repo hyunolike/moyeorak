@@ -55,6 +55,7 @@ test("참여자 3명 중 일정에 투표한 사람만 votedSchedule이 true", a
     confirmedStart: null,
     confirmedEnd: null,
     confirmedPlace: null,
+    respondBy: null,
   });
   expect(progress?.participants.map((p) => [p.name, p.votedSchedule])).toEqual([
     ["현호", false],

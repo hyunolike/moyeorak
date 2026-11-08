@@ -1,5 +1,6 @@
 import type { MeetingProgress } from "@/lib/api-types";
 import { joinWaitingNames, votedNow } from "@/lib/home-state";
+import { isPast, respondByText } from "@/lib/respond-by";
 
 /**
  * 재촉 메시지의 입력과 문장 틀. 서버(AI가 실패할 때)와 화면(AI를 기다리는 동안)이 같이 쓴다.
@@ -13,13 +14,15 @@ export type NudgeInput = {
   stage: "가능한 시간" | "출발지";
   waitingNames: string[];
   notJoined: number;
+  /** 응답 마감(ISO). 없으면 null. */
+  respondBy: string | null;
 };
 
 /** 확정됐거나 기다리는 사람이 없으면 null이다. */
 export function nudgeInput(
   p: Pick<
     MeetingProgress,
-    "status" | "hostName" | "participantCount" | "participants"
+    "status" | "hostName" | "participantCount" | "participants" | "respondBy"
   >,
 ): NudgeInput | null {
   if (p.status === "confirmed") return null;
@@ -34,10 +37,28 @@ export function nudgeInput(
     stage: p.status === "locating" ? "출발지" : "가능한 시간",
     waitingNames,
     notJoined,
+    respondBy: p.respondBy,
   };
 }
 
-export function templateNudge(tone: Tone, input: NudgeInput): string {
+/** 지난 마감은 말하지 않는다. */
+function liveDeadline(input: NudgeInput, now: Date): string | null {
+  if (!input.respondBy) return null;
+  const at = new Date(input.respondBy);
+  return isPast(at, now) ? null : respondByText(at, now);
+}
+
+export function templateNudge(
+  tone: Tone,
+  input: NudgeInput,
+  now = new Date(),
+): string {
+  const by = liveDeadline(input, now);
+  const tail = by ? ` ${by} 남겨 주시면 돼요.` : "";
+  return `${baseNudge(tone, input)}${tail}`;
+}
+
+function baseNudge(tone: Tone, input: NudgeInput): string {
   if (tone === "short") return `${input.stage} 남겨 주세요 🙏`;
   const who =
     input.waitingNames.length > 0
@@ -54,9 +75,10 @@ export function withLink(text: string, link: string): string {
 export function ruleMessages(
   input: NudgeInput,
   link: string,
+  now = new Date(),
 ): { tone: Tone; text: string }[] {
   return NUDGE_TONES.map((tone) => ({
     tone,
-    text: withLink(templateNudge(tone, input), link),
+    text: withLink(templateNudge(tone, input, now), link),
   }));
 }

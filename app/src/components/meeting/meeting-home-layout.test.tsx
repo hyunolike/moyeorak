@@ -62,6 +62,7 @@ test("참여자 행은 응답한 사람 목록이 바뀔 때만 자리 이동을
     confirmedStart: null,
     confirmedEnd: null,
     confirmedPlace: null,
+    respondBy: null,
   } as MeetingProgress;
   render(<MeetingHomeView progress={progress} meId={1} />);
   expect(liProps.length).toBeGreaterThan(0);

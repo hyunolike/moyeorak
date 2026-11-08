@@ -31,6 +31,7 @@ const progress = (over: Partial<MeetingProgress> = {}): MeetingProgress => ({
   confirmedStart: null,
   confirmedEnd: null,
   confirmedPlace: null,
+  respondBy: null,
   ...over,
 });
 
@@ -293,6 +294,7 @@ describe("confirmedSentence", () => {
           status: "confirmed",
           confirmedStart: null,
           confirmedPlace: null,
+          respondBy: null,
         }),
       ),
     ).toBe("약속이 정해졌어요.");

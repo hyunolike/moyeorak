@@ -197,7 +197,8 @@ export async function confirmSchedule(
     if (meeting.scope === "both") {
       await tx
         .update(meetings)
-        .set({ status: "locating" })
+        // 새 단계의 마감은 모임장이 다시 정한다.
+        .set({ status: "locating", respondBy: null })
         .where(eq(meetings.id, meetingId));
       await recordEvent(meetingId, "step_confirmed", tx);
       return { status: "locating" as const };

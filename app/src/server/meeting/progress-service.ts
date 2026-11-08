@@ -26,6 +26,7 @@ export type MeetingProgress = {
   confirmedStart: Date | null;
   confirmedEnd: Date | null;
   confirmedPlace: string | null;
+  respondBy: Date | null;
 };
 
 /** 홈 화면용 진행 현황. 참여자 목록 쿼리 한 번에 투표 여부를 EXISTS로 붙인다. */
@@ -75,5 +76,6 @@ export async function getMeetingProgress(
     confirmedStart: poll?.confirmedStart ?? null,
     confirmedEnd: poll?.confirmedEnd ?? null,
     confirmedPlace: place?.name ?? null,
+    respondBy: meeting.respondBy,
   };
 }

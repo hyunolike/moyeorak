@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { agentSuggestions, meetingEvents, schedulePolls } from "@/db/schema";
+import {
+  agentSuggestions,
+  meetingEvents,
+  meetings,
+  schedulePolls,
+} from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
   createMeeting,
@@ -306,4 +311,29 @@ describe("confirmSchedule 제안 닫기", () => {
     const summary = await getScheduleSummary(meetingId);
     expect(summary.poll.confirmedStart).toBeNull();
   });
+});
+
+test("장소 단계로 넘어가면 마감이 지워진다", async () => {
+  const { meetingId, at } = await setup("both");
+  await db
+    .update(meetings)
+    .set({ respondBy: new Date(Date.now() + 3_600_000) })
+    .where(eq(meetings.id, meetingId));
+  await confirmSchedule(meetingId, at("14:00"), at("16:00"));
+  const [row] = await db
+    .select()
+    .from(meetings)
+    .where(eq(meetings.id, meetingId));
+  expect(row.status).toBe("locating");
+  expect(row.respondBy).toBeNull();
+});
+
+test("마감이 지난 뒤에도 투표를 저장할 수 있다", async () => {
+  const { meetingId, participantId, at } = await setup("both");
+  await db
+    .update(meetings)
+    .set({ respondBy: new Date(Date.now() - 3_600_000) })
+    .where(eq(meetings.id, meetingId));
+  await saveScheduleVote(meetingId, participantId, [at("14:00")]);
+  expect((await getScheduleSummary(meetingId)).respondedCount).toBe(1);
 });
