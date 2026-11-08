@@ -35,7 +35,7 @@ import {
   routeStops,
 } from "@/lib/home-state";
 import { nudgeInput } from "@/lib/nudge-template";
-import { isPast, respondByText } from "@/lib/respond-by";
+import { isPast, respondByOptions, respondByText } from "@/lib/respond-by";
 
 /**
  * 이전 렌더보다 새로 응답한 참여자 id. 첫 렌더에는 비어 있다.
@@ -127,6 +127,13 @@ export function MeetingHomeView({
   const entering = useNewlyResponded(respondedPeople.map((p) => p.id));
   const respondedKey = respondedPeople.map((p) => p.id).join(",");
   const deadlineText = deadlineLine(progress);
+  const pollLimit = progress.status === "scheduling" ? lastPollDate : null;
+  // 투표 마지막 날이 오늘이면 고를 마감이 없다. 정하기는 숨기고, 이미 있는 마감은 바꾸기에서 없앨 수 있다.
+  const deadlineAction =
+    state?.deadlineAction === "응답 마감 정하기" &&
+    respondByOptions(new Date(), pollLimit).length === 0
+      ? null
+      : (state?.deadlineAction ?? null);
   const action = state?.action;
   const secondary = state?.secondaryAction;
 
@@ -181,13 +188,13 @@ export function MeetingHomeView({
             {state.deadlineNotice ? (
               <p className="text-muted text-b3 mt-2">{state.deadlineNotice}</p>
             ) : null}
-            {state.deadlineAction ? (
+            {deadlineAction ? (
               <button
                 type="button"
                 onClick={() => setDeadlineOpen(true)}
                 className="text-muted text-b3 mt-3 cursor-pointer underline"
               >
-                {state.deadlineAction}
+                {deadlineAction}
               </button>
             ) : null}
           </>
@@ -267,11 +274,11 @@ export function MeetingHomeView({
           }
         />
       ) : null}
-      {state?.deadlineAction ? (
+      {deadlineAction ? (
         <DeadlineSheet
           meetingId={progress.meetingId}
           hasDeadline={!!progress.respondBy}
-          lastPollDate={progress.status === "scheduling" ? lastPollDate : null}
+          lastPollDate={pollLimit}
           open={deadlineOpen}
           onClose={() => setDeadlineOpen(false)}
         />
