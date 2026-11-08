@@ -11,6 +11,18 @@ export type Metrics = {
   suggestionAcceptRate: number | null;
   /** 장소를 정하는 모임 중 목적을 하나라도 고른 비율. 그런 모임이 없으면 null. */
   purposeRate: number | null;
+  /** 재촉한 모임 중 첫 재촉 뒤 24시간 안에 투표나 출발지 입력이 있는 비율. 재촉한 모임이 없으면 null. */
+  nudgeResponseRate: number | null;
+  /** 말로 입력해 칠한 시간을 고치지 않고 저장한 비율. 말 입력 저장이 없으면 null. */
+  textVoteKeptRate: number | null;
+  /** 제안을 본 모임당 "다른 제안 보기" 평균. 제안을 본 모임이 없으면 null. */
+  skippedPerMeeting: number | null;
+  /** 제안을 본 모임당 조건을 넣어 다시 제안받은 횟수 평균. 제안을 본 모임이 없으면 null. */
+  resuggestedPerMeeting: number | null;
+  /** 같은 멤버로 다시 모인 모임 수. */
+  regatheredMeetings: number;
+  /** 공유 중 카카오 카드로 보낸 비율. 공유가 없으면 null. */
+  kakaoShareRate: number | null;
 };
 
 export type Range = { from: Date; to: Date };
@@ -120,6 +132,53 @@ export async function computeMetrics(range: Range): Promise<Metrics> {
       FROM meetings m
      WHERE m.scope <> 'schedule' AND ${where}`);
 
+  // 재촉 뒤 24시간 안의 응답: 모임별 첫 nudge_sent 이후 (첫 재촉, 첫 재촉 + 24시간] 사이의 응답.
+  const nudge = await one<{ total: number; responded: number }>(sql`
+    SELECT count(*)::int AS total,
+           (count(*) FILTER (
+             WHERE EXISTS (
+               SELECT 1 FROM meeting_events r
+                WHERE r.meeting_id = n.meeting_id
+                  AND r.type IN ('vote_done', 'departure_done')
+                  AND r.created_at > n.first_at
+                  AND r.created_at <= n.first_at + interval '24 hours')
+           ))::int AS responded
+      FROM (
+        SELECT e.meeting_id, min(e.created_at) AS first_at
+          FROM meeting_events e
+          JOIN meetings m ON m.id = e.meeting_id
+         WHERE e.type = 'nudge_sent' AND ${where}
+         GROUP BY e.meeting_id
+      ) n`);
+
+  const ev = await one<{
+    kept: number;
+    edited: number;
+    shared: number;
+    kakao: number;
+    regathered: number;
+    viewed: number;
+    skipped: number;
+    resuggested: number;
+  }>(sql`
+    SELECT (count(*) FILTER (WHERE e.type = 'vote_from_text'))::int AS kept,
+           (count(*) FILTER (WHERE e.type = 'vote_from_text_edited'))::int AS edited,
+           (count(*) FILTER (WHERE e.type = 'shared'))::int AS shared,
+           (count(*) FILTER (WHERE e.type = 'kakao_shared'))::int AS kakao,
+           (count(DISTINCT e.meeting_id) FILTER (WHERE e.type = 'regathered'))::int AS regathered,
+           (count(DISTINCT e.meeting_id) FILTER (WHERE e.type = 'suggestion_viewed'))::int AS viewed,
+           (count(*) FILTER (
+             WHERE e.type = 'suggestion_skipped'
+               AND e.meeting_id IN (SELECT v.meeting_id FROM meeting_events v WHERE v.type = 'suggestion_viewed')
+           ))::int AS skipped,
+           (count(*) FILTER (
+             WHERE e.type = 'resuggested'
+               AND e.meeting_id IN (SELECT v.meeting_id FROM meeting_events v WHERE v.type = 'suggestion_viewed')
+           ))::int AS resuggested
+      FROM meeting_events e
+      JOIN meetings m ON m.id = e.meeting_id
+     WHERE ${where}`);
+
   const meetings = base.meetings;
   const decided = sugg.accepted + sugg.rejected;
   const median4 = num(median.hours);
@@ -134,5 +193,14 @@ export async function computeMetrics(range: Range): Promise<Metrics> {
     sharesPerMeeting: meetings ? round(shares.n / meetings) : 0,
     suggestionAcceptRate: decided ? round(sugg.accepted / decided) : null,
     purposeRate: purpose.total ? round(purpose.picked / purpose.total) : null,
+    nudgeResponseRate: nudge.total
+      ? round(nudge.responded / nudge.total)
+      : null,
+    textVoteKeptRate:
+      ev.kept + ev.edited ? round(ev.kept / (ev.kept + ev.edited)) : null,
+    skippedPerMeeting: ev.viewed ? round(ev.skipped / ev.viewed) : null,
+    resuggestedPerMeeting: ev.viewed ? round(ev.resuggested / ev.viewed) : null,
+    regatheredMeetings: ev.regathered,
+    kakaoShareRate: ev.shared ? round(ev.kakao / ev.shared) : null,
   };
 }
