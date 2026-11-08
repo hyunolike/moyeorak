@@ -22,6 +22,7 @@ import { markInviteViewed } from "@/lib/invite-viewed";
 import { readMyMeetingsCache, writeMyMeetingsCache } from "@/lib/my-meetings";
 import type { PollWindow } from "@/lib/poll-window";
 import type { Purpose } from "@/lib/purposes";
+import type { SuggestConditions } from "@/lib/suggest-conditions";
 import type { VoteSource } from "@/server/schedule/schedule-service";
 import type { Suggestion } from "@/server/suggest/types";
 
@@ -492,10 +493,14 @@ export function useUpdatePurposes(meetingId: string) {
 export function useCreateSuggestions(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (vars?: { conditions?: SuggestConditions }) =>
       apiFetch<SuggestionSet>(
         `/api/meetings/${meetingId}/suggestions`,
-        withDeviceKey({ method: "POST" }),
+        withDeviceKey(
+          vars?.conditions
+            ? json("POST", { conditions: vars.conditions })
+            : { method: "POST" },
+        ),
       ),
     onSuccess: (set) => client.setQueryData(keys.suggestions(meetingId), set),
   });

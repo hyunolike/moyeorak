@@ -12,6 +12,7 @@ import {
 import { formatSlotDate, formatSlotRange } from "@/components/schedule/poll";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { conditionsLabel } from "@/lib/suggest-conditions";
 import { lineName, stationLabel } from "@/lib/summary-text";
 import type { Suggestion } from "@/server/suggest/types";
 
@@ -128,6 +129,9 @@ export function SuggestionCard({
   const [open, setOpen] = useState(false);
   const reduce = useReducedMotion();
   const panelId = useId();
+  const conditionLine = suggestion.conditions
+    ? conditionsLabel(suggestion.conditions)
+    : null;
 
   return (
     <article
@@ -138,6 +142,7 @@ export function SuggestionCard({
         className,
       )}
     >
+      {conditionLine && <p className="text-c1 text-muted">{conditionLine}</p>}
       <p className="text-b3 text-action-text">{AXIS_LABEL[suggestion.axis]}</p>
       {suggestion.kind === "schedule" ? (
         <div className="text-h2 text-text tabular-nums">
@@ -243,6 +248,7 @@ export function SuggestionDeck({
   onNext,
   busy = false,
   waiting = 0,
+  onResuggest,
 }: {
   suggestions: Suggestion[];
   onAccept: (suggestion: Suggestion) => void;
@@ -250,6 +256,8 @@ export function SuggestionDeck({
   busy?: boolean;
   /** 지금 단계에서 아직 응답하지 않은 자리 수. 확정 시트가 경고한다. */
   waiting?: number;
+  /** 있으면 카드 묶음 아래에 "조건 바꿔 다시 받기"를 둔다. */
+  onResuggest?: () => void;
 }) {
   const [selectedId, setSelectedId] = useState(suggestions[0]?.id);
   const [asking, setAsking] = useState(false);
@@ -316,6 +324,16 @@ export function SuggestionDeck({
           />
         ))}
       </div>
+      {onResuggest && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onResuggest}
+          className="text-b3 text-muted focus-visible:ring-focus disabled:text-disabled-text mx-auto mt-3 block h-9 rounded-sm px-3 underline outline-none focus-visible:ring-2"
+        >
+          조건 바꿔 다시 받기
+        </button>
+      )}
       <BottomCta
         primary={
           <Button

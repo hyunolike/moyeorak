@@ -10,6 +10,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { Skeleton } from "@/components/layout/skeleton";
 import { MeetingGate } from "@/components/meeting/meeting-gate";
 import { MobileLayout } from "@/components/mobile-layout";
+import { ResuggestSheet } from "@/components/suggest/resuggest-sheet";
 import { SuggestionDeck } from "@/components/suggest/suggestion-card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -19,10 +20,12 @@ import {
   useMeetingProgress,
   useRejectSuggestion,
   useSuggestions,
+  useUpdatePurposes,
 } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 import { waitingCount } from "@/lib/home-state";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
+import type { SuggestConditions } from "@/lib/suggest-conditions";
 
 type Kind = "schedule" | "location";
 
@@ -137,6 +140,9 @@ function SuggestMain({
   const [lastKind, setLastKind] = useState<Kind | null>(null);
   // 카드를 한 번이라도 보여 줬는지. 끝 문구와 "후보가 없어요" 문구를 가른다.
   const [shownAny, setShownAny] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [noMatch, setNoMatch] = useState(false);
+  const updatePurposes = useUpdatePurposes(meeting.id);
 
   const items = query.data?.items ?? [];
   const current = items[0];
@@ -156,7 +162,54 @@ function SuggestMain({
   const retryCreate = () => {
     reject.reset();
     accept.reset();
-    create.mutate();
+    create.mutate(undefined);
+  };
+
+  const resuggest = (conditions: SuggestConditions) => {
+    setNoMatch(false);
+    reject.reset();
+    accept.reset();
+    create.mutate(
+      Object.keys(conditions).length > 0 ? { conditions } : undefined,
+      {
+        onSuccess: () => setSheetOpen(false),
+        onError: (error) => {
+          if (error instanceof ApiError && error.code === "NO_MATCH") {
+            setNoMatch(true);
+          } else {
+            setSheetOpen(false);
+          }
+        },
+      },
+    );
+  };
+
+  const sheet = sheetOpen ? (
+    <ResuggestSheet
+      kind={kind}
+      openStationIds={items.flatMap((s) =>
+        s.kind === "location" ? [s.stationId] : [],
+      )}
+      purposes={meeting.purposes ?? []}
+      message={
+        noMatch
+          ? kind === "location"
+            ? "고른 조건에 맞는 역이 없어요. 조건을 줄여 볼까요?"
+            : "고른 조건에 맞는 시간이 없어요. 조건을 줄여 볼까요?"
+          : null
+      }
+      pending={create.isPending}
+      onPurposesChange={(next) => updatePurposes.mutate(next)}
+      onSubmit={resuggest}
+      onClose={() => {
+        setSheetOpen(false);
+        setNoMatch(false);
+      }}
+    />
+  ) : null;
+  const openSheet = () => {
+    setNoMatch(false);
+    setSheetOpen(true);
   };
 
   // 열린 제안이 없으면 한 번만 만든다. 거절로 다 쓴 뒤에는 사람이 눌러야 다시 만든다.
@@ -201,8 +254,13 @@ function SuggestMain({
     );
   }
 
+  // NO_MATCH는 시트 안에서 안내하고, 지금 제안은 그대로 둔다.
+  const createFailure =
+    create.error instanceof ApiError && create.error.code === "NO_MATCH"
+      ? null
+      : create.error;
   const failure =
-    create.error ??
+    createFailure ??
     accept.error ??
     reject.error ??
     (query.isError ? query.error : null);
@@ -232,7 +290,7 @@ function SuggestMain({
     );
   }
 
-  if (query.isPending || create.isPending) {
+  if (query.isPending || (create.isPending && !sheetOpen)) {
     return (
       <Body home={home}>
         <div className="flex flex-col gap-4 px-5">
@@ -257,6 +315,15 @@ function SuggestMain({
             ? "준비한 제안은 여기까지예요. 전체 목록에서 직접 고를 수 있어요."
             : "아직 함께 고를 만한 후보가 없어요. 응답이 더 모이면 다시 제안해 볼게요."}
         </Notice>
+        {shownAny && (
+          <button
+            type="button"
+            onClick={openSheet}
+            className="text-b3 text-muted focus-visible:ring-focus mx-auto mb-4 block h-9 rounded-sm px-3 underline outline-none focus-visible:ring-2"
+          >
+            조건 바꿔 다시 받기
+          </button>
+        )}
         <BottomCta
           primary={
             <Button type="button" size="cta" onClick={retryCreate}>
@@ -272,6 +339,7 @@ function SuggestMain({
             </Link>
           }
         />
+        {sheet}
       </Body>
     );
   }
@@ -297,6 +365,7 @@ function SuggestMain({
           suggestions={items}
           busy={busy}
           waiting={waiting}
+          onResuggest={openSheet}
           onNext={(s) => reject.mutate(s.id)}
           onAccept={(s) =>
             accept.mutate(s.id, {
@@ -310,6 +379,7 @@ function SuggestMain({
           }
         />
       </div>
+      {sheet}
     </Body>
   );
 }
