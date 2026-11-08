@@ -48,18 +48,23 @@ function liveDeadline(input: NudgeInput, now: Date): string | null {
   return isPast(at, now) ? null : respondByText(at, now);
 }
 
+/**
+ * 마감이 있으면 부탁을 한 번만 하도록 넣는다.
+ * 짧은 말투는 마감을 부탁 앞에 두고, 친근한 말투는 이미 부탁한 문장 뒤에 마감만 알린다.
+ */
 export function templateNudge(
   tone: Tone,
   input: NudgeInput,
   now = new Date(),
 ): string {
   const by = liveDeadline(input, now);
-  const tail = by ? ` ${by} 남겨 주시면 돼요.` : "";
-  return `${baseNudge(tone, input)}${tail}`;
+  if (tone === "short") {
+    return `${by ? `${by} ` : ""}${input.stage} 남겨 주세요 🙏`;
+  }
+  return `${friendlyNudge(input)}${by ? ` ${by}예요.` : ""}`;
 }
 
-function baseNudge(tone: Tone, input: NudgeInput): string {
-  if (tone === "short") return `${input.stage} 남겨 주세요 🙏`;
+function friendlyNudge(input: NudgeInput): string {
   const who =
     input.waitingNames.length > 0
       ? joinWaitingNames(input.waitingNames)
