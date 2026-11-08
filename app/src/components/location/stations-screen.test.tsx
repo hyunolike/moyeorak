@@ -67,6 +67,7 @@ afterEach(() => {
   confirmMutate.mockReset();
   push.mockReset();
   midpointError = false;
+  midpointData = { type: "ok", stations: [] };
   isHost = true;
   updateMutate.mockReset();
 });
@@ -363,4 +364,11 @@ test("보여 줄 가게 수가 모두 0이면 줄을 그리지 않고 멀어요 
   render(<StationsScreen meeting={{ ...meeting, purposes: [] } as Meeting} />);
   expect(screen.queryByText(/0곳/)).toBeNull();
   expect(screen.getByText("조금 멀어요")).toBeInTheDocument();
+});
+
+test("불러오는 동안의 역 목록 자리에도 가게 수 줄이 있어 실제 행과 높이가 같다", () => {
+  midpointData = undefined;
+  const { container } = render(<StationsScreen meeting={meeting} />);
+  expect(screen.getByText("중간지점을 찾는 중이에요")).toBeInTheDocument();
+  expect(container.textContent).toMatch(/음식점 \d+곳/);
 });
