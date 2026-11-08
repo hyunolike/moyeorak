@@ -80,3 +80,18 @@ test("목적 하나면 그 목적만 보여 준다", async () => {
   const [m] = await db.select().from(meetings).where(eq(meetings.id, id));
   expect(m?.purposes).toEqual(["drink"]);
 });
+
+test("한 목적의 검색이 실패하면 그 목적만 빼고 나머지를 보여 준다", async () => {
+  const id = await setup();
+  await confirmStation(id);
+  const real = kakao.searchNearbyPlaces;
+  vi.spyOn(kakao, "searchNearbyPlaces").mockImplementation(
+    async (center, purpose) => {
+      if (purpose === "meal") throw new Error("kakao down");
+      return real(center, purpose);
+    },
+  );
+  const groups = await nearbyPlacesFor(id);
+  expect(groups.map((g) => g.purpose)).toEqual(["cafe"]);
+  expect(groups[0]?.places.length).toBeGreaterThan(0);
+});

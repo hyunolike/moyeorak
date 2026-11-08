@@ -279,6 +279,23 @@ test("구경 목적이면 CT1과 AT4를 합쳐 거리순 3곳이다", async () =
   expect(places.map((p) => p.distanceMeters)).toEqual([100, 200, 300]);
 });
 
+test("구경 목적에서 두 분류에 같은 곳이 나오면 한 번만 넣는다", async () => {
+  const shared = doc("same", "박물관", 50);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockImplementation(async (url: string) => {
+      const code = new URL(url).searchParams.get("category_group_code");
+      const documents =
+        code === "CT1"
+          ? [shared, doc("ct2", "극장", 100)]
+          : [shared, doc("at1", "공원", 200)];
+      return new Response(JSON.stringify({ documents }), { status: 200 });
+    }),
+  );
+  const places = await searchNearbyPlaces(center, "sight");
+  expect(places.map((p) => p.name)).toEqual(["박물관", "극장", "공원"]);
+});
+
 test("같은 목적과 좌표는 캐시에서 돌려주고 목적이 다르면 따로 찾는다", async () => {
   const fetchMock = nearbyFetch();
   vi.stubGlobal("fetch", fetchMock);

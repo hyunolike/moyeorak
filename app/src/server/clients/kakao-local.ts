@@ -183,6 +183,8 @@ export async function searchNearbyPlaces(
       : lists
           .flat()
           .sort((a, b) => a.distanceMeters - b.distanceMeters)
+          // 문화시설이면서 관광명소인 곳은 두 분류에 다 나온다. 장소 페이지로 한 번만 남긴다.
+          .filter((p, i, all) => all.findIndex((q) => q.url === p.url) === i)
           .slice(0, NEARBY_SIZE);
   await setCached(key, places, NEARBY_TTL_MS);
   return places;
