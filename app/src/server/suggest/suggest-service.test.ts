@@ -589,3 +589,101 @@ test("조건 없이 만들면 resuggested가 남지 않는다", async () => {
   const events = await db.select().from(meetingEvents);
   expect(events.filter((e) => e.type === "resuggested")).toHaveLength(0);
 });
+
+async function locationSetup(stationCount: number) {
+  const { meetingId, ids } = await setup("location");
+  for (const [i, id] of ids.slice(0, 2).entries()) {
+    await upsertDeparture(meetingId, id, {
+      label: `출발${i}`,
+      lat: 37.5 + i / 100,
+      lng: 127,
+    });
+  }
+  near.mockResolvedValue(
+    Array.from({ length: stationCount }, (_, i) => ({
+      id: i + 1,
+      name: `역${i + 1}`,
+      line: "2호선",
+      lat: 37.5 + i / 100,
+      lng: 127,
+      venues: { ...ZERO_VENUES, meal: 10 - i },
+      distanceMeters: 0,
+    })),
+  );
+  matrix.mockImplementation(async (_from, to) =>
+    [0, 1].map((p) => to.map((_, s) => 10 + s * 3 + p * 5)),
+  );
+  return meetingId;
+}
+
+const slotKey = (s: { kind: string } & Record<string, unknown>) =>
+  s.kind === "schedule" ? `${s.start}~${s.end}` : String(s.stationId);
+
+test("조건이 지금 카드에도 맞으면 다시 받기는 지금 카드와 다른 시간을 주거나 NoMatchError다", async () => {
+  const { meetingId } = await setup("schedule");
+  const first = await createSuggestions(meetingId, deps);
+  expect(first.items.length).toBeGreaterThan(0);
+  const shown = new Set(first.items.map(slotKey));
+  // 투표는 모두 낮이라 지금 카드도 낮 조건에 맞는다.
+  const again = await createSuggestions(meetingId, deps, {
+    time: "day",
+  }).catch((e: unknown) => e);
+  if (again instanceof NoMatchError) {
+    const rows = await proposed(meetingId);
+    expect(
+      rows.filter((r) => r.status === "proposed").map((r) => r.id),
+    ).toEqual(first.items.map((i) => i.id));
+  } else {
+    const items = (again as Awaited<ReturnType<typeof createSuggestions>>)
+      .items;
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.some((i) => shown.has(slotKey(i)))).toBe(false);
+  }
+});
+
+test("넘긴 시간 카드는 같은 응답으로 다시 받을 때 다시 나오지 않는다", async () => {
+  const { meetingId } = await setup("schedule");
+  const first = await createSuggestions(meetingId, deps);
+  const skipped = first.items[0] as { id: number };
+  await rejectSuggestion(meetingId, skipped.id);
+  await expect(
+    createSuggestions(meetingId, deps, { time: "day" }),
+  ).rejects.toBeInstanceOf(NoMatchError);
+});
+
+test("응답이 바뀐 뒤에는 예전에 보인 시간도 다시 고를 수 있다", async () => {
+  const { meetingId, ids, dates } = await setup("schedule");
+  const first = await createSuggestions(meetingId, deps);
+  await rejectSuggestion(meetingId, (first.items[0] as { id: number }).id);
+  // 셋째 사람이 다른 날 오전도 된다고 고치면 제안 재료가 바뀐다.
+  await saveScheduleVote(meetingId, ids[2] as number, [
+    new Date(`${dates[1]}T14:00:00+09:00`),
+    new Date(`${dates[1]}T14:30:00+09:00`),
+    new Date(`${dates[2]}T10:00:00+09:00`),
+  ]);
+  const again = await createSuggestions(meetingId, deps, { time: "day" });
+  expect(again.items.map(slotKey)).toContain(slotKey(first.items[0] as never));
+});
+
+test("장소 다시 받기는 지금 보인 역을 빼고, 남은 역이 없으면 NoMatchError이고 기존 제안이 남는다", async () => {
+  const meetingId = await locationSetup(3);
+  const first = await createSuggestions(meetingId, deps);
+  expect(first.items).toHaveLength(2);
+  const shown = first.items.map(slotKey);
+  const rest = [1, 2, 3].find((id) => !shown.includes(String(id))) as number;
+
+  // 남은 한 역을 빼 달라고 하면, 지금 카드의 두 역도 빠져 남는 역이 없다.
+  await expect(
+    createSuggestions(meetingId, deps, { excludeStationIds: [rest] }),
+  ).rejects.toBeInstanceOf(NoMatchError);
+  const rows = await proposed(meetingId);
+  expect(rows.filter((r) => r.status === "proposed").map((r) => r.id)).toEqual(
+    first.items.map((i) => i.id),
+  );
+
+  // 상관없는 역만 빼 달라고 해도 지금 카드의 역은 다시 나오지 않는다.
+  const second = await createSuggestions(meetingId, deps, {
+    excludeStationIds: [999],
+  });
+  expect(second.items.map(slotKey)).toEqual([String(rest)]);
+});

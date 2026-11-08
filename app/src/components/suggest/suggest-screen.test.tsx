@@ -10,6 +10,7 @@ let pending = false;
 let createMutate = vi.fn();
 let createError: Error | null = null;
 let purposesPending = false;
+let dataKind = "schedule";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("next/link", () => ({
@@ -51,7 +52,7 @@ vi.mock("@/lib/api", () => {
       isPending: pending,
       isSuccess: !pending,
       isError: false,
-      data: { kind: "schedule", items },
+      data: { kind: dataKind, items },
     }),
     useCreateSuggestions: () => ({
       ...mutation(),
@@ -70,6 +71,7 @@ afterEach(() => {
   createMutate = vi.fn();
   createError = null;
   purposesPending = false;
+  dataKind = "schedule";
 });
 
 const meeting = {
@@ -170,4 +172,49 @@ test("새로 제안 받기는 조건 없이 만든다", () => {
   fireEvent.click(screen.getByRole("button", { name: "새로 제안 받기" }));
   expect(createMutate).toHaveBeenCalledTimes(1);
   expect(createMutate).toHaveBeenCalledWith(undefined);
+});
+
+test("준비한 제안을 다 넘긴 뒤 '지금 제안한 역 말고'는 마지막에 보인 역을 뺀다", async () => {
+  const location = {
+    id: 2,
+    status: "proposed",
+    createdAt: "2026-11-01T00:00:00+09:00",
+    kind: "location",
+    axis: "venues",
+    stationId: 7,
+    name: "합정",
+    line: "2호선",
+    lat: 37.55,
+    lng: 126.91,
+    departAt: "2026-11-07T14:00:00+09:00",
+    averageMinutes: 20,
+    maxMinutes: 30,
+    perParticipant: [{ name: "현호", minutes: 20 }],
+    venue: null,
+    reason: "가까워요.",
+    source: "rule",
+  };
+  const locating = { ...meeting, status: "locating", purposes: [] } as Meeting;
+  pending = false;
+  dataKind = "location";
+  items = [location];
+  const { rerender } = render(<SuggestScreen initialMeeting={locating} />);
+  // 마지막 카드를 넘겨 열린 제안이 없어졌다.
+  items = [];
+  rerender(<SuggestScreen initialMeeting={locating} />);
+  expect(
+    screen.getByText(
+      "준비한 제안은 여기까지예요. 전체 목록에서 직접 고를 수 있어요.",
+    ),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "조건 바꿔 다시 받기" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "지금 제안한 역 말고" }),
+  );
+  createMutate.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "다시 받기" }));
+  expect(createMutate).toHaveBeenCalledWith(
+    { conditions: { excludeStationIds: [7] } },
+    expect.anything(),
+  );
 });

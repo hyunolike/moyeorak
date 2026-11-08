@@ -105,3 +105,17 @@ test("목적을 저장하는 동안에는 다시 받기가 비활성이다", () 
   fireEvent.click(screen.getByRole("button", { name: "지금 제안한 역 말고" }));
   expect(screen.getByRole("button", { name: "다시 받기" })).toBeDisabled();
 });
+
+test("뺄 역이 없으면 '지금 제안한 역 말고'만 골라도 다시 받기가 비활성이다", () => {
+  render(
+    <ResuggestSheet
+      kind="location"
+      openStationIds={[]}
+      purposes={[]}
+      onSubmit={() => {}}
+      onClose={() => {}}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "지금 제안한 역 말고" }));
+  expect(screen.getByRole("button", { name: "다시 받기" })).toBeDisabled();
+});

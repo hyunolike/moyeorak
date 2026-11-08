@@ -25,7 +25,10 @@ import {
 import type { Meeting } from "@/lib/api-types";
 import { waitingCount } from "@/lib/home-state";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
-import type { SuggestConditions } from "@/lib/suggest-conditions";
+import {
+  isEmptyConditions,
+  type SuggestConditions,
+} from "@/lib/suggest-conditions";
 
 type Kind = "schedule" | "location";
 
@@ -142,6 +145,8 @@ function SuggestMain({
   const [shownAny, setShownAny] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [noMatch, setNoMatch] = useState(false);
+  // 마지막으로 보인 장소 카드의 역. 카드를 다 넘긴 끝 화면에서도 "지금 제안한 역 말고"가 이 역을 뺀다.
+  const [lastStationIds, setLastStationIds] = useState<number[]>([]);
   const updatePurposes = useUpdatePurposes(meeting.id);
 
   const items = query.data?.items ?? [];
@@ -159,6 +164,15 @@ function SuggestMain({
     }
   }, [current]);
 
+  const openStationIds = items.flatMap((s) =>
+    s.kind === "location" ? [s.stationId] : [],
+  );
+  const openStationKey = openStationIds.join(",");
+  useEffect(() => {
+    if (openStationKey)
+      setLastStationIds(openStationKey.split(",").map(Number));
+  }, [openStationKey]);
+
   const retryCreate = () => {
     reject.reset();
     accept.reset();
@@ -169,27 +183,24 @@ function SuggestMain({
     setNoMatch(false);
     reject.reset();
     accept.reset();
-    create.mutate(
-      Object.keys(conditions).length > 0 ? { conditions } : undefined,
-      {
-        onSuccess: () => setSheetOpen(false),
-        onError: (error) => {
-          if (error instanceof ApiError && error.code === "NO_MATCH") {
-            setNoMatch(true);
-          } else {
-            setSheetOpen(false);
-          }
-        },
+    create.mutate(isEmptyConditions(conditions) ? undefined : { conditions }, {
+      onSuccess: () => setSheetOpen(false),
+      onError: (error) => {
+        if (error instanceof ApiError && error.code === "NO_MATCH") {
+          setNoMatch(true);
+        } else {
+          setSheetOpen(false);
+        }
       },
-    );
+    });
   };
 
   const sheet = sheetOpen ? (
     <ResuggestSheet
       kind={kind}
-      openStationIds={items.flatMap((s) =>
-        s.kind === "location" ? [s.stationId] : [],
-      )}
+      openStationIds={
+        openStationIds.length > 0 ? openStationIds : lastStationIds
+      }
       purposes={meeting.purposes ?? []}
       message={
         noMatch

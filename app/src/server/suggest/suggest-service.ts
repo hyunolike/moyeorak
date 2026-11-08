@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { type Db, db, type Tx } from "@/db/client";
 import {
@@ -40,6 +41,7 @@ import {
 import {
   getSuggestion,
   listProposed,
+  listSeen,
   replaceProposed,
 } from "@/server/suggest/store";
 import type {
@@ -124,14 +126,26 @@ async function buildSuggestions(
 
   // 제안 재료(투표, 출발지)의 지문. 모델을 부르는 동안 바뀌면 저장하지 않는다.
   const before = await fingerprint(db, meetingId, kind);
+  // 조건을 넣어 다시 받을 때는 같은 재료로 이미 보여 준 카드(떠 있거나 넘긴 것)를 뺀다.
+  // "같은 재료"는 투표, 출발지, 목적이 그대로라는 뜻이라 무엇이 바뀌면 예전 카드도 다시 나올 수 있다.
+  const seen = conditions
+    ? await listSeen(meetingId, kind, basisOf(before))
+    : [];
 
   if (kind === "schedule") {
     const summary = await getScheduleSummary(meetingId);
     if (summary.respondedCount < MIN_RESPONSES) {
       throw new NotEnoughResponsesError();
     }
+    const shown = new Set(
+      seen.flatMap((p) =>
+        p.kind === "schedule" ? [`${p.start}~${p.end}`] : [],
+      ),
+    );
     const picks = pickSchedule(
-      summary.best,
+      summary.best.filter(
+        (b) => !shown.has(`${b.start.toISOString()}~${b.end.toISOString()}`),
+      ),
       summary.respondedCount,
       conditions,
     );
@@ -159,11 +173,20 @@ async function buildSuggestions(
   const departAt = meeting.schedulePoll?.confirmedStart ?? new Date();
   const result = await recommendMidpoint(meetingId, departAt);
   if (result.type === "insufficient") throw new NotEnoughResponsesError();
+  const shownStations = seen.flatMap((p) =>
+    p.kind === "location" ? [p.stationId] : [],
+  );
   const picks = pickLocation(
     result.stations,
     departAt,
     meeting.purposes,
-    conditions,
+    conditions && {
+      ...conditions,
+      excludeStationIds: [
+        ...(conditions.excludeStationIds ?? []),
+        ...shownStations,
+      ],
+    },
   );
   if (conditions && picks.length === 0) throw new NoMatchError();
   const departures = result.stations[0]?.perParticipant.length ?? 0;
@@ -180,6 +203,11 @@ async function buildSuggestions(
       ),
     ),
   );
+}
+
+/** 지문은 투표 칸을 다 담아 길어서, 저장할 때는 해시로 줄인다. */
+function basisOf(fingerprint: string): string {
+  return createHash("sha256").update(fingerprint).digest("hex");
 }
 
 async function fingerprint(
@@ -239,7 +267,13 @@ async function saveIfFresh(
     }
     return {
       stale: false as const,
-      items: await replaceProposed(meetingId, kind, payloads, tx),
+      items: await replaceProposed(
+        meetingId,
+        kind,
+        payloads,
+        tx,
+        basisOf(before),
+      ),
     };
   });
   if (saved.stale) return { kind: saved.current, items: [] };

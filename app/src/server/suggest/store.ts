@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { type Db, db, type Tx } from "@/db/client";
 import { agentSuggestions } from "@/db/schema";
 import {
@@ -29,19 +29,29 @@ const open = (meetingId: string, kind: string) =>
     eq(agentSuggestions.status, "proposed"),
   );
 
-/** 같은 kind의 열린 제안을 지우고 새 제안으로 바꾼다. 닫힌 행은 건드리지 않는다. */
+/**
+ * 같은 kind의 열린 제안을 지우고 새 제안으로 바꾼다. 닫힌 행은 건드리지 않는다.
+ * basis는 제안 재료의 지문이다. payload에 함께 저장하지만 읽을 때는 걸러져 화면에 나가지 않는다.
+ */
 export async function replaceProposed(
   meetingId: string,
   kind: SuggestionKind,
   payloads: SuggestionPayload[],
   tx?: Tx | Db,
+  basis?: string,
 ): Promise<Suggestion[]> {
   const run = async (q: Tx | Db) => {
     await q.delete(agentSuggestions).where(open(meetingId, kind));
     if (payloads.length === 0) return [];
     const rows = await q
       .insert(agentSuggestions)
-      .values(payloads.map((payload) => ({ meetingId, kind, payload })))
+      .values(
+        payloads.map((payload) => ({
+          meetingId,
+          kind,
+          payload: basis ? { ...payload, basis } : payload,
+        })),
+      )
       .returning();
     return rows.sort((a, b) => a.id - b.id).map(toSuggestion);
   };
@@ -58,6 +68,29 @@ export async function listProposed(
     .where(open(meetingId, kind))
     .orderBy(asc(agentSuggestions.id));
   return rows.map(toSuggestion);
+}
+
+/**
+ * 같은 재료(basis)로 보여 준 제안 중 지금 떠 있거나 넘긴 것. 다시 받기에서 같은 카드를 또 주지 않으려고 쓴다.
+ * 재료가 바뀌면 basis가 달라져 예전 카드는 여기 걸리지 않는다.
+ */
+export async function listSeen(
+  meetingId: string,
+  kind: SuggestionKind,
+  basis: string,
+): Promise<SuggestionPayload[]> {
+  const rows = await db
+    .select({ payload: agentSuggestions.payload })
+    .from(agentSuggestions)
+    .where(
+      and(
+        eq(agentSuggestions.meetingId, meetingId),
+        eq(agentSuggestions.kind, kind),
+        inArray(agentSuggestions.status, ["proposed", "rejected"]),
+        sql`${agentSuggestions.payload}->>'basis' = ${basis}`,
+      ),
+    );
+  return rows.map((r) => SuggestionPayload.parse(r.payload));
 }
 
 export async function dropProposed(

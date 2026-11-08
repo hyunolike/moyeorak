@@ -13,7 +13,10 @@ import {
 } from "@/components/ui/drawer";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { Purpose } from "@/lib/purposes";
-import type { SuggestConditions } from "@/lib/suggest-conditions";
+import {
+  isEmptyConditions,
+  type SuggestConditions,
+} from "@/lib/suggest-conditions";
 
 type Days = NonNullable<SuggestConditions["days"]>;
 type Time = NonNullable<SuggestConditions["time"]>;
@@ -87,7 +90,7 @@ export function ResuggestSheet({
   onClose,
 }: {
   kind: "schedule" | "location";
-  /** 지금 열려 있는 제안의 역 id들. "지금 제안한 역 말고"가 이걸 뺀다. */
+  /** 지금 열려 있는(다 넘겼으면 마지막에 보인) 제안의 역 id들. "지금 제안한 역 말고"가 이걸 뺀다. */
   openStationIds: number[];
   purposes: Purpose[];
   message?: string | null;
@@ -116,10 +119,9 @@ export function ResuggestSheet({
       : exclude
         ? { excludeStationIds: openStationIds }
         : {};
-  // 목적만 바꿔도 그 목적으로 다시 받을 수 있다.
+  // 목적만 바꿔도 그 목적으로 다시 받을 수 있다. 뺄 역이 없는 "지금 제안한 역 말고"는 조건이 아니다.
   const canSubmit =
-    Object.keys(conditions).length > 0 ||
-    (kind === "location" && purposesChanged);
+    !isEmptyConditions(conditions) || (kind === "location" && purposesChanged);
 
   return (
     <Drawer
