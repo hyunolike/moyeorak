@@ -358,3 +358,19 @@ test("근처 장소 섹션은 약속 카드 아래에 놓인다", () => {
     card.compareDocumentPosition(nearby) & Node.DOCUMENT_POSITION_FOLLOWING,
   ).toBeTruthy();
 });
+
+test("참여자에게는 같은 멤버로 또 모이기 링크가 보인다", () => {
+  render(
+    <SummaryCardView
+      summary={summary}
+      onShare={noop}
+      onCopy={noop}
+      regather={<a href="/new/both?from=m1">같은 멤버로 또 모이기</a>}
+    />,
+  );
+  expect(
+    screen
+      .getByRole("link", { name: "같은 멤버로 또 모이기" })
+      .getAttribute("href"),
+  ).toBe("/new/both?from=m1");
+});

@@ -76,8 +76,11 @@ export function SummaryCardView({
   onCopy,
   unconfirm,
   nearby,
+  regather,
 }: {
   summary: MeetingSummary;
+  /** 같은 멤버로 또 모이기 링크. 이 모임의 참여자에게만 넘긴다. */
+  regather?: ReactNode;
   /** 확정 직후 진입이면 카드가 올라오고 도장이 한 번 강조된다. */
   justConfirmed?: boolean;
   onShare: () => void;
@@ -219,6 +222,9 @@ export function SummaryCardView({
           <div className="flex justify-center">{unconfirm}</div>
         ) : null}
         {nearby}
+        {regather ? (
+          <div className="flex justify-center">{regather}</div>
+        ) : null}
       </div>
       <BottomCta
         primary={
@@ -310,6 +316,17 @@ export function SummaryCard({
       justConfirmed={justConfirmed}
       onShare={share}
       onCopy={copy}
+      regather={
+        me ? (
+          // 요약에는 범위가 없다. 폼이 지난 모임의 범위를 불러와 맞춘다.
+          <Link
+            href={`/new/both?from=${summary.meetingId}`}
+            className="text-muted text-b3 flex h-10 items-center px-3 underline underline-offset-4"
+          >
+            같은 멤버로 또 모이기
+          </Link>
+        ) : null
+      }
       nearby={
         summary.place ? (
           <NearbyPlacesSection

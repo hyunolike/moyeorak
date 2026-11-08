@@ -10,12 +10,15 @@ import type {
   MyMeeting,
   NearbyGroup,
   Place,
+  PreviousMembers,
+  RegatherDraft,
   ScheduleSummary,
   Scope,
 } from "@/lib/api-types";
 import {
   getDeviceKey,
   getStoredParticipantId,
+  peekDeviceKey,
   storeParticipantId,
 } from "@/lib/device-key";
 import { markInviteViewed } from "@/lib/invite-viewed";
@@ -162,6 +165,36 @@ export function useMyMeetings(deviceKey: string) {
   });
 }
 
+/** 지난 모임 설정으로 새 모임 폼을 채울 값. from이 없으면 받지 않고, 못 받아도 빈 폼으로 둔다. */
+export function useRegatherDraft(from: string | undefined) {
+  return useQuery({
+    queryKey: ["regather-draft", from] as const,
+    enabled: !!from,
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    queryFn: () =>
+      apiFetch<RegatherDraft>(
+        `/api/meetings/${from}/regather-draft`,
+        withDeviceKey({}),
+      ),
+  });
+}
+
+/** 새 모임 초대 화면에 보여 줄 지난번 멤버 이름. 키를 새로 만들지 않고 이미 있는 키만 보낸다. */
+export function usePreviousMembers(meetingId: string) {
+  return useQuery({
+    queryKey: ["previous-members", meetingId] as const,
+    retry: false,
+    queryFn: () => {
+      const key = peekDeviceKey();
+      return apiFetch<PreviousMembers>(
+        `/api/meetings/${meetingId}/previous-members`,
+        key ? { headers: { "X-Device-Key": key } } : undefined,
+      );
+    },
+  });
+}
+
 export function useCreateMeeting() {
   return useMutation({
     mutationFn: async (input: {
@@ -171,6 +204,7 @@ export function useCreateMeeting() {
       window?: PollWindow;
       purposes?: Purpose[];
       respondBy?: string;
+      sourceMeetingId?: string;
     }) => {
       const result = await apiFetch<{
         meetingId: string;

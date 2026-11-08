@@ -8,7 +8,7 @@ import { PageTitle } from "@/components/layout/page-title";
 import { MobileLayout } from "@/components/mobile-layout";
 import { TextField } from "@/components/text-field";
 import { Button } from "@/components/ui/button";
-import { ApiError, useClaim, useJoin } from "@/lib/api";
+import { ApiError, useClaim, useJoin, usePreviousMembers } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 
 export const NAME_MAX_LENGTH = 4;
@@ -36,6 +36,7 @@ export function JoinInvite({
   const [name, setName] = useState("");
   const join = useJoin(meeting.id);
   const claim = useClaim(meeting.id);
+  const previous = usePreviousMembers(meeting.id).data;
   const trimmed = name.trim();
   // 모임을 만든 사람은 이름으로 이어서 할 수 없다(확정과 재촉 권한이 있다).
   const friends = meeting.participants.filter((p) => !p.isHost);
@@ -89,6 +90,38 @@ export function JoinInvite({
                   : `최대 ${NAME_MAX_LENGTH}자까지 입력할 수 있어요`
             }
           />
+          {previous && (previous.mine || previous.names.length > 0) && (
+            <section className="mt-8">
+              {previous.mine && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={join.isPending}
+                  onClick={() => previous.mine && join.mutate(previous.mine)}
+                >
+                  지난번엔 {previous.mine}님으로 참여했어요
+                </Button>
+              )}
+              {previous.names.length > 0 && (
+                <div className={previous.mine ? "mt-4" : ""}>
+                  <h2 className="text-b3 text-text">지난번 멤버</h2>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {previous.names.map((n) => (
+                      <Button
+                        key={n}
+                        type="button"
+                        variant="secondary"
+                        disabled={join.isPending}
+                        onClick={() => join.mutate(n)}
+                      >
+                        {n}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
           {friends.length > 0 && (
             <fieldset className="mt-8 min-w-0 border-0 p-0">
               <legend className="text-b3 text-text">이미 참여했나요?</legend>

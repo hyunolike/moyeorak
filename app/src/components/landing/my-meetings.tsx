@@ -96,12 +96,12 @@ function MeetingRow({ meeting, past }: { meeting: MyMeeting; past: boolean }) {
       ? "done"
       : "selected";
   return (
-    <li>
+    <li className={cn(past && "flex items-center")}>
       <Link
         href={`/meetings/${meeting.id}`}
         className={cn(
-          "active:bg-surface-sunken flex items-center gap-3 px-4 py-3.5 transition-colors",
-          past && "opacity-60",
+          "active:bg-surface-sunken flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors",
+          past ? "flex-1 opacity-60" : "",
         )}
       >
         <span className="min-w-0 flex-1">
@@ -119,6 +119,14 @@ function MeetingRow({ meeting, past }: { meeting: MyMeeting; past: boolean }) {
         </span>
         <StatusChip tone={tone}>{myMeetingStatusLabel(meeting)}</StatusChip>
       </Link>
+      {past && (
+        <Link
+          href={`/new/${meeting.scope}?from=${meeting.id}`}
+          className="text-muted text-c1 shrink-0 px-4 py-3.5 underline underline-offset-4"
+        >
+          또 모이기
+        </Link>
+      )}
     </li>
   );
 }

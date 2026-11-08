@@ -19,6 +19,7 @@ vi.mock("@/lib/api", () => ({
   useSetDeadline: () => ({ mutate: vi.fn(), isPending: false }),
   useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
   useJoin: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
+  usePreviousMembers: () => ({ data: undefined }),
   useClaim: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
   ApiError: class extends Error {},
 }));

@@ -173,3 +173,25 @@ test("지난번에 받은 목록을 먼저 보여 준다(다시 열 때 첫 화�
     await screen.findByRole("link", { name: /지난번님의 모임/ }),
   ).toBeVisible();
 });
+
+test("지난 모임 줄에 또 모이기가 있다", () => {
+  render(
+    <MyMeetingsView
+      list={[
+        meeting({
+          id: "old",
+          hostName: "민준",
+          scope: "location",
+          status: "confirmed",
+          confirmedStart: "2026-10-01T10:00:00Z",
+        }),
+      ]}
+      now={now}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "지난 모임 1개" }));
+  expect(screen.getByRole("link", { name: "또 모이기" })).toHaveAttribute(
+    "href",
+    "/new/location?from=old",
+  );
+});
