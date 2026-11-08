@@ -21,6 +21,7 @@ import { markInviteViewed } from "@/lib/invite-viewed";
 import { readMyMeetingsCache, writeMyMeetingsCache } from "@/lib/my-meetings";
 import type { PollWindow } from "@/lib/poll-window";
 import type { Purpose } from "@/lib/purposes";
+import type { VoteSource } from "@/server/schedule/schedule-service";
 import type { Suggestion } from "@/server/suggest/types";
 
 export class ApiError extends Error {
@@ -228,7 +229,7 @@ export function useScheduleSummary(meetingId: string) {
 export function useSaveVote(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { slots: string[] }) =>
+    mutationFn: (input: { slots: string[]; source?: VoteSource }) =>
       apiFetch(
         `/api/meetings/${meetingId}/schedule/votes`,
         withDeviceKey(json("PUT", input)),
