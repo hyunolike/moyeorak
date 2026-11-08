@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,16 +17,20 @@ import { respondByOptions } from "@/lib/respond-by";
 export function DeadlineSheet({
   meetingId,
   hasDeadline,
+  lastPollDate = null,
   open,
   onClose,
 }: {
   meetingId: string;
   hasDeadline: boolean;
+  /** 시간 투표 단계의 마지막 날(YYYY-MM-DD). 그보다 늦은 보기는 숨긴다. 장소 단계는 null. */
+  lastPollDate?: string | null;
   open: boolean;
   onClose: () => void;
 }) {
   const set = useSetDeadline(meetingId);
-  const options = useMemo(() => respondByOptions(new Date(), null), []);
+  // 렌더마다 지금 기준으로 계산하므로, 시트를 열 때 늘 새 보기가 나온다.
+  const options = respondByOptions(new Date(), lastPollDate);
   const send = (value: string | null) =>
     set.mutate(value, {
       onSuccess: onClose,

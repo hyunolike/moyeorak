@@ -38,3 +38,19 @@ test("보기를 고르면 그 시각을 ISO로 보낸다", () => {
     expect.anything(),
   );
 });
+
+test("투표 마지막 날이 내일이면 내일 보기만 보인다", () => {
+  render(
+    <DeadlineSheet
+      meetingId="m1"
+      hasDeadline
+      lastPollDate="2026-11-03"
+      open
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByRole("button", { name: "내일 밤 10시" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "모레 밤 10시" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "3일 뒤 밤 10시" })).toBeNull();
+  expect(screen.getByRole("button", { name: "마감 없애기" })).toBeTruthy();
+});

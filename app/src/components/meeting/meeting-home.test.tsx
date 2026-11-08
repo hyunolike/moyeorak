@@ -214,3 +214,18 @@ test("참여자에게는 마감 버튼이 없다", () => {
   render(<MeetingHomeView progress={progress([1])} meId={2} />);
   expect(screen.queryByRole("button", { name: /응답 마감/ })).toBeNull();
 });
+
+test("확정 뒤에는 마감 줄과 마감 버튼이 없다", () => {
+  render(
+    <MeetingHomeView
+      progress={{
+        ...progress([1, 2]),
+        status: "confirmed",
+        respondBy: "2099-01-01T13:00:00Z",
+      }}
+      meId={1}
+    />,
+  );
+  expect(screen.queryByText(/응답해 주세요/)).toBeNull();
+  expect(screen.queryByRole("button", { name: /응답 마감/ })).toBeNull();
+});

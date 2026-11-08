@@ -23,6 +23,7 @@ import { buttonVariants } from "@/components/ui/button";
 import {
   useInviteViewed,
   useMe,
+  useMeeting,
   useMeetingProgress,
   usePrefetchNudge,
 } from "@/lib/api";
@@ -105,9 +106,12 @@ const secondaryButton = "size-full cursor-pointer";
 export function MeetingHomeView({
   progress,
   meId,
+  lastPollDate = null,
 }: {
   progress: MeetingProgress;
   meId: number | null | undefined;
+  /** 시간 투표 단계일 때 투표 마지막 날. 마감 보기를 거기까지로 줄인다. */
+  lastPollDate?: string | null;
 }) {
   const [nudgeOpen, setNudgeOpen] = useState(false);
   // 확정 뒤에 늦게 온 친구가 "나도 참여하기"를 누르면 이 자리에서 이름을 받는다.
@@ -267,6 +271,7 @@ export function MeetingHomeView({
         <DeadlineSheet
           meetingId={progress.meetingId}
           hasDeadline={!!progress.respondBy}
+          lastPollDate={progress.status === "scheduling" ? lastPollDate : null}
           open={deadlineOpen}
           onClose={() => setDeadlineOpen(false)}
         />
@@ -302,8 +307,15 @@ export function MeetingHome({
     participants: progress.participants,
   });
   useInviteViewed(progress.meetingId, !isPending && !isError && !me);
+  const { data: meeting } = useMeeting(progress.meetingId);
+  const lastPollDate =
+    meeting?.schedulePoll?.dateOptions.reduce<string | null>(
+      (max, d) => (max === null || d > max ? d : max),
+      null,
+    ) ?? null;
   return (
     <MeetingHomeView
+      lastPollDate={lastPollDate}
       progress={progress}
       meId={isPending ? undefined : (me?.id ?? null)}
     />
