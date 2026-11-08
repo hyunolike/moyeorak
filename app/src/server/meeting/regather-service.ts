@@ -52,11 +52,7 @@ export async function previousMembers(
 
   const [past, current] = await Promise.all([
     db
-      .select({
-        id: participants.id,
-        name: participants.name,
-        isHost: participants.isHost,
-      })
+      .select({ id: participants.id, name: participants.name })
       .from(participants)
       .where(eq(participants.meetingId, meeting.source))
       .orderBy(asc(participants.id)),
@@ -66,9 +62,10 @@ export async function previousMembers(
       .where(eq(participants.meetingId, meetingId)),
   ]);
   const taken = new Set(current.map((p) => p.name));
-  const names = past
-    .filter((p) => !p.isHost && !taken.has(p.name))
-    .map((p) => p.name);
+  // 지난 모임 호스트도 칩이 된다. 새 모임의 호스트는 이미 새 모임에 있어 빠진다.
+  const names = [
+    ...new Set(past.filter((p) => !taken.has(p.name)).map((p) => p.name)),
+  ];
 
   let mine: string | null = null;
   if (deviceKey) {
@@ -76,5 +73,6 @@ export async function previousMembers(
     const me = past.find((p) => p.id === myId);
     if (me && !taken.has(me.name)) mine = me.name;
   }
-  return { names, mine };
+  // 내 이름은 화면이 맨 앞에 따로 보여 준다.
+  return { names: names.filter((n) => n !== mine), mine };
 }

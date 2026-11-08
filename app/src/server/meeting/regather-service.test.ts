@@ -86,7 +86,7 @@ test("previous-members는 새 모임에 이미 들어온 이름을 빼고 준다
   });
   await joinMeeting(meetingId, { name: "민수", deviceKey: key("c") });
   expect(await previousMembers(meetingId, null)).toEqual({
-    names: [],
+    names: ["현호"],
     mine: null,
   });
   const { meetingId: second } = await createMeeting({
@@ -96,9 +96,9 @@ test("previous-members는 새 모임에 이미 들어온 이름을 빼고 준다
     deviceKey: key("b"),
     sourceMeetingId: old,
   });
-  // 호스트(현호)는 제외, 준호는 새 모임 호스트라 이미 있다.
+  // 준호는 새 모임 호스트라 이미 있고, 지난 호스트 현호는 칩으로 나온다.
   expect(await previousMembers(second, null)).toEqual({
-    names: ["민수"],
+    names: ["현호", "민수"],
     mine: null,
   });
 });
@@ -113,7 +113,7 @@ test("지난 모임 기기 키로 열면 mine에 그 이름을 준다", async ()
     sourceMeetingId: old,
   });
   expect(await previousMembers(meetingId, key("c"))).toEqual({
-    names: ["민수"],
+    names: ["현호"],
     mine: "민수",
   });
   // 이미 새 모임에 있으면 mine은 null
@@ -132,4 +132,35 @@ test("없는 모임은 MeetingNotFoundError", async () => {
   await expect(previousMembers("nope".padEnd(21, "x"), null)).rejects.toThrow(
     MeetingNotFoundError,
   );
+});
+
+test("지난 모임 호스트가 아닌 사람이 다시 모으면 지난 호스트 이름이 names에 있다", async () => {
+  const old = await oldMeeting();
+  const { meetingId } = await createMeeting({
+    hostName: "민수",
+    participantCount: 3,
+    scope: "both",
+    deviceKey: key("c"),
+    sourceMeetingId: old,
+  });
+  expect((await previousMembers(meetingId, null)).names).toEqual([
+    "현호",
+    "준호",
+  ]);
+});
+
+test("지난 모임에 같은 이름이 둘이면 칩은 하나다", async () => {
+  const old = await oldMeeting();
+  await joinMeeting(old, { name: "민수", deviceKey: key("d") });
+  const { meetingId } = await createMeeting({
+    hostName: "준호",
+    participantCount: 3,
+    scope: "both",
+    deviceKey: key("b"),
+    sourceMeetingId: old,
+  });
+  expect((await previousMembers(meetingId, null)).names).toEqual([
+    "현호",
+    "민수",
+  ]);
 });

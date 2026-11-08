@@ -33,11 +33,11 @@ test("기기 키 없이도 이름 목록을 주고, 키가 있으면 mine도 준
     sourceMeetingId: old,
   });
   expect((await (await call(meetingId)).json()).data).toEqual({
-    names: ["민수"],
+    names: ["현호", "민수"],
     mine: null,
   });
   expect((await (await call(meetingId, key("c"))).json()).data).toEqual({
-    names: ["민수"],
+    names: ["현호"],
     mine: "민수",
   });
   // 형식이 틀린 키는 없는 것으로 본다
