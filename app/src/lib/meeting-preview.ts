@@ -1,6 +1,6 @@
 import type { MeetingProgress } from "@/lib/api-types";
 import { confirmedSentence, headcount, respondedCount } from "@/lib/home-state";
-import { isPast, respondByText } from "@/lib/respond-by";
+import { isPast, respondByDateText } from "@/lib/respond-by";
 
 export type MeetingPreview = {
   title: string;
@@ -24,9 +24,10 @@ export function meetingPreview(
     p.status === "locating"
       ? "출발지를 남겨 주세요."
       : "가능한 시간을 남겨 주세요.";
+  // 카드와 미리보기는 보낸 뒤 며칠 있다 열릴 수 있어 "오늘" 대신 날짜를 쓴다.
   const by = p.respondBy ? new Date(p.respondBy) : null;
   const deadline =
-    by && !isPast(by, now) ? ` ${respondByText(by, now)}예요.` : "";
+    by && !isPast(by, now) ? ` ${respondByDateText(by)}예요.` : "";
   return {
     title,
     description: `${ask} ${headcount(p)}명 중 ${n}명이 응답했어요.${deadline}`,

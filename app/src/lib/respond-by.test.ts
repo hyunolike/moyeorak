@@ -1,4 +1,9 @@
-import { isPast, respondByOptions, respondByText } from "@/lib/respond-by";
+import {
+  isPast,
+  respondByDateText,
+  respondByOptions,
+  respondByText,
+} from "@/lib/respond-by";
 
 // 서울 11월 8일 낮 12시
 const noon = new Date("2026-11-08T12:00:00+09:00");
@@ -52,4 +57,9 @@ test("isPast는 같은 순간부터 지난 것으로 본다", () => {
   const at = new Date("2026-11-08T22:00:00+09:00");
   expect(isPast(at, new Date("2026-11-08T21:59:59+09:00"))).toBe(false);
   expect(isPast(at, at)).toBe(true);
+});
+
+test("날짜 표기는 오늘이어도 날짜와 요일을 쓴다", () => {
+  const at = new Date("2026-11-08T22:00:00+09:00");
+  expect(respondByDateText(at)).toBe("11월 8일(일) 밤 10시까지");
 });

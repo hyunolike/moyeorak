@@ -51,6 +51,14 @@ export function respondByText(at: Date, now: Date): string {
   const remaining = at.getTime() - now.getTime();
   const sameDay = seoulDayStart(at).getTime() === seoulDayStart(now).getTime();
   if (remaining <= DAY_MS && sameDay) return `오늘 ${clockText(at)}까지`;
+  return respondByDateText(at);
+}
+
+/**
+ * 언제 읽어도 맞는 날짜와 요일 표기("11월 10일(화) 밤 10시까지").
+ * 카카오 카드나 링크 미리보기처럼 만든 뒤 한참 있다 읽히는 곳에 쓴다.
+ */
+export function respondByDateText(at: Date): string {
   const t = seoulParts(at);
   return `${t.month}월 ${t.day}일(${t.weekday}) ${clockText(at)}까지`;
 }

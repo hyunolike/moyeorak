@@ -106,3 +106,11 @@ test("마감이 지났거나 확정된 뒤에는 마감을 붙이지 않는다",
     ).description,
   ).not.toContain("까지예요");
 });
+
+test("마감이 오늘이어도 미리보기에는 '오늘' 대신 날짜를 쓴다(카드는 나중에 열려도 남는다)", () => {
+  const now = new Date("2026-11-10T17:00:00+09:00");
+  const p = progress({ respondBy: "2026-11-10T13:00:00.000Z" });
+  expect(meetingPreview(p, now).description).toBe(
+    "가능한 시간을 남겨 주세요. 3명 중 0명이 응답했어요. 11월 10일(화) 밤 10시까지예요.",
+  );
+});
