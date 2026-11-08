@@ -10,6 +10,7 @@ import { ExternalApiError, RateLimitedError } from "@/server/clients/errors";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
+  InvalidDeadlineError,
   InvalidPollWindowError,
   LocationConfirmedError,
   MeetingNotFoundError,
@@ -23,6 +24,7 @@ import {
 } from "@/server/schedule/errors";
 import {
   NobodyWaitingError,
+  NoMatchError,
   NotConfirmedError,
   NotEnoughResponsesError,
   StationNotFoundError,
@@ -47,6 +49,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [DeviceAlreadyJoinedError, 409],
   [InvalidSlotsError, 400],
   [InvalidPollWindowError, 400],
+  [InvalidDeadlineError, 400],
   [ParticipantNotFoundError, 404],
   [ScheduleNotFoundError, 404],
   [AlreadyConfirmedError, 409],
@@ -58,6 +61,7 @@ const errorStatus = new Map<ErrorClass, number>([
   [AiConfigError, 500],
   [ParseFailedError, 422],
   [NotEnoughResponsesError, 409],
+  [NoMatchError, 409],
   [SuggestionNotFoundError, 404],
   [SuggestionClosedError, 409],
   [StationNotFoundError, 404],

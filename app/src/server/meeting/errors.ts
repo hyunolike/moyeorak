@@ -37,3 +37,11 @@ export class LocationConfirmedError extends Error {
     this.name = "LocationConfirmedError";
   }
 }
+
+export class InvalidDeadlineError extends Error {
+  readonly code = "INVALID_DEADLINE";
+  constructor() {
+    super("마감은 지금부터 28일 안의 앞으로 올 시각이어야 해요");
+    this.name = "InvalidDeadlineError";
+  }
+}

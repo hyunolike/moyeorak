@@ -28,6 +28,7 @@ const progress: MeetingProgress = {
   confirmedStart: null,
   confirmedEnd: null,
   confirmedPlace: null,
+  respondBy: null,
 };
 
 const meta = {

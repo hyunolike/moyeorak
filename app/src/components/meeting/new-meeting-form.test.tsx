@@ -3,7 +3,11 @@ import { NewMeetingForm } from "./new-meeting-form";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 const mutate = vi.hoisted(() => vi.fn());
+const draft = vi.hoisted(() => ({
+  data: undefined as unknown,
+}));
 vi.mock("@/lib/api", () => ({
+  useRegatherDraft: () => ({ data: draft.data }),
   useCreateMeeting: () => ({
     mutate,
     isError: false,
@@ -13,6 +17,7 @@ vi.mock("@/lib/api", () => ({
 
 beforeEach(() => {
   mutate.mockClear();
+  draft.data = undefined;
   // 2026-11-02(월) 서울 낮 12시
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-11-02T03:00:00Z"));
@@ -145,4 +150,52 @@ test("시간만 정하는 모임에는 목적 칩이 없고 purposes도 보내�
   fillName();
   submit();
   expect(mutate.mock.calls[0][0].purposes).toBeUndefined();
+});
+
+test("응답 마감을 고르면 respondBy를 보낸다", () => {
+  render(<NewMeetingForm flow="schedule" />);
+  fillName();
+  submit();
+  expect(mutate.mock.calls[0][0].respondBy).toBeUndefined();
+  mutate.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "내일 밤 10시" }));
+  submit();
+  expect(mutate.mock.calls[0][0].respondBy).toBe("2026-11-03T13:00:00.000Z");
+});
+
+test("from이 있으면 지난 모임 설정으로 채운다", () => {
+  draft.data = {
+    scope: "location",
+    purposes: ["meal"],
+    participantCount: 6,
+    myName: "준호",
+  };
+  render(<NewMeetingForm flow="both" from="old1" />);
+  expect(
+    screen.getByRole("button", { name: "장소만" }).getAttribute("aria-pressed"),
+  ).toBe("true");
+  expect((screen.getByLabelText("팀장 이름") as HTMLInputElement).value).toBe(
+    "준호",
+  );
+  expect(screen.getByText("6명")).toBeTruthy();
+  expect(
+    screen.queryByRole("group", { name: "언제 중에서 정할까요?" }),
+  ).toBeNull();
+});
+
+test("제출하면 sourceMeetingId를 보낸다", () => {
+  draft.data = {
+    scope: "both",
+    purposes: [],
+    participantCount: 3,
+    myName: "준호",
+  };
+  render(<NewMeetingForm flow="both" from="old1" />);
+  submit();
+  expect(mutate.mock.calls[0][0]).toMatchObject({
+    sourceMeetingId: "old1",
+    hostName: "준호",
+    participantCount: 3,
+  });
+  expect(mutate.mock.calls[0][0].respondBy).toBeUndefined();
 });

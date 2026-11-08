@@ -15,6 +15,7 @@ import {
 } from "@/lib/poll-window";
 import { type Purpose, parsePurposes } from "@/lib/purposes";
 import { recordEvent } from "@/server/events/record-event";
+import { assertValidDeadline } from "@/server/meeting/deadline-service";
 import {
   CannotClaimHostError,
   DeviceAlreadyJoinedError,
@@ -32,6 +33,10 @@ export type CreateMeetingInput = {
   window?: PollWindow;
   /** 모임 목적. 없으면 빈 목록이고, 표 순서로 정리해 저장한다. */
   purposes?: Purpose[];
+  /** 응답 마감. 지금보다 뒤이고 28일 안이어야 한다. */
+  respondBy?: Date;
+  /** 같은 멤버로 또 모이는 지난 모임 id. 만드는 사람이 그 모임 참여자일 때만 받아들인다. */
+  sourceMeetingId?: string;
 };
 
 export type MeetingDetail = {
@@ -43,6 +48,7 @@ export type MeetingDetail = {
   purposes: Purpose[];
   status: "scheduling" | "locating" | "confirmed";
   confirmedAt: Date | null;
+  respondBy: Date | null;
   createdAt: Date;
   participants: { id: number; name: string; isHost: boolean }[];
   schedulePoll: {
@@ -60,14 +66,27 @@ export async function createMeeting(
   const today = seoulToday();
   const window = input.window ?? pollWindow({ preset: "two-weeks" }, today);
   if (!validatePollWindow(window, today)) throw new InvalidPollWindowError();
+  if (input.respondBy) assertValidDeadline(input.respondBy, new Date());
   return db.transaction(async (tx) => {
     const meetingId = newId();
+    // 남의 모임 id로 이름 목록을 빼 가지 못하게, 참여자가 아니면 조용히 무시한다.
+    const sourceMeetingId =
+      input.sourceMeetingId &&
+      (await participantIdByDevice(
+        tx,
+        input.sourceMeetingId,
+        input.deviceKey,
+      )) !== null
+        ? input.sourceMeetingId
+        : null;
     await tx.insert(meetings).values({
       id: meetingId,
       hostName: input.hostName,
       participantCount: input.participantCount,
       scope: input.scope,
       purposes: parsePurposes(input.purposes ?? []),
+      respondBy: input.respondBy ?? null,
+      sourceMeetingId,
       // 장소만 정하는 모임은 시간 단계 없이 장소 단계에서 시작한다.
       status: input.scope === "location" ? "locating" : "scheduling",
     });
@@ -87,6 +106,7 @@ export async function createMeeting(
       endMinute: window.endMinute,
     });
     await recordEvent(meetingId, "created", tx);
+    if (sourceMeetingId) await recordEvent(meetingId, "regathered", tx);
     return { meetingId, participantId: host.id };
   });
 }
@@ -117,6 +137,7 @@ export async function getMeeting(id: string): Promise<MeetingDetail | null> {
     purposes: parsePurposes(meeting.purposes),
     status: meeting.status,
     confirmedAt: meeting.confirmedAt,
+    respondBy: meeting.respondBy,
     createdAt: meeting.createdAt,
     participants: people,
     schedulePoll: poll
@@ -173,7 +194,7 @@ export type DeviceParticipant = {
  * 이 기기(deviceKey)로 참여한 사람의 id. 처음 참여한 브라우저(participants.device_key)와
  * 이름을 골라 이어서 한 브라우저(participant_devices)를 모두 본다.
  */
-async function participantIdByDevice(
+export async function participantIdByDevice(
   tx: Tx | Db,
   meetingId: string,
   deviceKey: string,

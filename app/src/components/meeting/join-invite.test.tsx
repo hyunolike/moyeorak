@@ -4,13 +4,18 @@ import type { Meeting } from "@/lib/api-types";
 
 const join = vi.hoisted(() => ({ mutate: vi.fn() }));
 const claim = vi.hoisted(() => ({ mutate: vi.fn() }));
+const previous = vi.hoisted(() => ({
+  data: undefined as { names: string[]; mine: string | null } | undefined,
+}));
 vi.mock("@/lib/api", () => ({
+  usePreviousMembers: () => ({ data: previous.data }),
   ApiError: class extends Error {},
   useJoin: () => ({ ...join, isError: false, isPending: false }),
   useClaim: () => ({ ...claim, isError: false, isPending: false }),
 }));
 
 beforeEach(() => {
+  previous.data = undefined;
   join.mutate.mockClear();
   claim.mutate.mockClear();
 });
@@ -61,4 +66,32 @@ test("이미 있는 이름을 입력하면 위에서 그 이름을 누르라고 
       "이미 있는 이름이에요. 본인이라면 아래에서 이름을 눌러 주세요",
     ),
   ).toBeTruthy();
+});
+
+test("지난번 멤버 칩을 누르면 그 이름으로 참여한다", () => {
+  previous.data = { names: ["서연", "지후"], mine: null };
+  render(<JoinInvite meeting={meeting([host])} flow="schedule" />);
+  expect(screen.getByText("지난번 멤버")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "서연" }));
+  expect(join.mutate).toHaveBeenCalledWith("서연");
+});
+
+test("mine이 있으면 지난번 이름 버튼을 맨 위에 보여 준다", () => {
+  previous.data = { names: ["서연"], mine: "준호" };
+  render(<JoinInvite meeting={meeting([host])} flow="schedule" />);
+  const mine = screen.getByRole("button", {
+    name: "지난번엔 준호님으로 참여했어요",
+  });
+  const chip = screen.getByRole("button", { name: "서연" });
+  expect(
+    mine.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  fireEvent.click(mine);
+  expect(join.mutate).toHaveBeenCalledWith("준호");
+});
+
+test("지난번 멤버가 없으면 섹션을 숨긴다", () => {
+  previous.data = { names: [], mine: null };
+  render(<JoinInvite meeting={meeting([host])} flow="schedule" />);
+  expect(screen.queryByText("지난번 멤버")).toBeNull();
 });

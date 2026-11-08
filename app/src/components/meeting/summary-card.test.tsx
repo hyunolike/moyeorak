@@ -5,6 +5,7 @@ import {
   SummaryCard,
   SummaryCardView,
 } from "@/components/meeting/summary-card";
+import { preloadKakaoShare, sendKakaoCard } from "@/lib/kakao-share";
 import type { MeetingSummary } from "@/lib/summary-text";
 
 const replace = vi.fn();
@@ -25,7 +26,8 @@ const mutate = vi.fn();
 const unconfirmMutate = vi.fn();
 let meIsHost = false;
 vi.mock("@/lib/api", () => ({
-  useShareEvent: () => ({ mutate }),
+  useMeetingEvent: () => mutate,
+  useNearbyPlaces: () => ({ data: undefined }),
   useMe: () => ({
     isPending: false,
     isError: false,
@@ -38,6 +40,10 @@ vi.mock("motion/react", async (orig) => ({
   useReducedMotion: vi.fn(() => false),
 }));
 vi.mock("sonner", () => ({ toast: vi.fn() }));
+vi.mock("@/lib/kakao-share", () => ({
+  sendKakaoCard: vi.fn(() => false),
+  preloadKakaoShare: vi.fn(),
+}));
 
 const summary: MeetingSummary = {
   meetingId: "m1",
@@ -208,6 +214,7 @@ describe("복사와 공유", () => {
   const writeText = vi.fn().mockResolvedValue(undefined);
   beforeEach(() => {
     writeText.mockClear();
+    vi.mocked(sendKakaoCard).mockClear();
     vi.stubGlobal("isSecureContext", true);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
@@ -240,6 +247,26 @@ describe("복사와 공유", () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
+  test("카카오 카드로 보내면 복사나 Web Share는 쓰지 않는다", async () => {
+    vi.mocked(sendKakaoCard).mockReturnValueOnce(true);
+    render(<SummaryCard summary={summary} participants={participants} />);
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "단톡방에 공유하기" }),
+      );
+    });
+    expect(sendKakaoCard).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "현호님의 모임이 정해졌어요",
+        description: "11월 7일 토요일 오전 9시 녹사평역",
+        buttonTitle: "약속 보기",
+        url: `${window.location.origin}/meetings/m1/summary`,
+      }),
+    );
+    expect(writeText).not.toHaveBeenCalled();
+    expect(mutate.mock.calls).toEqual([["shared"], ["kakao_shared"]]);
+  });
+
   test("공유는 Web Share가 있으면 그것을 쓴다", async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", {
@@ -254,10 +281,10 @@ describe("복사와 공유", () => {
     });
     expect(share).toHaveBeenCalledOnce();
     expect(writeText).not.toHaveBeenCalled();
-    expect(mutate).toHaveBeenCalledOnce();
+    expect(mutate.mock.calls).toEqual([["shared"]]);
   });
 
-  test("공유 창을 닫으면 아무 일도 없다", async () => {
+  test("공유 창을 닫아도 누른 순간 남긴 shared 말고는 아무 일도 없다", async () => {
     const share = vi
       .fn()
       .mockRejectedValue(new DOMException("cancel", "AbortError"));
@@ -273,7 +300,53 @@ describe("복사와 공유", () => {
     });
     expect(writeText).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
-    expect(mutate).not.toHaveBeenCalled();
+    expect(mutate.mock.calls).toEqual([["shared"]]);
+  });
+
+  test("그릴 때 카카오 SDK를 미리 불러 둔다", () => {
+    render(<SummaryCard summary={summary} participants={participants} />);
+    expect(preloadKakaoShare).toHaveBeenCalled();
+  });
+
+  test("카드가 준비돼 있으면 누른 그 자리에서 바로 보낸다", () => {
+    vi.mocked(sendKakaoCard).mockReturnValueOnce(true);
+    render(<SummaryCard summary={summary} participants={participants} />);
+    fireEvent.click(screen.getByRole("button", { name: "단톡방에 공유하기" }));
+    expect(sendKakaoCard).toHaveBeenCalledOnce();
+    expect(mutate).toHaveBeenCalledWith("kakao_shared");
+  });
+
+  test("카드를 못 보내면 기다리지 않고 누른 그 자리에서 Web Share를 연다", () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "share", {
+      value: share,
+      configurable: true,
+    });
+    render(<SummaryCard summary={summary} participants={participants} />);
+    fireEvent.click(screen.getByRole("button", { name: "단톡방에 공유하기" }));
+    expect(share).toHaveBeenCalledOnce();
+  });
+
+  test("공유 창이 떠 있는 동안 또 누르면 한 번만 연다", async () => {
+    let close = () => {};
+    const share = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          close = resolve;
+        }),
+    );
+    Object.defineProperty(navigator, "share", {
+      value: share,
+      configurable: true,
+    });
+    render(<SummaryCard summary={summary} participants={participants} />);
+    const button = screen.getByRole("button", { name: "단톡방에 공유하기" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(share).toHaveBeenCalledOnce();
+    await act(async () => close());
+    fireEvent.click(button);
+    expect(share).toHaveBeenCalledTimes(2);
   });
 
   test("Web Share가 없으면 복사로 대신한다", async () => {
@@ -285,6 +358,18 @@ describe("복사와 공유", () => {
     });
     expect(writeText).toHaveBeenCalledOnce();
     expect(toast).toHaveBeenCalledWith("복사했어요");
+    // 복사로 내려가도 shared는 누른 순간 한 번만 남는다.
+    expect(mutate.mock.calls).toEqual([["shared"]]);
+  });
+
+  test("공유는 무엇으로 보내든 누르는 순간 shared를 남긴다", () => {
+    Object.defineProperty(navigator, "share", {
+      value: () => new Promise(() => {}),
+      configurable: true,
+    });
+    render(<SummaryCard summary={summary} participants={participants} />);
+    fireEvent.click(screen.getByRole("button", { name: "단톡방에 공유하기" }));
+    expect(mutate.mock.calls).toEqual([["shared"]]);
   });
 });
 
@@ -301,4 +386,51 @@ test("60분이 넘는 이동 시간은 시간과 분으로 보인다", () => {
   );
   expect(screen.getByText("1시간 15분")).toBeTruthy();
   expect(screen.queryByText("75분")).toBeNull();
+});
+
+test("시작 시각이 없으면 캘린더 타일이 없다", () => {
+  const { rerender } = render(
+    <SummaryCardView summary={summary} onShare={noop} onCopy={noop} />,
+  );
+  expect(screen.getByRole("button", { name: "캘린더" })).toBeTruthy();
+  rerender(
+    <SummaryCardView
+      summary={{ ...summary, start: null, end: null }}
+      onShare={noop}
+      onCopy={noop}
+    />,
+  );
+  expect(screen.queryByRole("button", { name: "캘린더" })).toBeNull();
+});
+
+test("근처 장소 섹션은 약속 카드 아래에 놓인다", () => {
+  render(
+    <SummaryCardView
+      summary={summary}
+      onShare={noop}
+      onCopy={noop}
+      nearby={<section aria-label="근처 자리" />}
+    />,
+  );
+  const card = screen.getByRole("article", { name: "약속 카드" });
+  const nearby = screen.getByRole("region", { name: "근처 자리" });
+  expect(
+    card.compareDocumentPosition(nearby) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+});
+
+test("참여자에게는 같은 멤버로 또 모이기 링크가 보인다", () => {
+  render(
+    <SummaryCardView
+      summary={summary}
+      onShare={noop}
+      onCopy={noop}
+      regather={<a href="/new/both?from=m1">같은 멤버로 또 모이기</a>}
+    />,
+  );
+  expect(
+    screen
+      .getByRole("link", { name: "같은 멤버로 또 모이기" })
+      .getAttribute("href"),
+  ).toBe("/new/both?from=m1");
 });

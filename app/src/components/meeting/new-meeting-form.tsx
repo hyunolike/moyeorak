@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppBar } from "@/components/layout/app-bar";
 import { BottomCta } from "@/components/layout/bottom-cta";
 import { PageTitle } from "@/components/layout/page-title";
@@ -11,15 +11,17 @@ import {
   type Preset,
 } from "@/components/meeting/poll-window-picker";
 import { PurposeChips } from "@/components/meeting/purpose-chips";
+import { RespondByPicker } from "@/components/meeting/respond-by-picker";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Stepper } from "@/components/stepper";
 import { TextField } from "@/components/text-field";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useCreateMeeting } from "@/lib/api";
+import { useCreateMeeting, useRegatherDraft } from "@/lib/api";
 import type { Scope } from "@/lib/api-types";
 import { type DayTime, pollWindow, seoulToday } from "@/lib/poll-window";
 import type { Purpose } from "@/lib/purposes";
+import { type RespondByOption, respondByOptions } from "@/lib/respond-by";
 
 export type Flow = "both" | "schedule" | "location";
 
@@ -29,13 +31,29 @@ const SCOPES: { value: Scope; label: string }[] = [
   { value: "both", label: "둘 다" },
 ];
 
-export function NewMeetingForm({ flow }: { flow: Flow }) {
+export function NewMeetingForm({
+  flow,
+  from,
+}: {
+  flow: Flow;
+  /** 같은 멤버로 또 모일 때 지난 모임 id */
+  from?: string;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [count, setCount] = useState(2);
   const [scope, setScope] = useState<Scope>(flow);
   const [purposes, setPurposes] = useState<Purpose[]>([]);
   const create = useCreateMeeting();
+  // 지난 모임 설정은 한 번만 채운다. 못 받으면 빈 폼 그대로 둔다.
+  const draft = useRegatherDraft(from).data;
+  useEffect(() => {
+    if (!draft) return;
+    setScope(draft.scope);
+    setPurposes(draft.purposes);
+    setCount(draft.participantCount);
+    setName((current) => current || draft.myName);
+  }, [draft]);
   const trimmed = name.trim();
   const today = useMemo(() => seoulToday(), []);
   const [preset, setPreset] = useState<Preset>("two-weeks");
@@ -47,6 +65,17 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
     preset === "custom"
       ? pollWindow({ preset, dates: customDates, time }, today)
       : pollWindow({ preset }, today);
+  const lastPollDate = decidesTime
+    ? (window.dates.reduce<string | null>(
+        (max, d) => (max === null || d > max ? d : max),
+        null,
+      ) ?? null)
+    : null;
+  const [respondBy, setRespondBy] = useState<RespondByOption["key"] | null>(
+    null,
+  );
+  const respondByChoices = respondByOptions(new Date(), lastPollDate);
+  const chosenRespondBy = respondByChoices.find((o) => o.key === respondBy);
   const ready = !!trimmed && (!decidesTime || window.dates.length > 0);
 
   const handleSubmit = () => {
@@ -57,6 +86,10 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
         scope,
         ...(decidesTime ? { window } : {}),
         ...(decidesPlace ? { purposes } : {}),
+        ...(from ? { sourceMeetingId: from } : {}),
+        ...(chosenRespondBy
+          ? { respondBy: chosenRespondBy.at.toISOString() }
+          : {}),
       },
       {
         onSuccess: ({ meetingId }) => router.push(`/meetings/${meetingId}`),
@@ -135,6 +168,14 @@ export function NewMeetingForm({ flow }: { flow: Flow }) {
               onTimeChange={setTime}
             />
           )}
+          <div className="mt-6">
+            <p className="text-b3 text-text mb-2">응답 마감</p>
+            <RespondByPicker
+              value={chosenRespondBy ? respondBy : null}
+              options={respondByChoices}
+              onChange={setRespondBy}
+            />
+          </div>
         </div>
         <BottomCta
           primary={

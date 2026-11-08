@@ -1,4 +1,5 @@
 import { generateText, Output } from "ai";
+import type { SuggestConditions } from "@/lib/suggest-conditions";
 import { withAgentCall } from "@/server/ai/agent-call";
 import { AiLimitError } from "@/server/ai/errors";
 import { aiModel, withStructuredOutputFallback } from "@/server/ai/provider";
@@ -84,6 +85,7 @@ export async function reasonsFromModel(
   picks: Pick[],
   respondedCount: number,
   generate: GenerateReasons,
+  conditions?: SuggestConditions,
 ): Promise<{
   reasons: WrittenReason[];
   inputTokens: number;
@@ -91,7 +93,7 @@ export async function reasonsFromModel(
 }> {
   let r: Awaited<ReturnType<GenerateReasons>>;
   try {
-    r = await generate(buildReasonsPrompt(picks, respondedCount));
+    r = await generate(buildReasonsPrompt(picks, respondedCount, conditions));
   } catch (e) {
     if (isViolation(e)) throw new SchemaViolation();
     throw new ModelFailure("model call failed", { cause: e });
@@ -138,6 +140,7 @@ export async function writeReasons(
   meetingId: string,
   picks: Pick[],
   respondedCount: number,
+  conditions?: SuggestConditions,
   deps?: { generate: GenerateReasons; model: string },
 ): Promise<WrittenReason[]> {
   if (picks.length === 0) return [];
@@ -159,6 +162,7 @@ export async function writeReasons(
             picks,
             respondedCount,
             resolved.generate,
+            conditions,
           );
           return {
             value: r.reasons,

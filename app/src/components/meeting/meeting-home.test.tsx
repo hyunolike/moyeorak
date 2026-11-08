@@ -12,11 +12,14 @@ vi.mock("next/link", () => ({
 const prefetchNudge = vi.hoisted(() => vi.fn());
 const unconfirmMutate = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api", () => ({
-  useShareEvent: () => ({ mutate: vi.fn() }),
+  useMeetingEvent: () => vi.fn(),
+  useMeetingProgress: () => ({ data: undefined }),
   useNudge: () => ({ isFetching: false, data: undefined }),
   usePrefetchNudge: () => prefetchNudge,
+  useSetDeadline: () => ({ mutate: vi.fn(), isPending: false }),
   useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
   useJoin: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
+  usePreviousMembers: () => ({ data: undefined }),
   useClaim: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
   ApiError: class extends Error {},
 }));
@@ -46,6 +49,7 @@ const progress = (voted: number[]): MeetingProgress => ({
   confirmedStart: null,
   confirmedEnd: null,
   confirmedPlace: null,
+  respondBy: null,
 });
 
 const rows = () =>
@@ -189,4 +193,87 @@ test("재촉하기를 누르기 시작하면 기다리는 사람 기준으로 AI
   render(<MeetingHomeView progress={progress([1, 2, 3, 4])} meId={1} />);
   fireEvent.pointerDown(screen.getByRole("button", { name: "재촉하기" }));
   expect(prefetchNudge).toHaveBeenCalledWith("가능한 시간|0|민지");
+});
+
+test("마감이 있으면 진행 카드에 응답 마감을 알리고 호스트는 바꿀 수 있다", () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-08T03:00:00Z"));
+  render(
+    <MeetingHomeView
+      progress={{ ...progress([1]), respondBy: "2026-11-10T13:00:00Z" }}
+      meId={1}
+    />,
+  );
+  expect(
+    screen.getByText("11월 10일(화) 밤 10시까지 응답해 주세요"),
+  ).toBeTruthy();
+  expect(screen.getByRole("button", { name: "응답 마감 바꾸기" })).toBeTruthy();
+  vi.useRealTimers();
+});
+
+test("투표 마지막 날이 오늘이라 고를 마감이 없으면 응답 마감 정하기를 숨긴다", () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-08T03:00:00Z"));
+  render(
+    <MeetingHomeView
+      progress={progress([1])}
+      meId={1}
+      lastPollDate="2026-11-08"
+    />,
+  );
+  expect(screen.queryByRole("button", { name: /응답 마감/ })).toBeNull();
+  vi.useRealTimers();
+});
+
+test("고를 마감이 없어도 이미 마감이 있으면 바꾸기로 열어 없앨 수 있다", () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-08T03:00:00Z"));
+  render(
+    <MeetingHomeView
+      progress={{ ...progress([1]), respondBy: "2026-11-08T13:00:00Z" }}
+      meId={1}
+      lastPollDate="2026-11-08"
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "응답 마감 바꾸기" }));
+  const sheet = screen.getByRole("dialog", { name: "응답 마감" });
+  expect(
+    within(sheet).getByRole("button", { name: "마감 없애기" }),
+  ).toBeTruthy();
+  expect(within(sheet).queryByRole("button", { name: /밤 10시/ })).toBeNull();
+  vi.useRealTimers();
+});
+
+test("투표 마지막 날이 내일 이후면 응답 마감 정하기가 보인다", () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-08T03:00:00Z"));
+  render(
+    <MeetingHomeView
+      progress={progress([1])}
+      meId={1}
+      lastPollDate="2026-11-09"
+    />,
+  );
+  expect(screen.getByRole("button", { name: "응답 마감 정하기" })).toBeTruthy();
+  vi.useRealTimers();
+});
+
+test("참여자에게는 마감 버튼이 없다", () => {
+  render(<MeetingHomeView progress={progress([1])} meId={2} />);
+  expect(screen.queryByRole("button", { name: /응답 마감/ })).toBeNull();
+});
+
+test("확정 뒤에는 마감 줄과 마감 버튼이 없다", () => {
+  render(
+    <MeetingHomeView
+      progress={{
+        ...progress([1, 2]),
+        status: "confirmed",
+        respondBy: "2099-01-01T13:00:00Z",
+      }}
+      meId={1}
+    />,
+  );
+  expect(screen.queryByText(/응답해 주세요/)).toBeNull();
+  expect(screen.queryByRole("button", { name: /응답 마감/ })).toBeNull();
 });

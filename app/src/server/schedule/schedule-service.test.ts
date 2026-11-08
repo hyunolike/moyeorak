@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { agentSuggestions, meetingEvents, schedulePolls } from "@/db/schema";
+import {
+  agentSuggestions,
+  meetingEvents,
+  meetings,
+  schedulePolls,
+} from "@/db/schema";
 import { resetTestDb } from "@/db/test-utils";
 import {
   createMeeting,
@@ -72,14 +77,16 @@ test("투표와 확정은 이벤트를 남긴다", async () => {
   );
 });
 
-test("scope=both의 일정 확정은 confirmed 이벤트를 남기지 않는다", async () => {
+test("둘 다 모임에서 시간을 확정하면 step_confirmed가 남고 confirmed는 남지 않는다", async () => {
   const { meetingId, at } = await setup("both");
   await confirmSchedule(meetingId, at("14:00"), at("16:00"));
   const rows = await db
     .select()
     .from(meetingEvents)
     .where(eq(meetingEvents.meetingId, meetingId));
-  expect(rows.map((r) => r.type)).not.toContain("confirmed");
+  const types = rows.map((r) => r.type);
+  expect(types).toContain("step_confirmed");
+  expect(types).not.toContain("confirmed");
 });
 
 test("saveScheduleVote는 범위 밖 슬롯에 InvalidSlotsError", async () => {
@@ -304,4 +311,29 @@ describe("confirmSchedule 제안 닫기", () => {
     const summary = await getScheduleSummary(meetingId);
     expect(summary.poll.confirmedStart).toBeNull();
   });
+});
+
+test("장소 단계로 넘어가면 마감이 지워진다", async () => {
+  const { meetingId, at } = await setup("both");
+  await db
+    .update(meetings)
+    .set({ respondBy: new Date(Date.now() + 3_600_000) })
+    .where(eq(meetings.id, meetingId));
+  await confirmSchedule(meetingId, at("14:00"), at("16:00"));
+  const [row] = await db
+    .select()
+    .from(meetings)
+    .where(eq(meetings.id, meetingId));
+  expect(row.status).toBe("locating");
+  expect(row.respondBy).toBeNull();
+});
+
+test("마감이 지난 뒤에도 투표를 저장할 수 있다", async () => {
+  const { meetingId, participantId, at } = await setup("both");
+  await db
+    .update(meetings)
+    .set({ respondBy: new Date(Date.now() - 3_600_000) })
+    .where(eq(meetings.id, meetingId));
+  await saveScheduleVote(meetingId, participantId, [at("14:00")]);
+  expect((await getScheduleSummary(meetingId)).respondedCount).toBe(1);
 });

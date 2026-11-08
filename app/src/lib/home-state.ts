@@ -18,6 +18,10 @@ export type HomeState = {
   note: string | null;
   /** 호스트이고 확정 전이며 기다리는 사람이 있을 때만 true. */
   canNudge: boolean;
+  /** 마감이 지났을 때 참여자에게 보여 주는 안내 줄. 호스트와 확정 뒤에는 null. */
+  deadlineNotice: string | null;
+  /** 호스트의 마감 버튼 문구. 확정 전 호스트만 받는다. */
+  deadlineAction: "응답 마감 정하기" | "응답 마감 바꾸기" | null;
 };
 
 type Action = NonNullable<HomeState["action"]>;
@@ -144,12 +148,38 @@ export function joinWaitingNames(names: string[]): string {
 
 type Participant = MeetingProgress["participants"][number];
 
-export function homeState(p: MeetingProgress, meId: number | null): HomeState {
+export function homeState(
+  p: MeetingProgress,
+  meId: number | null,
+  now: Date = new Date(),
+): HomeState {
+  const base = baseState(p, meId);
+  const open = p.status !== "confirmed";
+  const pastDue =
+    open && !!p.respondBy && new Date(p.respondBy).getTime() <= now.getTime();
+  const host = isHost(p, meId);
+  const askSuggest = pastDue && host && respondedCount(p) >= 2;
   return {
     secondaryAction: null,
-    ...baseState(p, meId),
+    ...base,
+    action: askSuggest
+      ? {
+          label: "마감이 지났어요. 지금 응답으로 제안 받기",
+          href: `/meetings/${p.meetingId}/suggest`,
+        }
+      : base.action,
     note: decidedNote(p),
     canNudge: canNudge(p, meId),
+    deadlineNotice:
+      pastDue && meId !== null && !host
+        ? "마감이 지났지만 아직 응답할 수 있어요"
+        : null,
+    deadlineAction:
+      open && host
+        ? p.respondBy
+          ? "응답 마감 바꾸기"
+          : "응답 마감 정하기"
+        : null,
   };
 }
 
@@ -204,7 +234,10 @@ function progressTitle(p: MeetingProgress, n: number, m: number): string {
 function baseState(
   p: MeetingProgress,
   meId: number | null,
-): Omit<HomeState, "canNudge" | "note" | "secondaryAction"> &
+): Omit<
+  HomeState,
+  "canNudge" | "note" | "secondaryAction" | "deadlineNotice" | "deadlineAction"
+> &
   Partial<Pick<HomeState, "secondaryAction">> {
   const stages = STAGES[p.scope];
   const current = CURRENT[p.status];

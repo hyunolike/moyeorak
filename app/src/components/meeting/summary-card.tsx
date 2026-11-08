@@ -11,12 +11,15 @@ import { BottomCta } from "@/components/layout/bottom-cta";
 import { GuideLine } from "@/components/layout/guide-line";
 import { formatDuration } from "@/components/location/format";
 import { lineColor } from "@/components/map/line-color";
+import { CalendarAction } from "@/components/meeting/calendar-action";
+import { NearbyPlacesSection } from "@/components/meeting/nearby-places";
 import { UnconfirmButton } from "@/components/meeting/unconfirm-button";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Button } from "@/components/ui/button";
-import { useMe, useShareEvent } from "@/lib/api";
+import { useMe, useMeetingEvent } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 import { formatConfirmedClock, formatConfirmedDay } from "@/lib/home-state";
+import { preloadKakaoShare, sendKakaoCard } from "@/lib/kakao-share";
 import {
   lineName,
   type MeetingSummary,
@@ -72,14 +75,20 @@ export function SummaryCardView({
   onShare,
   onCopy,
   unconfirm,
+  nearby,
+  regather,
 }: {
   summary: MeetingSummary;
+  /** 같은 멤버로 또 모이기 링크. 이 모임의 참여자에게만 넘긴다. */
+  regather?: ReactNode;
   /** 확정 직후 진입이면 카드가 올라오고 도장이 한 번 강조된다. */
   justConfirmed?: boolean;
   onShare: () => void;
   onCopy: () => void;
   /** 모임장에게만 넘긴다. 확정 되돌리기 버튼 자리. */
   unconfirm?: ReactNode;
+  /** 카드 아래 근처 장소 섹션 자리. 확정 장소가 있을 때만 넘긴다. */
+  nearby?: ReactNode;
 }) {
   const reduce = useReducedMotion();
   const play = justConfirmed && !reduce;
@@ -189,6 +198,11 @@ export function SummaryCardView({
             </span>
             글로 복사
           </button>
+          <CalendarAction
+            summary={summary}
+            tileClassName={actionTile}
+            iconClassName={actionIcon}
+          />
           {summary.place ? (
             <a
               className={actionTile}
@@ -206,6 +220,10 @@ export function SummaryCardView({
         </div>
         {unconfirm ? (
           <div className="flex justify-center">{unconfirm}</div>
+        ) : null}
+        {nearby}
+        {regather ? (
+          <div className="flex justify-center">{regather}</div>
         ) : null}
       </div>
       <BottomCta
@@ -230,13 +248,20 @@ export function SummaryCard({
   /** 모임장인지 알아보는 데 쓴다. */
   participants: Meeting["participants"];
 }) {
-  const shareEvent = useShareEvent(summary.meetingId);
+  const sendEvent = useMeetingEvent(summary.meetingId);
   const { me } = useMe({ id: summary.meetingId, participants });
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   // 처음 그릴 때의 표시만 믿는다. 표시를 지운 뒤 다시 그려도 움직임은 다시 시작하지 않는다.
   const [justConfirmed] = useState(() => params.get("just") === "confirmed");
+  // 공유 창이나 복사가 끝나기 전에 또 누르면 한 번만 처리한다.
+  const sharing = useRef(false);
+
+  // 누른 뒤에 SDK를 기다리면 Safari가 사용자 동작을 잃어 공유 창이 막힌다. 미리 불러 둔다.
+  useEffect(() => {
+    preloadKakaoShare();
+  }, []);
 
   // 표시는 한 번만 지운다. router가 바뀔 때마다 다시 지우면 이동이 끝나지 않는다.
   const cleared = useRef(false);
@@ -252,26 +277,60 @@ export function SummaryCard({
       `${window.location.origin}/meetings/${summary.meetingId}`,
     );
 
-  const copy = async () => {
+  /** 복사하고 토스트로 알린다. 복사했는지 돌려준다. */
+  const copyWithToast = async () => {
     const copied = await copyText(text());
-    if (copied) {
-      shareEvent.mutate();
-      toast("복사했어요");
-    } else toast("복사하지 못했어요");
+    toast(copied ? "복사했어요" : "복사하지 못했어요");
+    return copied;
   };
 
-  const share = async () => {
+  const copy = async () => {
+    if (await copyWithToast()) sendEvent("shared");
+  };
+
+  /**
+   * 카드, Web Share, 복사 중 하나로 바로 간다. 그 앞에서 아무것도 기다리지 않는다.
+   * `shared`는 초대 링크 버튼처럼 누르는 순간 남기고, 카드로 보내면 `kakao_shared`를 더한다.
+   */
+  const shareOnce = async () => {
+    sendEvent("shared");
+    const origin = window.location.origin;
+    const when = summary.start
+      ? `${formatConfirmedDay(summary.start)} ${formatConfirmedClock(summary.start)}`
+      : "";
+    const station = summary.place ? stationLabel(summary.place.name) : "";
+    const url = `${origin}/meetings/${summary.meetingId}`;
+    const sent = sendKakaoCard({
+      title: `${summary.hostName}님의 모임이 정해졌어요`,
+      description: [when, station].filter(Boolean).join(" "),
+      imageUrl: `${url}/opengraph-image`,
+      buttonTitle: "약속 보기",
+      url: `${url}/summary`,
+    });
+    if (sent) {
+      sendEvent("kakao_shared");
+      return;
+    }
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text: text() });
-        shareEvent.mutate();
         return;
       } catch (e) {
         // 공유 창을 닫은 것은 실패가 아니다.
         if (e instanceof DOMException && e.name === "AbortError") return;
       }
     }
-    await copy();
+    await copyWithToast();
+  };
+
+  const share = async () => {
+    if (sharing.current) return;
+    sharing.current = true;
+    try {
+      await shareOnce();
+    } finally {
+      sharing.current = false;
+    }
   };
 
   return (
@@ -280,6 +339,25 @@ export function SummaryCard({
       justConfirmed={justConfirmed}
       onShare={share}
       onCopy={copy}
+      regather={
+        me ? (
+          // 요약에는 범위가 없다. 폼이 지난 모임의 범위를 불러와 맞춘다.
+          <Link
+            href={`/new/both?from=${summary.meetingId}`}
+            className="text-muted text-b3 flex h-10 items-center px-3 underline underline-offset-4"
+          >
+            같은 멤버로 또 모이기
+          </Link>
+        ) : null
+      }
+      nearby={
+        summary.place ? (
+          <NearbyPlacesSection
+            meetingId={summary.meetingId}
+            stationName={stationLabel(summary.place.name)}
+          />
+        ) : null
+      }
       unconfirm={
         me?.isHost ? (
           <UnconfirmButton

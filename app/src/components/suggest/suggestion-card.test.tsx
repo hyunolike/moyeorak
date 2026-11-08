@@ -218,3 +218,15 @@ test("마주 표시는 4.5:1 이상인 글자색을 쓴다", () => {
   render(<SuggestionCard suggestion={location} />);
   expect(screen.getByText("마주").className).toMatch(/text-tangerine-800/);
 });
+
+test("조건이 있으면 '주말 저녁으로 다시 고른 제안'을 보여 준다", () => {
+  render(
+    <SuggestionCard
+      suggestion={{
+        ...schedule,
+        conditions: { days: "weekend", time: "evening" },
+      }}
+    />,
+  );
+  expect(screen.getByText("주말 저녁으로 다시 고른 제안")).toBeInTheDocument();
+});

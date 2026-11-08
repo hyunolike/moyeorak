@@ -15,6 +15,7 @@ const body = z.object({
     .array(z.string().datetime({ offset: true }))
     .min(1)
     .max(MAX_VOTE_SLOTS),
+  source: z.enum(["manual", "text", "text_edited"]).optional(),
 });
 
 export async function PUT(
@@ -24,11 +25,12 @@ export async function PUT(
   return toResponse(async () => {
     const { id } = await params;
     const { participantId } = await requireParticipant(req, id);
-    const { slots } = body.parse(await readJson(req));
+    const { slots, source } = body.parse(await readJson(req));
     await saveScheduleVote(
       id,
       participantId,
       slots.map((s) => new Date(s)),
+      source,
     );
     return { saved: slots.length };
   });

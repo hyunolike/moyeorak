@@ -11,19 +11,42 @@ const pct = (n: number | null) =>
 const hours = (n: number | null) => (n === null ? "–" : n.toFixed(1));
 const count = (n: number | null) => (n === null ? "–" : n.toFixed(2));
 
-const rows: { label: string; value: (m: Metrics) => string }[] = [
-  { label: "모임 수", value: (m) => String(m.meetings) },
-  { label: "확정률", value: (m) => pct(m.confirmationRate) },
-  { label: "참여 완료율", value: (m) => pct(m.participationRate) },
-  {
-    label: "생성에서 확정까지(중앙값, 시간)",
-    value: (m) => hours(m.medianHoursToConfirm),
-  },
-  { label: "재사용률", value: (m) => pct(m.reuseRate) },
-  { label: "모임당 공유 수", value: (m) => count(m.sharesPerMeeting) },
-  { label: "제안 수락률", value: (m) => pct(m.suggestionAcceptRate) },
-  { label: "목적을 고른 모임", value: (m) => pct(m.purposeRate) },
-];
+const rows: { label: string; note?: string; value: (m: Metrics) => string }[] =
+  [
+    { label: "모임 수", value: (m) => String(m.meetings) },
+    { label: "확정률", value: (m) => pct(m.confirmationRate) },
+    { label: "참여 완료율", value: (m) => pct(m.participationRate) },
+    {
+      label: "생성에서 확정까지(중앙값, 시간)",
+      value: (m) => hours(m.medianHoursToConfirm),
+    },
+    { label: "재사용률", value: (m) => pct(m.reuseRate) },
+    {
+      label: "모임당 공유 수",
+      note: "재촉 메시지는 2026-11-08부터 따로 센다",
+      value: (m) => count(m.sharesPerMeeting),
+    },
+    { label: "제안 수락률", value: (m) => pct(m.suggestionAcceptRate) },
+    { label: "목적을 고른 모임", value: (m) => pct(m.purposeRate) },
+    {
+      label: "재촉 뒤 24시간 안에 응답한 모임",
+      value: (m) => pct(m.nudgeResponseRate),
+    },
+    {
+      label: "말 입력 그대로 저장한 비율",
+      value: (m) => pct(m.textVoteKeptRate),
+    },
+    {
+      label: "모임당 다른 제안 보기",
+      value: (m) => count(m.skippedPerMeeting),
+    },
+    { label: "모임당 다시 제안", value: (m) => count(m.resuggestedPerMeeting) },
+    {
+      label: "같은 멤버로 다시 모인 모임",
+      value: (m) => String(m.regatheredMeetings),
+    },
+    { label: "카카오 카드 공유 비율", value: (m) => pct(m.kakaoShareRate) },
+  ];
 
 const cell = "border-border border-b px-2 py-2.5";
 const num = `${cell} text-right`;
@@ -46,7 +69,10 @@ async function MetricsTable() {
       <tbody>
         {rows.map((r) => (
           <tr key={r.label}>
-            <td className={cell}>{r.label}</td>
+            <td className={cell}>
+              {r.label}
+              {r.note && <p className="text-muted text-c1">{r.note}</p>}
+            </td>
             <td className={num}>{r.value(recent)}</td>
             <td className={num}>{r.value(all)}</td>
           </tr>

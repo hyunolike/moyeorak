@@ -210,6 +210,7 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 
 10. 역마다 주변 가게 수를 세어 둡니다. 순서가 중요해서 마이그레이션을 먼저 적용하고, 운영 DB에 `pnpm stations:venues`를 한 번 실행한 다음, 그 뒤에 배포합니다. 카카오 REST API 키(`KAKAO_API_KEY`)가 필요하고, 키가 없거나 `MOCK_EXTERNAL=1`이면 스크립트가 시작하자마자 멈춥니다. 이 작업을 하기 전에는 가게 수 표가 비어 있어서 화면에 가게 수 줄이 나오지 않고, 목적을 골라도 붐비는 역이 위로 올라오지 않으며 평균 이동시간 순서로 보입니다. 이후 한 달에 한 번 다시 실행해 갱신합니다.
 11. 평가 세트를 채워 모델을 고르고 환경 변수를 교체합니다.
+12. 카카오톡 공유 카드, 응답 마감, 같은 멤버로 또 모이기를 낸 배포는 순서가 중요합니다. 먼저 운영 DB에 `0008_meeting_deadline_regather` 마이그레이션을 2단계와 같은 직접 연결로 적용합니다. 이 마이그레이션이 응답 마감과 지난 모임 연결 컬럼을 추가하는데, 코드가 먼저 나가면 모임을 만들거나 열 때 컬럼이 없어 실패합니다. 그다음 배포하고, 마지막으로 휴대폰 카카오톡에서 공유 버튼으로 카드를 보내 제목, 설명, 이미지, 참여하기 버튼이 제대로 보이는지 확인합니다. 카드를 보내려면 Vercel Production 환경에 `NEXT_PUBLIC_KAKAO_JS_KEY`나 지도용 `NEXT_PUBLIC_KAKAO_MAP_KEY`가 있어야 하고, 둘 다 없으면 버튼이 링크를 복사하는 쪽으로 물러납니다.
 
 ### 배포 환경 변수
 
@@ -220,6 +221,7 @@ PR 브랜치마다 Vercel 미리보기 배포가 생깁니다. 미리보기는 `
 | `MOCK_EXTERNAL`                                                | 넣지 않음                        | `1`                             |
 | `GOOGLE_API_KEY`, `KAKAO_API_KEY`                              | 넣음                             | 넣지 않음                       |
 | `NEXT_PUBLIC_KAKAO_MAP_KEY`                                    | 카카오 JavaScript 키             | 넣지 않음(그림 지도)            |
+| `NEXT_PUBLIC_KAKAO_JS_KEY`                                     | 지도 키와 같으면 생략            | 넣지 않음(링크 복사)            |
 | `NVIDIA_API_KEY`, `NVIDIA_MODEL_PARSE`, `NVIDIA_MODEL_SUGGEST` | 넣음                             | 넣지 않음                       |
 | `ADMIN_TOKEN`                                                  | 긴 무작위 문자열                 | 다른 무작위 문자열              |
 | `GOOGLE_MONTHLY_ELEMENT_CAP`                                   | 기본값이면 생략                  | 생략                            |

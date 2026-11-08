@@ -57,6 +57,13 @@
       "when": 1794093792978,
       "tag": "0007_fix_station_names",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794096463500,
+      "tag": "0008_meeting_deadline_regather",
+      "breakpoints": true
     }
   ]
 }

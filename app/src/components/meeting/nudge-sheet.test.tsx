@@ -7,14 +7,14 @@ import {
 } from "@testing-library/react";
 import { toast } from "sonner";
 import { NudgeSheet, NudgeSheetView } from "@/components/meeting/nudge-sheet";
-import { useNudge } from "@/lib/api";
+import { useMeetingEvent, useNudge } from "@/lib/api";
 import type { NudgeInput } from "@/lib/nudge-template";
 
 vi.mock("sonner", () => ({ toast: vi.fn() }));
 vi.mock("@/lib/api", () => ({
   ApiError: class extends Error {},
   useNudge: vi.fn(),
-  useShareEvent: vi.fn(() => ({ mutate: vi.fn() })),
+  useMeetingEvent: vi.fn(() => vi.fn()),
 }));
 
 afterEach(cleanup);
@@ -105,6 +105,7 @@ describe("NudgeSheet: 문장 틀 먼저, AI는 나중에", () => {
     stage: "가능한 시간",
     waitingNames: ["민지"],
     notJoined: 0,
+    respondBy: null,
   };
   const link = `${window.location.origin}/meetings/m1`;
   const ruleFriendly = `현호님의 모임 가능한 시간을 모으고 있어요. 민지님 시간 될 때 남겨 주세요!\n${link}`;
@@ -172,5 +173,15 @@ describe("NudgeSheet: 문장 틀 먼저, AI는 나중에", () => {
     render(sheet());
     expect(screen.getByTestId("nudge-friendly").textContent).toBe(ruleFriendly);
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  test("재촉 메시지를 복사하면 shared가 아니라 nudge_sent를 보낸다", async () => {
+    const send = vi.fn();
+    vi.mocked(useMeetingEvent).mockReturnValue(send);
+    nudgeState({ data: undefined, isFetching: false });
+    render(sheet());
+    fireEvent.click(screen.getByRole("button", { name: "복사하기" }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith("nudge_sent"));
+    expect(send).not.toHaveBeenCalledWith("shared");
   });
 });

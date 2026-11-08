@@ -1,5 +1,6 @@
 import { PURPOSE_VENUE, PURPOSES, type Purpose } from "@/lib/purposes";
 import { seoulDayStart } from "@/lib/seoul-time";
+import { matchesSlot, type SuggestConditions } from "@/lib/suggest-conditions";
 import type { Recommendation } from "@/server/midpoint/midpoint-service";
 import type { BestSlot } from "@/server/schedule/slots";
 
@@ -46,11 +47,13 @@ const seoulDay = (d: Date) => seoulDayStart(d).getTime();
 export function pickSchedule(
   best: BestSlot[],
   respondedCount: number,
+  conditions: SuggestConditions = {},
 ): SchedulePick[] {
   const minAvailable = Math.max(2, Math.ceil(respondedCount / 2));
   const long = (s: BestSlot) => s.end.getTime() - s.start.getTime() >= HOUR_MS;
   const ranked = best
     .filter((s) => s.available.length >= minAvailable)
+    .filter((s) => matchesSlot(s, conditions))
     .sort(
       (a, b) =>
         b.available.length - a.available.length ||
@@ -114,8 +117,10 @@ export function pickLocation(
   stations: Recommendation[],
   departAt: Date,
   purposes: Purpose[],
+  conditions: SuggestConditions = {},
 ): LocationPick[] {
-  const near = stations.filter((s) => !s.far);
+  const excluded = new Set(conditions.excludeStationIds ?? []);
+  const near = stations.filter((s) => !s.far && !excluded.has(s.stationId));
   const first = near[0];
   if (!first) return [];
   const key = PURPOSES.find((p) => purposes.includes(p)) ?? "meal";

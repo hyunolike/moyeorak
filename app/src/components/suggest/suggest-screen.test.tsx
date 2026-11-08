@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 import { SuggestScreen } from "@/components/suggest/suggest-screen";
 import type { Meeting } from "@/lib/api-types";
 
 let items: unknown[] = [];
 let pending = false;
+let createMutate = vi.fn();
+let createError: Error | null = null;
+let purposesPending = false;
+let dataKind = "schedule";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("next/link", () => ({
@@ -26,6 +30,15 @@ vi.mock("@/components/meeting/meeting-gate", () => ({
   }) => children(initialMeeting, { isHost: true }),
 }));
 vi.mock("@/lib/api", () => {
+  class ApiError extends Error {
+    constructor(
+      readonly status: number,
+      readonly code: string,
+      message: string,
+    ) {
+      super(message);
+    }
+  }
   const mutation = () => ({
     mutate: vi.fn(),
     reset: vi.fn(),
@@ -34,21 +47,32 @@ vi.mock("@/lib/api", () => {
     error: null,
   });
   return {
-    ApiError: class extends Error {},
+    ApiError,
     useSuggestions: () => ({
       isPending: pending,
       isSuccess: !pending,
       isError: false,
-      data: { kind: "schedule", items },
+      data: { kind: dataKind, items },
     }),
-    useCreateSuggestions: mutation,
+    useCreateSuggestions: () => ({
+      ...mutation(),
+      mutate: createMutate,
+      error: createError,
+    }),
+    useUpdatePurposes: () => ({ ...mutation(), isPending: purposesPending }),
     useAcceptSuggestion: mutation,
     useRejectSuggestion: mutation,
     useMeetingProgress: () => ({ data: undefined }),
   };
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  createMutate = vi.fn();
+  createError = null;
+  purposesPending = false;
+  dataKind = "schedule";
+});
 
 const meeting = {
   id: "m1",
@@ -87,4 +111,110 @@ test("만드는 동안에만 마주가 생각하고, 제안이 나오면 기본 
   const faces = second.container.querySelectorAll("svg[data-expression]");
   expect(faces).toHaveLength(1);
   expect(faces[0]?.getAttribute("data-expression")).toBe("default");
+});
+
+const SERVER_MESSAGE = "맞는 후보가 없어요";
+
+test("NO_MATCH면 시트 안에 안내 문구를 보여 주고 기존 제안은 그대로 둔다", async () => {
+  const { ApiError } = await import("@/lib/api");
+  const noMatch = new (ApiError as never as new (...a: unknown[]) => Error)(
+    409,
+    "NO_MATCH",
+    SERVER_MESSAGE,
+  );
+  pending = false;
+  items = [suggestion];
+  // 훅은 실패 뒤에 error를 들고 있다. 화면이 NO_MATCH를 오류 화면으로 만들면 안 된다.
+  createError = noMatch;
+  createMutate = vi.fn((_vars, opts) => opts?.onError?.(noMatch));
+  render(<SuggestScreen initialMeeting={meeting} />);
+  fireEvent.click(screen.getByRole("button", { name: "조건 바꿔 다시 받기" }));
+  fireEvent.click(await screen.findByRole("button", { name: "주말" }));
+  fireEvent.click(screen.getByRole("button", { name: "다시 받기" }));
+  expect(
+    await screen.findByText(
+      "고른 조건에 맞는 시간이 없어요. 조건을 줄여 볼까요?",
+    ),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "다시 받기" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "이걸로 확정", hidden: true }),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(SERVER_MESSAGE)).toBeNull();
+  expect(
+    screen.queryByText("제안을 처리하지 못했어요. 잠시 후 다시 시도해 주세요."),
+  ).toBeNull();
+  expect(
+    screen.queryByText(
+      "이미 정해졌거나 닫힌 제안이에요. 모임 홈에서 확인해 주세요.",
+    ),
+  ).toBeNull();
+  expect(createMutate).toHaveBeenCalledWith(
+    { conditions: { days: "weekend" } },
+    expect.anything(),
+  );
+});
+
+test("열린 제안이 없으면 조건 없이 한 번만 자동으로 만든다", () => {
+  pending = false;
+  items = [];
+  const { rerender } = render(<SuggestScreen initialMeeting={meeting} />);
+  rerender(<SuggestScreen initialMeeting={meeting} />);
+  expect(createMutate).toHaveBeenCalledTimes(1);
+  expect(createMutate).toHaveBeenCalledWith();
+});
+
+test("새로 제안 받기는 조건 없이 만든다", () => {
+  pending = false;
+  items = [];
+  render(<SuggestScreen initialMeeting={meeting} />);
+  createMutate.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "새로 제안 받기" }));
+  expect(createMutate).toHaveBeenCalledTimes(1);
+  expect(createMutate).toHaveBeenCalledWith(undefined);
+});
+
+test("준비한 제안을 다 넘긴 뒤 '지금 제안한 역 말고'는 마지막에 보인 역을 뺀다", async () => {
+  const location = {
+    id: 2,
+    status: "proposed",
+    createdAt: "2026-11-01T00:00:00+09:00",
+    kind: "location",
+    axis: "venues",
+    stationId: 7,
+    name: "합정",
+    line: "2호선",
+    lat: 37.55,
+    lng: 126.91,
+    departAt: "2026-11-07T14:00:00+09:00",
+    averageMinutes: 20,
+    maxMinutes: 30,
+    perParticipant: [{ name: "현호", minutes: 20 }],
+    venue: null,
+    reason: "가까워요.",
+    source: "rule",
+  };
+  const locating = { ...meeting, status: "locating", purposes: [] } as Meeting;
+  pending = false;
+  dataKind = "location";
+  items = [location];
+  const { rerender } = render(<SuggestScreen initialMeeting={locating} />);
+  // 마지막 카드를 넘겨 열린 제안이 없어졌다.
+  items = [];
+  rerender(<SuggestScreen initialMeeting={locating} />);
+  expect(
+    screen.getByText(
+      "준비한 제안은 여기까지예요. 전체 목록에서 직접 고를 수 있어요.",
+    ),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "조건 바꿔 다시 받기" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "지금 제안한 역 말고" }),
+  );
+  createMutate.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "다시 받기" }));
+  expect(createMutate).toHaveBeenCalledWith(
+    { conditions: { excludeStationIds: [7] } },
+    expect.anything(),
+  );
 });

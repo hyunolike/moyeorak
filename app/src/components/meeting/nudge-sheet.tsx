@@ -12,7 +12,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { type NudgeMessage, useNudge, useShareEvent } from "@/lib/api";
+import { type NudgeMessage, useMeetingEvent, useNudge } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { type NudgeInput, ruleMessages } from "@/lib/nudge-template";
 
@@ -232,7 +232,7 @@ export function NudgeSheet({
   onClose: () => void;
 }) {
   const nudge = useNudge(meetingId, nudgeWaitingKey(input), open);
-  const shareEvent = useShareEvent(meetingId);
+  const sendEvent = useMeetingEvent(meetingId);
   const [pinnedRule, setPinnedRule] = useState(false);
   useEffect(() => {
     if (!open) setPinnedRule(false);
@@ -265,11 +265,11 @@ export function NudgeSheet({
         if (!showAi) setPinnedRule(true);
       }}
       onCopy={async (text) => {
-        shareEvent.mutate();
+        sendEvent("nudge_sent");
         return copyText(text);
       }}
       onShare={(text) => {
-        shareEvent.mutate();
+        sendEvent("nudge_sent");
         navigator.share({ text }).catch(() => {});
       }}
     />
@@ -278,5 +278,10 @@ export function NudgeSheet({
 
 /** 같은 사람들이 같은 단계에서 기다리는 동안은 같은 값. AI 결과를 다시 쓰는 기준이다. */
 export function nudgeWaitingKey(input: NudgeInput): string {
-  return [input.stage, input.notJoined, ...input.waitingNames].join("|");
+  return [
+    input.stage,
+    input.notJoined,
+    ...(input.respondBy ? [input.respondBy] : []),
+    ...input.waitingNames,
+  ].join("|");
 }

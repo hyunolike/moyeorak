@@ -8,19 +8,25 @@ import type {
   MeetingProgress,
   Midpoint,
   MyMeeting,
+  NearbyGroup,
   Place,
+  PreviousMembers,
+  RegatherDraft,
   ScheduleSummary,
   Scope,
 } from "@/lib/api-types";
 import {
   getDeviceKey,
   getStoredParticipantId,
+  peekDeviceKey,
   storeParticipantId,
 } from "@/lib/device-key";
 import { markInviteViewed } from "@/lib/invite-viewed";
 import { readMyMeetingsCache, writeMyMeetingsCache } from "@/lib/my-meetings";
 import type { PollWindow } from "@/lib/poll-window";
 import type { Purpose } from "@/lib/purposes";
+import type { SuggestConditions } from "@/lib/suggest-conditions";
+import type { VoteSource } from "@/server/schedule/schedule-service";
 import type { Suggestion } from "@/server/suggest/types";
 
 export class ApiError extends Error {
@@ -159,6 +165,36 @@ export function useMyMeetings(deviceKey: string) {
   });
 }
 
+/** 지난 모임 설정으로 새 모임 폼을 채울 값. from이 없으면 받지 않고, 못 받아도 빈 폼으로 둔다. */
+export function useRegatherDraft(from: string | undefined) {
+  return useQuery({
+    queryKey: ["regather-draft", from] as const,
+    enabled: !!from,
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    queryFn: () =>
+      apiFetch<RegatherDraft>(
+        `/api/meetings/${from}/regather-draft`,
+        withDeviceKey({}),
+      ),
+  });
+}
+
+/** 새 모임 초대 화면에 보여 줄 지난번 멤버 이름. 키를 새로 만들지 않고 이미 있는 키만 보낸다. */
+export function usePreviousMembers(meetingId: string) {
+  return useQuery({
+    queryKey: ["previous-members", meetingId] as const,
+    retry: false,
+    queryFn: () => {
+      const key = peekDeviceKey();
+      return apiFetch<PreviousMembers>(
+        `/api/meetings/${meetingId}/previous-members`,
+        key ? { headers: { "X-Device-Key": key } } : undefined,
+      );
+    },
+  });
+}
+
 export function useCreateMeeting() {
   return useMutation({
     mutationFn: async (input: {
@@ -167,6 +203,8 @@ export function useCreateMeeting() {
       scope: Scope;
       window?: PollWindow;
       purposes?: Purpose[];
+      respondBy?: string;
+      sourceMeetingId?: string;
     }) => {
       const result = await apiFetch<{
         meetingId: string;
@@ -178,6 +216,23 @@ export function useCreateMeeting() {
       storeParticipantId(result.meetingId, result.participantId);
       return result;
     },
+  });
+}
+
+/** 모임장 전용. 응답 마감을 정하거나(ISO) 없앤다(null). 홈 진행 상태를 다시 읽는다. */
+export function useSetDeadline(meetingId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (respondBy: string | null) =>
+      apiFetch<{ respondBy: string | null }>(
+        `/api/meetings/${meetingId}/deadline`,
+        withDeviceKey(json("PATCH", { respondBy })),
+      ),
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: keys.meeting(meetingId) }),
+        client.invalidateQueries({ queryKey: keys.progress(meetingId) }),
+      ]),
   });
 }
 
@@ -228,7 +283,7 @@ export function useScheduleSummary(meetingId: string) {
 export function useSaveVote(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: { slots: string[] }) =>
+    mutationFn: (input: { slots: string[]; source?: VoteSource }) =>
       apiFetch(
         `/api/meetings/${meetingId}/schedule/votes`,
         withDeviceKey(json("PUT", input)),
@@ -336,6 +391,22 @@ export function usePlaceSearch(keyword: string) {
   });
 }
 
+/** 확정된 역 근처에서 모임 목적에 맞는 장소. 실패해도 다시 묻지 않고 화면은 섹션을 숨긴다. */
+export function useNearbyPlaces(meetingId: string) {
+  return useQuery({
+    queryKey: ["nearby", meetingId],
+    queryFn: async () =>
+      (
+        await apiFetch<{ groups: NearbyGroup[] }>(
+          `/api/meetings/${meetingId}/nearby`,
+          withDeviceKey({}),
+        )
+      ).groups,
+    retry: false,
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
 export function useMidpoint(meetingId: string) {
   return useQuery({
     queryKey: keys.midpoint(meetingId),
@@ -345,15 +416,20 @@ export function useMidpoint(meetingId: string) {
   });
 }
 
-/** 공유 이벤트 기록. 실패해도 사용자 흐름은 막지 않는다. */
-export function useShareEvent(meetingId: string) {
-  return useMutation({
-    mutationFn: () =>
-      apiFetch(
-        `/api/meetings/${meetingId}/events`,
-        json("POST", { type: "shared" }),
-      ),
+export type ClientEventType =
+  | "shared"
+  | "invite_viewed"
+  | "nudge_sent"
+  | "kakao_shared"
+  | "calendar_added";
+
+/** 화면에서 남기는 이벤트 기록. 실패해도 사용자 흐름은 막지 않는다. */
+export function useMeetingEvent(meetingId: string) {
+  const { mutate } = useMutation({
+    mutationFn: (type: ClientEventType) =>
+      apiFetch(`/api/meetings/${meetingId}/events`, json("POST", { type })),
   });
+  return (type: ClientEventType) => mutate(type);
 }
 
 /** 참여하지 않은 사람이 초대 화면을 봤을 때 한 번 기록한다(퍼널의 "링크 열림"). 실패해도 화면은 그대로다. */
@@ -469,10 +545,14 @@ export function useUpdatePurposes(meetingId: string) {
 export function useCreateSuggestions(meetingId: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (vars?: { conditions?: SuggestConditions }) =>
       apiFetch<SuggestionSet>(
         `/api/meetings/${meetingId}/suggestions`,
-        withDeviceKey({ method: "POST" }),
+        withDeviceKey(
+          vars?.conditions
+            ? json("POST", { conditions: vars.conditions })
+            : { method: "POST" },
+        ),
       ),
     onSuccess: (set) => client.setQueryData(keys.suggestions(meetingId), set),
   });

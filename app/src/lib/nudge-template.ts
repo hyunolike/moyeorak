@@ -1,5 +1,6 @@
 import type { MeetingProgress } from "@/lib/api-types";
 import { joinWaitingNames, votedNow } from "@/lib/home-state";
+import { isPast, respondByText } from "@/lib/respond-by";
 
 /**
  * 재촉 메시지의 입력과 문장 틀. 서버(AI가 실패할 때)와 화면(AI를 기다리는 동안)이 같이 쓴다.
@@ -13,13 +14,15 @@ export type NudgeInput = {
   stage: "가능한 시간" | "출발지";
   waitingNames: string[];
   notJoined: number;
+  /** 응답 마감(ISO). 없으면 null. */
+  respondBy: string | null;
 };
 
 /** 확정됐거나 기다리는 사람이 없으면 null이다. */
 export function nudgeInput(
   p: Pick<
     MeetingProgress,
-    "status" | "hostName" | "participantCount" | "participants"
+    "status" | "hostName" | "participantCount" | "participants" | "respondBy"
   >,
 ): NudgeInput | null {
   if (p.status === "confirmed") return null;
@@ -34,11 +37,34 @@ export function nudgeInput(
     stage: p.status === "locating" ? "출발지" : "가능한 시간",
     waitingNames,
     notJoined,
+    respondBy: p.respondBy,
   };
 }
 
-export function templateNudge(tone: Tone, input: NudgeInput): string {
-  if (tone === "short") return `${input.stage} 남겨 주세요 🙏`;
+/** 지난 마감은 말하지 않는다. */
+function liveDeadline(input: NudgeInput, now: Date): string | null {
+  if (!input.respondBy) return null;
+  const at = new Date(input.respondBy);
+  return isPast(at, now) ? null : respondByText(at, now);
+}
+
+/**
+ * 마감이 있으면 부탁을 한 번만 하도록 넣는다.
+ * 짧은 말투는 마감을 부탁 앞에 두고, 친근한 말투는 이미 부탁한 문장 뒤에 마감만 알린다.
+ */
+export function templateNudge(
+  tone: Tone,
+  input: NudgeInput,
+  now = new Date(),
+): string {
+  const by = liveDeadline(input, now);
+  if (tone === "short") {
+    return `${by ? `${by} ` : ""}${input.stage} 남겨 주세요 🙏`;
+  }
+  return `${friendlyNudge(input)}${by ? ` ${by}예요.` : ""}`;
+}
+
+function friendlyNudge(input: NudgeInput): string {
   const who =
     input.waitingNames.length > 0
       ? joinWaitingNames(input.waitingNames)
@@ -54,9 +80,10 @@ export function withLink(text: string, link: string): string {
 export function ruleMessages(
   input: NudgeInput,
   link: string,
+  now = new Date(),
 ): { tone: Tone; text: string }[] {
   return NUDGE_TONES.map((tone) => ({
     tone,
-    text: withLink(templateNudge(tone, input), link),
+    text: withLink(templateNudge(tone, input, now), link),
   }));
 }

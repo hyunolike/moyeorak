@@ -66,9 +66,10 @@ export async function confirmLocation(
       "location",
       opts.acceptedSuggestionId ?? null,
     );
+    // 다 정해졌으니 마감도 끝난다. 확정을 되돌려도 지난 마감이 다시 살아나지 않는다.
     await tx
       .update(meetings)
-      .set({ status: "confirmed", confirmedAt: new Date() })
+      .set({ status: "confirmed", confirmedAt: new Date(), respondBy: null })
       .where(eq(meetings.id, meetingId));
     await recordEvent(meetingId, "confirmed", tx);
     return { status: "confirmed" as const };

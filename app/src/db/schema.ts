@@ -33,6 +33,8 @@ export const meetings = pgTable("meetings", {
     .$type<Purpose[]>()
     .notNull()
     .default(sql`'{}'::text[]`),
+  respondBy: timestamptz("respond_by"),
+  sourceMeetingId: varchar("source_meeting_id", { length: 21 }),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
 });
 
@@ -209,6 +211,17 @@ export const meetingEvents = pgTable("meeting_events", {
       | "suggestion_viewed"
       | "confirmed"
       | "purpose_changed"
+      | "nudge_sent"
+      | "kakao_shared"
+      | "calendar_added"
+      | "vote_from_text"
+      | "vote_from_text_edited"
+      | "suggestion_skipped"
+      | "resuggested"
+      | "step_confirmed"
+      | "unconfirmed"
+      | "deadline_set"
+      | "regathered"
     >()
     .notNull(),
   createdAt: timestamptz("created_at").notNull().defaultNow(),

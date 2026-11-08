@@ -1,3 +1,7 @@
+import {
+  conditionsPhrase,
+  type SuggestConditions,
+} from "@/lib/suggest-conditions";
 import type { Pick } from "@/server/ai/suggest/templates";
 
 /** 고정 시스템 프롬프트. 모임 데이터는 user 메시지에만 둔다. */
@@ -45,9 +49,12 @@ function describe(pick: Pick, i: number): string {
 export function buildReasonsPrompt(
   picks: Pick[],
   respondedCount: number,
+  conditions?: SuggestConditions,
 ): { system: string; user: string } {
+  const label = conditions ? conditionsPhrase(conditions) : null;
   const user = [
     `응답한 사람 ${respondedCount}명, 카드 ${picks.length}장`,
+    ...(label ? [`다시 고른 조건: ${label}`] : []),
     ...picks.map(describe),
   ].join("\n");
   return { system: SYSTEM, user };

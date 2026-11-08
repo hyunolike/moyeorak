@@ -24,9 +24,11 @@ vi.mock("next/link", () => ({
 const prefetchNudge = vi.hoisted(() => vi.fn());
 const unconfirmMutate = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api", () => ({
-  useShareEvent: () => ({ mutate: vi.fn() }),
+  useMeetingEvent: () => vi.fn(),
+  useMeetingProgress: () => ({ data: undefined }),
   useNudge: () => ({ isFetching: false, data: undefined }),
   usePrefetchNudge: () => prefetchNudge,
+  useSetDeadline: () => ({ mutate: vi.fn(), isPending: false }),
   useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
   useJoin: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
   useClaim: () => ({ mutate: vi.fn(), isError: false, isPending: false }),
@@ -61,6 +63,7 @@ test("참여자 행은 응답한 사람 목록이 바뀔 때만 자리 이동을
     confirmedStart: null,
     confirmedEnd: null,
     confirmedPlace: null,
+    respondBy: null,
   } as MeetingProgress;
   render(<MeetingHomeView progress={progress} meId={1} />);
   expect(liProps.length).toBeGreaterThan(0);

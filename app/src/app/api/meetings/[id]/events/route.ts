@@ -7,7 +7,15 @@ import { readJson, toResponse } from "@/server/http";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 
 // 화면에서 남기는 이벤트만 받는다. 나머지(참여, 응답, 확정)는 서버가 직접 기록한다.
-const body = z.object({ type: z.enum(["shared", "invite_viewed"]) });
+const body = z.object({
+  type: z.enum([
+    "shared",
+    "invite_viewed",
+    "nudge_sent",
+    "kakao_shared",
+    "calendar_added",
+  ]),
+});
 
 export async function POST(
   req: Request,

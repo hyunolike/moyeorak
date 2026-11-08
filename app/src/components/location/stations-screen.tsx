@@ -33,8 +33,10 @@ import {
 import type { Departure, Meeting, Station } from "@/lib/api-types";
 import { cn } from "@/lib/cn";
 import { JUST_CONFIRMED_QUERY } from "@/lib/just-confirmed";
-import { type Purpose, venueLine, ZERO_VENUES } from "@/lib/purposes";
+import { type Purpose, venueLine } from "@/lib/purposes";
 import { lineName, stationLabel } from "@/lib/summary-text";
+
+const SAMPLE_VENUES = { meal: 10, drink: 10, cafe: 10, study: 10, sight: 10 };
 
 const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({
   stationId: -rank,
@@ -44,7 +46,8 @@ const SAMPLE_STATIONS: Station[] = [1, 2, 3].map((rank) => ({
   lng: 0,
   averageMinutes: 30,
   maxMinutes: null,
-  venues: ZERO_VENUES,
+  // 실제 행처럼 가게 수 줄이 있어야 뼈대가 그 줄 높이까지 잡는다. 어떤 목적을 골라도 줄이 나오게 모두 채운다.
+  venues: SAMPLE_VENUES,
   far: false,
   perParticipant: [],
 }));

@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { sql } from "drizzle-orm";
@@ -118,10 +118,12 @@ const quote = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
 export function toUpdateSql(rows: ReportRow[]): string {
   return rows
-    .filter((r) => r.status === "fix" && r.match)
-    .map(
-      (r) =>
-        `UPDATE stations SET geom = ST_SetSRID(ST_MakePoint(${r.match!.lng.toFixed(6)}, ${r.match!.lat.toFixed(6)}), 4326) WHERE name = ${quote(r.name)} AND line = ${quote(r.line)};`,
+    .flatMap((r) =>
+      r.status === "fix" && r.match
+        ? [
+            `UPDATE stations SET geom = ST_SetSRID(ST_MakePoint(${r.match.lng.toFixed(6)}, ${r.match.lat.toFixed(6)}), 4326) WHERE name = ${quote(r.name)} AND line = ${quote(r.line)};`,
+          ]
+        : [],
     )
     .join("\n--> statement-breakpoint\n");
 }
@@ -157,11 +159,12 @@ async function main(outDir: string) {
   for (const s of stations) {
     const query = stationQuery(s.name);
     try {
-      if (!cache.has(query)) {
+      let docs = cache.get(query);
+      if (!docs) {
         await new Promise((r) => setTimeout(r, DELAY_MS));
-        cache.set(query, await searchSubway(query, apiKey));
+        docs = await searchSubway(query, apiKey);
+        cache.set(query, docs);
       }
-      const docs = cache.get(query)!;
       const row = classify(s, pickStation(s, docs));
       if (row.status === "unmatched") {
         row.candidates = docs.map((d) => `${d.place_name} (${d.y}, ${d.x})`);

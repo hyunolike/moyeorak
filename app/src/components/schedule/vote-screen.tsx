@@ -29,6 +29,8 @@ import { useSaveVote, useScheduleSummary } from "@/lib/api";
 import type { Meeting, ScheduleSummary } from "@/lib/api-types";
 
 const slotKey = (date: Date) => date.getTime().toString();
+const setKey = (dates: Date[]) =>
+  [...new Set(dates.map((d) => d.getTime()))].sort((a, b) => a - b).join(",");
 
 function VoteForm({
   meeting,
@@ -47,6 +49,8 @@ function VoteForm({
   );
   // 말로 칠하기 직전 선택. 한 번 되돌리거나 직접 고치면 비운다.
   const [undoSlots, setUndoSlots] = useState<Date[] | null>(null);
+  // 말로 칠한 직후의 칸 집합. 말 입력을 안 썼으면 null이다.
+  const [parsedKey, setParsedKey] = useState<string | null>(null);
   // 선택은 바로 바꾸고, 화면에는 시간 순서로 한 칸씩 드러낸다.
   const paint = usePaintSequence();
   const save = useSaveVote(meeting.id);
@@ -79,6 +83,7 @@ function VoteForm({
       .map(slotKey)
       .filter((key) => !before.has(key));
     setUndoSlots(selected);
+    setParsedKey(setKey(slots));
     setSelected(slots);
     paint.play(added);
   };
@@ -93,6 +98,7 @@ function VoteForm({
       .filter((key) => !restored.has(key));
     setSelected(undoSlots);
     setUndoSlots(null);
+    setParsedKey(null);
     paint.play(removed);
   };
 
@@ -100,6 +106,12 @@ function VoteForm({
     save.mutate(
       {
         slots: selected.map((date) => date.toISOString()),
+        source:
+          parsedKey === null
+            ? "manual"
+            : parsedKey === setKey(selected)
+              ? "text"
+              : "text_edited",
       },
       { onSuccess: () => router.push(schedulePath) },
     );

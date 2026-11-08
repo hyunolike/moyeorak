@@ -13,6 +13,7 @@ export type Meeting = {
   purposes: Purpose[];
   status: "scheduling" | "locating" | "confirmed";
   confirmedAt: string | null;
+  respondBy: string | null;
   createdAt: string;
   participants: { id: number; name: string; isHost: boolean }[];
   schedulePoll: {
@@ -84,6 +85,8 @@ export type MeetingProgress = {
   confirmedEnd: string | null;
   /** confirmed_locations.name */
   confirmedPlace: string | null;
+  /** 응답 마감. 확정되면 화면에 쓰지 않는다. */
+  respondBy: string | null;
 };
 
 /** GET /api/me/meetings 한 줄. 이 기기가 참여한 모임이다. */
@@ -102,4 +105,34 @@ export type MyMeeting = {
   confirmedEnd: string | null;
   confirmedPlace: string | null;
   lastActivityAt: string;
+};
+
+export type NearbyPlace = {
+  name: string;
+  category: string;
+  distanceMeters: number;
+  url: string;
+};
+
+/** 확정 역 근처 장소를 모임 목적별로 묶은 것. label은 화면에 보이는 종류 이름이다. */
+export type NearbyGroup = {
+  purpose: Purpose;
+  label: string;
+  places: NearbyPlace[];
+};
+
+/** 같은 멤버로 또 모일 때 새 모임 폼을 채울 지난 모임의 값. */
+export type RegatherDraft = {
+  scope: Scope;
+  purposes: Purpose[];
+  /** 지난 모임의 표시 인원. 예상 인원과 실제 참여자 수 중 큰 값이고 최대 20이다. */
+  participantCount: number;
+  /** 누른 사람의 지난 모임 이름 */
+  myName: string;
+};
+
+/** 새 모임 초대 화면에 보여 줄 지난번 멤버 이름. */
+export type PreviousMembers = {
+  names: string[];
+  mine: string | null;
 };

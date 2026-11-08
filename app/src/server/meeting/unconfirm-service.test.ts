@@ -5,6 +5,7 @@ import {
   agentSuggestions,
   confirmedLocations,
   locationVotes,
+  meetingEvents,
   meetings,
   schedulePolls,
   scheduleVotes,
@@ -193,4 +194,43 @@ test("되돌린 뒤 같은 단계를 다시 확정할 수 있다", async () => {
   await expect(confirmLocation(meetingId, station.id)).resolves.toEqual({
     status: "confirmed",
   });
+});
+
+test("확정을 되돌리면 unconfirmed가 남는다", async () => {
+  const { meetingId, start, end } = await setup("schedule");
+  await confirmSchedule(meetingId, start, end);
+  await unconfirmMeeting(meetingId);
+  const rows = await db
+    .select({ type: meetingEvents.type })
+    .from(meetingEvents)
+    .where(eq(meetingEvents.meetingId, meetingId));
+  expect(rows.map((r) => r.type)).toContain("unconfirmed");
+});
+
+test("시간만 정하는 모임은 확정할 때 마감을 지우고, 되돌려도 옛 마감이 살아나지 않는다", async () => {
+  const { meetingId, start, end } = await setup("schedule");
+  await db
+    .update(meetings)
+    .set({ respondBy: new Date(Date.now() + 3_600_000) })
+    .where(eq(meetings.id, meetingId));
+  await confirmSchedule(meetingId, start, end);
+  expect((await meetingOf(meetingId))?.respondBy).toBeNull();
+  await unconfirmMeeting(meetingId);
+  const m = await meetingOf(meetingId);
+  expect(m?.status).toBe("scheduling");
+  expect(m?.respondBy).toBeNull();
+});
+
+test("장소를 확정할 때 마감을 지우고, 되돌려도 옛 마감이 살아나지 않는다", async () => {
+  const { meetingId, station } = await setup("location");
+  await db
+    .update(meetings)
+    .set({ respondBy: new Date(Date.now() + 3_600_000) })
+    .where(eq(meetings.id, meetingId));
+  await confirmLocation(meetingId, station.id);
+  expect((await meetingOf(meetingId))?.respondBy).toBeNull();
+  await unconfirmMeeting(meetingId);
+  const m = await meetingOf(meetingId);
+  expect(m?.status).toBe("locating");
+  expect(m?.respondBy).toBeNull();
 });

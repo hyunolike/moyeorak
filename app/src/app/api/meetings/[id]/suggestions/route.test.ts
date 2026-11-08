@@ -193,3 +193,45 @@ test("호스트 거절은 { ok: true }이고 닫힌 제안을 다시 거절하�
   expect((await first.json()).data).toEqual({ ok: true });
   expect((await call()).status).toBe(409);
 });
+
+test("NO_MATCH면 409와 code NO_MATCH다", async () => {
+  const id = await setup();
+  const res = await POST(
+    new Request(url(id), {
+      method: "POST",
+      headers: { ...h(hostKey), "content-type": "application/json" },
+      body: JSON.stringify({ conditions: { time: "evening" } }),
+    }),
+    ctx(id),
+  );
+  expect(res.status).toBe(409);
+  expect((await res.json()).error.code).toBe("NO_MATCH");
+});
+
+test("알 수 없는 조건 키는 400이다", async () => {
+  const id = await setup();
+  const res = await POST(
+    new Request(url(id), {
+      method: "POST",
+      headers: { ...h(hostKey), "content-type": "application/json" },
+      body: JSON.stringify({ conditions: { foo: 1 } }),
+    }),
+    ctx(id),
+  );
+  expect(res.status).toBe(400);
+});
+
+test("다른 제안 보기로 넘기면 suggestion_skipped가 남는다", async () => {
+  const id = await setup();
+  const { items } = await createSuggestions(id, {
+    writeReasons: fake as never,
+  });
+  const sid = String((items[0] as { id: number }).id);
+  const res = await REJECT(
+    new Request(`${url(id)}/${sid}`, { method: "POST", headers: h(hostKey) }),
+    sctx(id, sid),
+  );
+  expect(res.status).toBe(200);
+  const events = await db.select().from(meetingEvents);
+  expect(events.filter((e) => e.type === "suggestion_skipped")).toHaveLength(1);
+});

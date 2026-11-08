@@ -41,10 +41,14 @@ export type ScheduleSummary = {
   respondedCount: number;
 };
 
+/** 투표를 어떻게 채웠는지. text는 말로 입력한 그대로, text_edited는 말로 입력한 뒤 고친 것 */
+export type VoteSource = "manual" | "text" | "text_edited";
+
 export async function saveScheduleVote(
   meetingId: string,
   participantId: number,
   slots: Date[],
+  source: VoteSource = "manual",
 ): Promise<void> {
   await db.transaction(async (tx) => {
     // 확정과 투표가 겹치지 않게 모임 행을 잠그고 상태를 본다.
@@ -88,6 +92,10 @@ export async function saveScheduleVote(
     // 투표가 바뀌면 이미 만든 제안의 "n명 가능" 같은 사실이 달라지므로 지운다.
     await dropProposed(meetingId, "schedule", tx);
     await recordEvent(meetingId, "vote_done", tx);
+    if (source === "text") await recordEvent(meetingId, "vote_from_text", tx);
+    if (source === "text_edited") {
+      await recordEvent(meetingId, "vote_from_text_edited", tx);
+    }
   });
 }
 
@@ -189,13 +197,16 @@ export async function confirmSchedule(
     if (meeting.scope === "both") {
       await tx
         .update(meetings)
-        .set({ status: "locating" })
+        // 새 단계의 마감은 모임장이 다시 정한다.
+        .set({ status: "locating", respondBy: null })
         .where(eq(meetings.id, meetingId));
+      await recordEvent(meetingId, "step_confirmed", tx);
       return { status: "locating" as const };
     }
+    // 다 정해졌으니 마감도 끝난다. 확정을 되돌려도 지난 마감이 다시 살아나지 않는다.
     await tx
       .update(meetings)
-      .set({ status: "confirmed", confirmedAt: new Date() })
+      .set({ status: "confirmed", confirmedAt: new Date(), respondBy: null })
       .where(eq(meetings.id, meetingId));
     await recordEvent(meetingId, "confirmed", tx);
     return { status: "confirmed" as const };
