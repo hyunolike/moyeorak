@@ -6,6 +6,7 @@ import {
   meetings,
   schedulePolls,
 } from "@/db/schema";
+import { recordEvent } from "@/server/events/record-event";
 import { MeetingNotFoundError } from "@/server/meeting/errors";
 import { NotConfirmedError } from "@/server/suggest/errors";
 import type { SuggestionKind } from "@/server/suggest/types";
@@ -48,6 +49,7 @@ export async function unconfirmMeeting(
       .update(meetings)
       .set({ status: step.to, confirmedAt: null })
       .where(eq(meetings.id, meetingId));
+    await recordEvent(meetingId, "unconfirmed", tx);
     return { status: step.to };
   });
 }

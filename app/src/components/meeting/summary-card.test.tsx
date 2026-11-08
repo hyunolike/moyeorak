@@ -25,7 +25,7 @@ const mutate = vi.fn();
 const unconfirmMutate = vi.fn();
 let meIsHost = false;
 vi.mock("@/lib/api", () => ({
-  useShareEvent: () => ({ mutate }),
+  useMeetingEvent: () => mutate,
   useMe: () => ({
     isPending: false,
     isError: false,

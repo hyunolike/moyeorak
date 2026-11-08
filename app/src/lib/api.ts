@@ -345,15 +345,20 @@ export function useMidpoint(meetingId: string) {
   });
 }
 
-/** 공유 이벤트 기록. 실패해도 사용자 흐름은 막지 않는다. */
-export function useShareEvent(meetingId: string) {
-  return useMutation({
-    mutationFn: () =>
-      apiFetch(
-        `/api/meetings/${meetingId}/events`,
-        json("POST", { type: "shared" }),
-      ),
+export type ClientEventType =
+  | "shared"
+  | "invite_viewed"
+  | "nudge_sent"
+  | "kakao_shared"
+  | "calendar_added";
+
+/** 화면에서 남기는 이벤트 기록. 실패해도 사용자 흐름은 막지 않는다. */
+export function useMeetingEvent(meetingId: string) {
+  const { mutate } = useMutation({
+    mutationFn: (type: ClientEventType) =>
+      apiFetch(`/api/meetings/${meetingId}/events`, json("POST", { type })),
   });
+  return (type: ClientEventType) => mutate(type);
 }
 
 /** 참여하지 않은 사람이 초대 화면을 봤을 때 한 번 기록한다(퍼널의 "링크 열림"). 실패해도 화면은 그대로다. */

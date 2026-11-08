@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useShareEvent } from "@/lib/api";
+import { useMeetingEvent } from "@/lib/api";
 
 async function copyText(text: string) {
   if (!window.isSecureContext || !navigator.clipboard?.writeText) return false;
@@ -27,10 +27,10 @@ export function ShareButton({
   /** 주면 아이콘 버튼 대신 글자가 있는 가로 꽉 찬 주 버튼으로 그린다. */
   label?: string;
 }) {
-  const shareEvent = useShareEvent(meetingId);
+  const sendEvent = useMeetingEvent(meetingId);
 
   const handleClick = async () => {
-    shareEvent.mutate();
+    sendEvent("shared");
     const copied = await copyText(
       `${window.location.origin}/meetings/${meetingId}`,
     );

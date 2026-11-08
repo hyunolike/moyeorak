@@ -72,14 +72,16 @@ test("투표와 확정은 이벤트를 남긴다", async () => {
   );
 });
 
-test("scope=both의 일정 확정은 confirmed 이벤트를 남기지 않는다", async () => {
+test("둘 다 모임에서 시간을 확정하면 step_confirmed가 남고 confirmed는 남지 않는다", async () => {
   const { meetingId, at } = await setup("both");
   await confirmSchedule(meetingId, at("14:00"), at("16:00"));
   const rows = await db
     .select()
     .from(meetingEvents)
     .where(eq(meetingEvents.meetingId, meetingId));
-  expect(rows.map((r) => r.type)).not.toContain("confirmed");
+  const types = rows.map((r) => r.type);
+  expect(types).toContain("step_confirmed");
+  expect(types).not.toContain("confirmed");
 });
 
 test("saveScheduleVote는 범위 밖 슬롯에 InvalidSlotsError", async () => {

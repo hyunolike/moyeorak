@@ -14,7 +14,7 @@ import { lineColor } from "@/components/map/line-color";
 import { UnconfirmButton } from "@/components/meeting/unconfirm-button";
 import { MobileLayout } from "@/components/mobile-layout";
 import { Button } from "@/components/ui/button";
-import { useMe, useShareEvent } from "@/lib/api";
+import { useMe, useMeetingEvent } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 import { formatConfirmedClock, formatConfirmedDay } from "@/lib/home-state";
 import {
@@ -230,7 +230,7 @@ export function SummaryCard({
   /** 모임장인지 알아보는 데 쓴다. */
   participants: Meeting["participants"];
 }) {
-  const shareEvent = useShareEvent(summary.meetingId);
+  const sendEvent = useMeetingEvent(summary.meetingId);
   const { me } = useMe({ id: summary.meetingId, participants });
   const router = useRouter();
   const pathname = usePathname();
@@ -255,7 +255,7 @@ export function SummaryCard({
   const copy = async () => {
     const copied = await copyText(text());
     if (copied) {
-      shareEvent.mutate();
+      sendEvent("shared");
       toast("복사했어요");
     } else toast("복사하지 못했어요");
   };
@@ -264,7 +264,7 @@ export function SummaryCard({
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text: text() });
-        shareEvent.mutate();
+        sendEvent("shared");
         return;
       } catch (e) {
         // 공유 창을 닫은 것은 실패가 아니다.

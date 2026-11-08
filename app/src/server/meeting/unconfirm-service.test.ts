@@ -5,6 +5,7 @@ import {
   agentSuggestions,
   confirmedLocations,
   locationVotes,
+  meetingEvents,
   meetings,
   schedulePolls,
   scheduleVotes,
@@ -193,4 +194,15 @@ test("되돌린 뒤 같은 단계를 다시 확정할 수 있다", async () => {
   await expect(confirmLocation(meetingId, station.id)).resolves.toEqual({
     status: "confirmed",
   });
+});
+
+test("확정을 되돌리면 unconfirmed가 남는다", async () => {
+  const { meetingId, start, end } = await setup("schedule");
+  await confirmSchedule(meetingId, start, end);
+  await unconfirmMeeting(meetingId);
+  const rows = await db
+    .select({ type: meetingEvents.type })
+    .from(meetingEvents)
+    .where(eq(meetingEvents.meetingId, meetingId));
+  expect(rows.map((r) => r.type)).toContain("unconfirmed");
 });

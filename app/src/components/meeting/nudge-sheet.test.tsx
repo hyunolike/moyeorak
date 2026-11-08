@@ -7,14 +7,14 @@ import {
 } from "@testing-library/react";
 import { toast } from "sonner";
 import { NudgeSheet, NudgeSheetView } from "@/components/meeting/nudge-sheet";
-import { useNudge } from "@/lib/api";
+import { useMeetingEvent, useNudge } from "@/lib/api";
 import type { NudgeInput } from "@/lib/nudge-template";
 
 vi.mock("sonner", () => ({ toast: vi.fn() }));
 vi.mock("@/lib/api", () => ({
   ApiError: class extends Error {},
   useNudge: vi.fn(),
-  useShareEvent: vi.fn(() => ({ mutate: vi.fn() })),
+  useMeetingEvent: vi.fn(() => vi.fn()),
 }));
 
 afterEach(cleanup);
@@ -172,5 +172,15 @@ describe("NudgeSheet: 문장 틀 먼저, AI는 나중에", () => {
     render(sheet());
     expect(screen.getByTestId("nudge-friendly").textContent).toBe(ruleFriendly);
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  test("재촉 메시지를 복사하면 shared가 아니라 nudge_sent를 보낸다", async () => {
+    const send = vi.fn();
+    vi.mocked(useMeetingEvent).mockReturnValue(send);
+    nudgeState({ data: undefined, isFetching: false });
+    render(sheet());
+    fireEvent.click(screen.getByRole("button", { name: "복사하기" }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith("nudge_sent"));
+    expect(send).not.toHaveBeenCalledWith("shared");
   });
 });

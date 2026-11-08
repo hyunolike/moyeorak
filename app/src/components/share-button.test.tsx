@@ -10,7 +10,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { ShareButton } from "@/components/share-button";
 
 vi.mock("sonner", () => ({ toast: vi.fn() }));
-vi.mock("@/lib/api", () => ({ useShareEvent: () => ({ mutate: vi.fn() }) }));
+vi.mock("@/lib/api", () => ({ useMeetingEvent: () => vi.fn() }));
 
 afterEach(cleanup);
 

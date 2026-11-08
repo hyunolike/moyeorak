@@ -12,7 +12,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { type NudgeMessage, useNudge, useShareEvent } from "@/lib/api";
+import { type NudgeMessage, useMeetingEvent, useNudge } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import { type NudgeInput, ruleMessages } from "@/lib/nudge-template";
 
@@ -232,7 +232,7 @@ export function NudgeSheet({
   onClose: () => void;
 }) {
   const nudge = useNudge(meetingId, nudgeWaitingKey(input), open);
-  const shareEvent = useShareEvent(meetingId);
+  const sendEvent = useMeetingEvent(meetingId);
   const [pinnedRule, setPinnedRule] = useState(false);
   useEffect(() => {
     if (!open) setPinnedRule(false);
@@ -265,11 +265,11 @@ export function NudgeSheet({
         if (!showAi) setPinnedRule(true);
       }}
       onCopy={async (text) => {
-        shareEvent.mutate();
+        sendEvent("nudge_sent");
         return copyText(text);
       }}
       onShare={(text) => {
-        shareEvent.mutate();
+        sendEvent("nudge_sent");
         navigator.share({ text }).catch(() => {});
       }}
     />

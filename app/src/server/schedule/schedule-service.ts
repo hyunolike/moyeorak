@@ -191,6 +191,7 @@ export async function confirmSchedule(
         .update(meetings)
         .set({ status: "locating" })
         .where(eq(meetings.id, meetingId));
+      await recordEvent(meetingId, "step_confirmed", tx);
       return { status: "locating" as const };
     }
     await tx
