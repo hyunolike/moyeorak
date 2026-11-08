@@ -5,6 +5,7 @@ import {
   SummaryCard,
   SummaryCardView,
 } from "@/components/meeting/summary-card";
+import { sendKakaoCard } from "@/lib/kakao-share";
 import type { MeetingSummary } from "@/lib/summary-text";
 
 const replace = vi.fn();
@@ -39,6 +40,9 @@ vi.mock("motion/react", async (orig) => ({
   useReducedMotion: vi.fn(() => false),
 }));
 vi.mock("sonner", () => ({ toast: vi.fn() }));
+vi.mock("@/lib/kakao-share", () => ({
+  sendKakaoCard: vi.fn().mockResolvedValue(false),
+}));
 
 const summary: MeetingSummary = {
   meetingId: "m1",
@@ -239,6 +243,26 @@ describe("복사와 공유", () => {
     });
     expect(toast).toHaveBeenCalledWith("복사하지 못했어요");
     expect(mutate).not.toHaveBeenCalled();
+  });
+
+  test("카카오 카드로 보내면 복사나 Web Share는 쓰지 않는다", async () => {
+    vi.mocked(sendKakaoCard).mockResolvedValueOnce(true);
+    render(<SummaryCard summary={summary} participants={participants} />);
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "단톡방에 공유하기" }),
+      );
+    });
+    expect(sendKakaoCard).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "현호님의 모임이 정해졌어요",
+        description: "11월 7일 토요일 오전 9시 녹사평역",
+        buttonTitle: "약속 보기",
+        url: `${window.location.origin}/meetings/m1/summary`,
+      }),
+    );
+    expect(writeText).not.toHaveBeenCalled();
+    expect(mutate).toHaveBeenCalledWith("kakao_shared");
   });
 
   test("공유는 Web Share가 있으면 그것을 쓴다", async () => {

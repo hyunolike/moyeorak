@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useMe, useMeetingEvent } from "@/lib/api";
 import type { Meeting } from "@/lib/api-types";
 import { formatConfirmedClock, formatConfirmedDay } from "@/lib/home-state";
+import { sendKakaoCard } from "@/lib/kakao-share";
 import {
   lineName,
   type MeetingSummary,
@@ -272,6 +273,24 @@ export function SummaryCard({
   };
 
   const share = async () => {
+    const origin = window.location.origin;
+    const when = summary.start
+      ? `${formatConfirmedDay(summary.start)} ${formatConfirmedClock(summary.start)}`
+      : "";
+    const station = summary.place ? stationLabel(summary.place.name) : "";
+    const url = `${origin}/meetings/${summary.meetingId}`;
+    const sent = await sendKakaoCard({
+      title: `${summary.hostName}님의 모임이 정해졌어요`,
+      description: [when, station].filter(Boolean).join(" "),
+      imageUrl: `${url}/opengraph-image`,
+      buttonTitle: "약속 보기",
+      url: `${url}/summary`,
+    });
+    if (sent) {
+      sendEvent("shared");
+      sendEvent("kakao_shared");
+      return;
+    }
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text: text() });

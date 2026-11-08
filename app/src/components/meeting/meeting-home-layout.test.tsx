@@ -25,6 +25,7 @@ const prefetchNudge = vi.hoisted(() => vi.fn());
 const unconfirmMutate = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api", () => ({
   useMeetingEvent: () => vi.fn(),
+  useMeetingProgress: () => ({ data: undefined }),
   useNudge: () => ({ isFetching: false, data: undefined }),
   usePrefetchNudge: () => prefetchNudge,
   useUnconfirm: () => ({ mutate: unconfirmMutate, isPending: false }),
