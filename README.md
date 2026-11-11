@@ -6,6 +6,8 @@
 
 ### 서로의 시간을, 하나의 약속으로
 
+**한국어** | [English](./README.en.md)
+
 [![](https://img.shields.io/badge/-moyeorak.hyunolike.dev-FF6A13?style=flat&logo=googlechrome&logoColor=white)](https://moyeorak.hyunolike.dev)
 [![](https://img.shields.io/badge/-첫_버전_소개-16161A?style=flat&logo=github&logoColor=white)](./docs/legacy/README.md)
 
@@ -78,24 +80,22 @@ https://github.com/user-attachments/assets/f0a9be91-336c-49d0-a5df-f31b487eab14
 
 ## 🏗️ 구조
 
-```mermaid
-flowchart LR
-    User(["사용자"]) -->|HTTPS| Edge["Vercel 엣지<br/>서울"]
-
-    subgraph Vercel["Vercel Hobby"]
-        Edge --> App["Next.js 앱<br/>화면과 API<br/>함수 리전 sin1"]
-    end
-
-    App --> DB[("Neon Free<br/>PostgreSQL + PostGIS<br/>싱가포르")]
-    App --> NV["NVIDIA<br/>시간 해석, 제안 문장"]
-    App --> Google["Google Routes<br/>대중교통 이동 시간"]
-    App --> Kakao["Kakao Local<br/>장소 검색"]
-```
+<p align="center">
+  <img src="docs/assets/architecture/codex/system-architecture.png" width="900" alt="모여락 시스템 구조: 사용자가 Vercel 서울 엣지를 거쳐 싱가포르 리전의 Next.js 앱에 요청하고, 앱은 Neon PostgreSQL(PostGIS), NVIDIA NIM, Google Routes, Kakao Local을 호출한다" />
+</p>
 
 - **한 프로젝트:** 첫 버전은 React SPA, Spring Boot, EC2로 나뉘어 있었습니다. 리뉴얼은 화면과 API를 Next.js 하나에 두고, AI 호출도 별도 서버 없이 같은 함수 안에서 합니다.
 - **같은 지역에 두기:** Neon에는 서울 리전이 없어서 싱가포르를 쓰고, Vercel 함수도 `sin1`에 두어 DB와 가까이 붙였습니다. 요청은 서울 엣지로 들어와 싱가포르 함수가 처리합니다.
 - **중간지점:** 출발지들의 중심 근처 역 10곳을 PostGIS로 찾고, Google Routes로 사람별 대중교통 시간을 구해 후보를 고릅니다. 결과는 DB 캐시에 한 시간 둡니다.
 - **미리보기 배포:** PR마다 Vercel 미리보기가 생기고, Neon의 `preview` 브랜치와 모의 외부 응답으로 돌아서 외부 API 한도를 쓰지 않습니다.
+
+### 장소 제안 요청 흐름
+
+"마주의 제안"을 누르면 서버 안에서 아래 순서로 처리됩니다. 후보는 코드가 고르고, 모델은 이유 문장만 쓰고, 확정은 모임을 만든 사람이 합니다.
+
+<p align="center">
+  <img src="docs/assets/architecture/codex/request-flow.png" width="900" alt="장소 제안 요청 흐름 10단계: 제안 요청, 출발지 읽기, 캐시 확인, PostGIS로 가까운 역 10곳 검색, Google Routes 이동 시간 행렬, 코드가 후보 선택, NVIDIA가 이유 문장 작성, 숫자 검사, 제안 저장과 카드 표시, 모임을 만든 사람의 확정" />
+</p>
 
 ### 비용을 0원으로 묶는 방법
 
