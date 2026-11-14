@@ -46,23 +46,22 @@ export function ScheduleActions({
   const closed = meeting.status !== "scheduling";
   const isBoth = meeting.scope === "both";
 
-  const confirmTopSlot = (nextPath: string, conflictPath = nextPath) => {
-    if (!topSlot || closed) {
+  const confirmTopSlot = (nextPath: string, conflictPath = homePath) => {
+    if (closed) {
       router.push(nextPath);
       return;
     }
+    if (!topSlot) return;
     confirm.mutate(
       { start: topSlot.start, end: topSlot.end },
-      isBoth
-        ? { onSettled: () => router.push(nextPath) }
-        : {
-            // 다른 기기에서 먼저 정했으면(409) 모임 홈에 결과가 있다.
-            onSuccess: () => router.push(nextPath),
-            onError: (error) => {
-              if (isAlreadyConfirmed(error)) router.push(conflictPath);
-              else setModalOpen(false);
-            },
-          },
+      {
+        onSuccess: () => router.push(nextPath),
+        // 다른 기기가 먼저 정한 결과는 모임 홈에서 확인한다.
+        // 일반 실패는 고른 시간과 시트를 유지해 같은 요청을 다시 보낼 수 있게 한다.
+        onError: (error) => {
+          if (isAlreadyConfirmed(error)) router.push(conflictPath);
+        },
+      },
     );
   };
 
@@ -71,21 +70,18 @@ export function ScheduleActions({
     : undefined;
   const canConfirm = isHost && onBestTab && !closed && !!topSlot;
   // 일정이 확정돼 장소 단계로 넘어갔으면 누구에게나 장소 버튼을 보여준다.
-  const canGoToLocation = isBoth && ((onBestTab && isHost) || closed);
+  const canGoToLocation = isBoth && (canConfirm || closed);
   const canLockTime = meeting.scope === "schedule" && canConfirm;
+  const error =
+    confirm.isError && !isAlreadyConfirmed(confirm.error)
+      ? "시간을 정하지 못했어요. 잠시 후 다시 시도해 주세요."
+      : undefined;
 
   return (
     <>
       <BottomCta
         primary={
           <>
-            {confirm.isError &&
-              !isAlreadyConfirmed(confirm.error) &&
-              !isBoth && (
-                <p className="text-error text-b4 text-center">
-                  시간을 정하지 못했어요. 잠시 후 다시 시도해 주세요.
-                </p>
-              )}
             {canGoToLocation ? (
               <Button
                 size="cta"
@@ -115,6 +111,7 @@ export function ScheduleActions({
         }
       />
       {isModalOpen &&
+        canConfirm &&
         (isBoth ? (
           <DecisionSheet
             kind="schedule"
@@ -123,6 +120,7 @@ export function ScheduleActions({
             summary={summary}
             waiting={waiting}
             pending={confirm.isPending}
+            error={error}
             onConfirm={() => confirmTopSlot(locationPath)}
             onClose={() => setModalOpen(false)}
           />
@@ -134,6 +132,7 @@ export function ScheduleActions({
             summary={summary}
             waiting={waiting}
             pending={confirm.isPending}
+            error={error}
             // 방금 정했으면 약속 카드로, 다른 기기에서 먼저 정했으면(409) 모임 홈으로 간다.
             onConfirm={() =>
               confirmTopSlot(

@@ -239,20 +239,20 @@ function confirmSummary(s: Suggestion) {
 }
 
 /**
- * 제안 카드를 옆으로 넘겨 보고(스크롤 스냅 + 점 표시) 보이는 카드를 확정하거나 넘긴다.
+ * 제안 카드를 옆으로 비교하고(스크롤 스냅 + 점 표시) 보이는 카드를 확정하거나 제외한다.
  * 아래 고정 버튼과 확정 확인 시트까지 한 덩어리다.
  */
 export function SuggestionDeck({
   suggestions,
   onAccept,
-  onNext,
+  onReject,
   busy = false,
   waiting = 0,
   onResuggest,
 }: {
   suggestions: Suggestion[];
   onAccept: (suggestion: Suggestion) => void;
-  onNext: (suggestion: Suggestion) => void;
+  onReject: (suggestion: Suggestion) => void;
   busy?: boolean;
   /** 지금 단계에서 아직 응답하지 않은 자리 수. 확정 시트가 경고한다. */
   waiting?: number;
@@ -265,7 +265,7 @@ export function SuggestionDeck({
   const selected =
     suggestions.find((s) => s.id === selectedId) ?? suggestions[0];
 
-  // 고른 카드가 목록에서 사라지면(넘기기) 맨 앞으로 되돌린다
+  // 고른 카드가 목록에서 사라지면(제외) 맨 앞으로 되돌린다
   const ids = suggestions.map((s) => s.id).join(",");
   // biome-ignore lint/correctness/useExhaustiveDependencies: ids가 바뀔 때만 돌린다
   useEffect(() => {
@@ -275,11 +275,33 @@ export function SuggestionDeck({
     }
   }, [ids]);
 
+  const showNext = () => {
+    const index =
+      (suggestions.findIndex((s) => s.id === selected?.id) + 1) %
+      suggestions.length;
+    setSelectedId(suggestions[index].id);
+    const el = track.current;
+    const card = el?.querySelectorAll("article")[index];
+    if (el && card) {
+      el.scrollTo({
+        left:
+          el.scrollLeft +
+          card.getBoundingClientRect().left -
+          el.getBoundingClientRect().left -
+          (Number.parseFloat(getComputedStyle(el).paddingLeft) || 0),
+        // 버튼 이동은 즉시 적용해 스크롤 중간 프레임이 확정·제외 대상을 바꾸지 않게 한다.
+        behavior: "instant",
+      });
+    }
+  };
+
   // 왼쪽 가장자리에 가장 가까운 카드를 고른 카드로 본다
   const onScroll = () => {
     const el = track.current;
     if (!el) return;
-    const edge = el.getBoundingClientRect().left;
+    const edge =
+      el.getBoundingClientRect().left +
+      (Number.parseFloat(getComputedStyle(el).paddingLeft) || 0);
     let best = 0;
     let bestGap = Number.POSITIVE_INFINITY;
     el.querySelectorAll("article").forEach((card, i) => {
@@ -346,14 +368,26 @@ export function SuggestionDeck({
           </Button>
         }
         secondary={
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onNext(selected)}
-            className="text-text focus-visible:ring-focus disabled:text-disabled-text h-10 w-full rounded-sm outline-none focus-visible:ring-2"
-          >
-            다른 제안 보기
-          </button>
+          <div className="flex w-full gap-2">
+            {suggestions.length > 1 && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={showNext}
+                className="text-text focus-visible:ring-focus disabled:text-disabled-text h-10 flex-1 rounded-sm outline-none focus-visible:ring-2"
+              >
+                다른 제안 보기
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onReject(selected)}
+              className="text-muted focus-visible:ring-focus disabled:text-disabled-text h-10 flex-1 rounded-sm underline outline-none focus-visible:ring-2"
+            >
+              이 제안 제외
+            </button>
+          </div>
         }
       />
       {asking && (

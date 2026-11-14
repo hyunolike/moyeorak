@@ -378,7 +378,7 @@ function SuggestMain({
           busy={busy}
           waiting={waiting}
           onResuggest={openSheet}
-          onNext={(s) => reject.mutate(s.id)}
+          onReject={(s) => reject.mutate(s.id)}
           onAccept={(s) =>
             accept.mutate(s.id, {
               onSuccess: ({ status }) =>

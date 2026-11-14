@@ -48,10 +48,18 @@ test("팀장이 제안을 넘겨 보고 확정하면 요약 화면으로 간다"
   await expect(card).toBeVisible();
   await expect(card).toContainText("(모의)");
   const first = await card.textContent();
+  const count = await page.getByRole("article").count();
+  const rejected: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/reject") && request.method() === "POST")
+      rejected.push(request.url());
+  });
 
   await page.getByRole("button", { name: "다른 제안 보기" }).click();
   await expect(card).not.toHaveText(first ?? "");
   await expect(card).toBeVisible();
+  await expect(page.getByRole("article")).toHaveCount(count);
+  expect(rejected).toHaveLength(0);
 
   await page.getByRole("button", { name: "이걸로 확정" }).click();
   await page
@@ -64,12 +72,12 @@ test("팀장이 제안을 넘겨 보고 확정하면 요약 화면으로 간다"
   await expect(page.getByText("약속이 정해졌어요")).toBeVisible();
 });
 
-test("제안을 모두 넘기면 전체 보기와 새로 제안 받기가 나온다", async ({
+test("제안을 모두 제외하면 전체 보기와 새로 제안 받기가 나온다", async ({
   page,
 }) => {
   const id = await createVotedMeeting(page);
   await page.goto(`/meetings/${id}/suggest`);
-  const next = page.getByRole("button", { name: "다른 제안 보기" });
+  const next = page.getByRole("button", { name: "이 제안 제외" });
   await expect(next).toBeVisible();
   await next.click();
   await expect(page.locator(SELECTED)).toBeVisible();

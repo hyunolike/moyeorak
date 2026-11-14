@@ -26,7 +26,13 @@ export function PlaceSearch({
         className="flex gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          setSubmitted(keyword.trim());
+          const next = keyword.trim();
+          if (!next || disabled) return;
+          if (next === submitted) {
+            if (!search.isFetching) void search.refetch();
+          } else {
+            setSubmitted(next);
+          }
         }}
       >
         <Input
@@ -42,7 +48,11 @@ export function PlaceSearch({
           type="submit"
           variant="secondary"
           size="lg"
-          disabled={!keyword.trim()}
+          disabled={
+            !keyword.trim() ||
+            disabled ||
+            (search.isFetching && keyword.trim() === submitted)
+          }
         >
           검색
         </Button>

@@ -84,7 +84,7 @@ export const Deck: StoryObj<typeof SuggestionDeck> = {
         schedule({ id: 2, axis: "soonest", source: "rule" }),
       ]}
       onAccept={fn()}
-      onNext={fn()}
+      onReject={fn()}
     />
   ),
 };
@@ -94,7 +94,7 @@ export const DeckBusy: StoryObj<typeof SuggestionDeck> = {
     <SuggestionDeck
       suggestions={[schedule({})]}
       onAccept={fn()}
-      onNext={fn()}
+      onReject={fn()}
       busy
     />
   ),
