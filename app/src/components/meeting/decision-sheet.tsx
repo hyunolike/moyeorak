@@ -38,6 +38,7 @@ export function DecisionSheet({
   waiting,
   title = "이걸로 확정할까요?",
   confirmLabel = "확정하기",
+  error,
   pending,
   onConfirm,
   onClose,
@@ -47,6 +48,7 @@ export function DecisionSheet({
   waiting: number;
   title?: string;
   confirmLabel?: string;
+  error?: string;
   pending?: boolean;
   onConfirm: () => void;
   onClose: () => void;
@@ -57,6 +59,7 @@ export function DecisionSheet({
       summary={summary}
       caption={decisionCaption(kind, waiting)}
       confirmLabel={confirmLabel}
+      error={error}
       pending={pending}
       onConfirm={onConfirm}
       onClose={onClose}

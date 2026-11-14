@@ -54,6 +54,13 @@ const location: Suggestion = {
 
 const noop = () => {};
 
+beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+    configurable: true,
+    value: vi.fn(),
+  });
+});
+
 test("시간 제안은 날짜와 시간대와 이유를 보여 준다", () => {
   render(<SuggestionCard suggestion={schedule} />);
   expect(screen.getByText("11월 7일 (토)")).toBeInTheDocument();
@@ -113,12 +120,12 @@ test("선택된 카드는 aria-current로 표시된다", () => {
 
 const second: Suggestion = { ...schedule, id: 3, axis: "soonest" };
 
-test("덱은 카드 두 장과 점 두 개를 그리고 버튼은 이걸로 확정과 다른 제안 보기 둘뿐이다", () => {
+test("덱은 카드 두 장과 점 두 개를 그리고 비교와 제외 버튼을 구분한다", () => {
   render(
     <SuggestionDeck
       suggestions={[schedule, second]}
       onAccept={noop}
-      onNext={noop}
+      onReject={noop}
     />,
   );
   expect(screen.getAllByRole("article")).toHaveLength(2);
@@ -127,7 +134,7 @@ test("덱은 카드 두 장과 점 두 개를 그리고 버튼은 이걸로 확�
     .getAllByRole("button")
     .map((b) => b.textContent)
     .filter((t) => t !== "이유 보기");
-  expect(names).toEqual(["이걸로 확정", "다른 제안 보기"]);
+  expect(names).toEqual(["이걸로 확정", "다른 제안 보기", "이 제안 제외"]);
 });
 
 test("확정은 확인 시트에서 한 번 묻고 고른 카드로 onAccept를 부른다", () => {
@@ -136,7 +143,7 @@ test("확정은 확인 시트에서 한 번 묻고 고른 카드로 onAccept를 
     <SuggestionDeck
       suggestions={[schedule, second]}
       onAccept={onAccept}
-      onNext={noop}
+      onReject={noop}
     />,
   );
   fireEvent.click(screen.getByRole("button", { name: "이걸로 확정" }));
@@ -153,7 +160,7 @@ test("응답하지 않은 자리가 있으면 확정 시트가 경고한다", ()
     <SuggestionDeck
       suggestions={[schedule, second]}
       onAccept={noop}
-      onNext={noop}
+      onReject={noop}
       waiting={2}
     />,
   );
@@ -166,30 +173,133 @@ test("응답하지 않은 자리가 있으면 확정 시트가 경고한다", ()
   ).toBeVisible();
 });
 
-test("다른 제안 보기는 고른 카드로 onNext를 부른다", () => {
-  const onNext = vi.fn();
+test("다른 제안 보기는 두 후보를 보존하고 선택만 순환하며 현재 카드를 확정한다", () => {
+  const onReject = vi.fn();
+  const onAccept = vi.fn();
+  render(
+    <SuggestionDeck
+      suggestions={[schedule, second]}
+      onAccept={onAccept}
+      onReject={onReject}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "다른 제안 보기" }));
+  const cards = screen.getAllByRole("article");
+  expect(cards).toHaveLength(2);
+  expect(cards[1]).toHaveAttribute("aria-current", "true");
+  expect(cards[0]).not.toHaveAttribute("aria-current");
+  expect(onReject).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "다른 제안 보기" }));
+  expect(cards[0]).toHaveAttribute("aria-current", "true");
+  fireEvent.click(screen.getByRole("button", { name: "다른 제안 보기" }));
+  fireEvent.click(screen.getByRole("button", { name: "이걸로 확정" }));
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("button", {
+      name: "확정하기",
+    }),
+  );
+  expect(onAccept).toHaveBeenCalledWith(second);
+  expect(onReject).not.toHaveBeenCalled();
+});
+
+test("이 제안 제외는 현재 선택한 후보만 거절한다", () => {
+  const onReject = vi.fn();
   render(
     <SuggestionDeck
       suggestions={[schedule, second]}
       onAccept={noop}
-      onNext={onNext}
+      onReject={onReject}
     />,
   );
   fireEvent.click(screen.getByRole("button", { name: "다른 제안 보기" }));
-  expect(onNext).toHaveBeenCalledWith(schedule);
+  fireEvent.click(screen.getByRole("button", { name: "이 제안 제외" }));
+  expect(onReject).toHaveBeenCalledOnce();
+  expect(onReject).toHaveBeenCalledWith(second);
 });
 
-test("확정하는 중에는 두 버튼이 잠긴다", () => {
+test("다른 제안 보기 직후 스크롤 이벤트가 와도 눈앞의 다음 후보만 제외한다", () => {
+  const onReject = vi.fn();
   render(
     <SuggestionDeck
-      suggestions={[schedule]}
+      suggestions={[schedule, second]}
       onAccept={noop}
-      onNext={noop}
+      onReject={onReject}
+    />,
+  );
+  const cards = screen.getAllByRole("article");
+  const track = cards[0].parentElement;
+  if (!track) throw new Error("제안 목록이 없습니다");
+  let left = 0;
+  vi.spyOn(track, "getBoundingClientRect").mockImplementation(
+    () => ({ left: 0 }) as DOMRect,
+  );
+  cards.forEach((card, index) => {
+    vi.spyOn(card, "getBoundingClientRect").mockImplementation(
+      () => ({ left: 20 + index * 312 - left }) as DOMRect,
+    );
+  });
+  vi.spyOn(track, "scrollTo").mockImplementation(
+    (options: ScrollToOptions | number) => {
+      // smooth는 첫 프레임에 이전 카드에 머물고, instant는 즉시 목적지에 도달한다.
+      if (typeof options === "object" && options.behavior === "instant")
+        left = options.left ?? 0;
+    },
+  );
+  fireEvent.click(screen.getByRole("button", { name: "다른 제안 보기" }));
+  fireEvent.scroll(track);
+  fireEvent.click(screen.getByRole("button", { name: "이 제안 제외" }));
+  expect(onReject).toHaveBeenCalledWith(second);
+});
+
+test("후보가 하나면 다른 제안 보기 없이 확정과 명시적 제외를 제공한다", () => {
+  render(
+    <SuggestionDeck suggestions={[schedule]} onAccept={noop} onReject={noop} />,
+  );
+  expect(
+    screen.queryByRole("button", { name: "다른 제안 보기" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "이 제안 제외" })).toBeEnabled();
+});
+
+test("선택한 후보가 제외되면 남은 후보로 확정한다", () => {
+  const onAccept = vi.fn();
+  const { rerender } = render(
+    <SuggestionDeck
+      suggestions={[schedule, second]}
+      onAccept={onAccept}
+      onReject={noop}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "다른 제안 보기" }));
+  rerender(
+    <SuggestionDeck
+      suggestions={[schedule]}
+      onAccept={onAccept}
+      onReject={noop}
+    />,
+  );
+  expect(screen.getByRole("article")).toHaveAttribute("aria-current", "true");
+  fireEvent.click(screen.getByRole("button", { name: "이걸로 확정" }));
+  fireEvent.click(
+    within(screen.getByRole("dialog")).getByRole("button", {
+      name: "확정하기",
+    }),
+  );
+  expect(onAccept).toHaveBeenCalledWith(schedule);
+});
+
+test("확정하는 중에는 확정과 비교와 제외 버튼이 잠긴다", () => {
+  render(
+    <SuggestionDeck
+      suggestions={[schedule, second]}
+      onAccept={noop}
+      onReject={noop}
       busy
     />,
   );
   expect(screen.getByRole("button", { name: "이걸로 확정" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "다른 제안 보기" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "이 제안 제외" })).toBeDisabled();
 });
 
 test("이름이 이미 역으로 끝나면 역을 또 붙이지 않는다", () => {

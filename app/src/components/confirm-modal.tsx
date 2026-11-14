@@ -18,6 +18,7 @@ export function ConfirmModal({
   title,
   summary,
   caption,
+  error,
   confirmLabel,
   onConfirm,
   onClose,
@@ -26,6 +27,7 @@ export function ConfirmModal({
   title: string;
   summary?: string;
   caption?: string;
+  error?: string;
   confirmLabel: string;
   onConfirm: () => void;
   onClose: () => void;
@@ -47,6 +49,11 @@ export function ConfirmModal({
           )}
           {caption && (
             <p className="text-warning text-b3 font-semibold">{caption}</p>
+          )}
+          {error && (
+            <p role="alert" className="text-error text-b4">
+              {error}
+            </p>
           )}
         </DrawerHeader>
         <DrawerFooter className="px-5 pt-5 pb-[max(28px,env(safe-area-inset-bottom))]">

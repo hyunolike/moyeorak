@@ -106,13 +106,17 @@ export function SummaryCardView({
           transition={RISE}
           className="bg-action text-on-action relative overflow-hidden rounded-lg px-6 py-6"
         >
-          <Stamped
-            play={play}
-            className="rounded-pill border-ink-900 text-c1 absolute top-4 right-4 grid size-16 -rotate-8 place-items-center border-[3px] font-extrabold"
-          >
-            확정
-          </Stamped>
-          <p className="text-b3 font-bold">{summary.hostName}님의 모임</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-b3 min-w-0 font-bold wrap-anywhere">
+              {summary.hostName}님의 모임
+            </p>
+            <Stamped
+              play={play}
+              className="rounded-pill border-ink-900 text-c1 grid size-12 shrink-0 -rotate-8 place-items-center border-[3px] font-extrabold"
+            >
+              확정
+            </Stamped>
+          </div>
           {summary.start ? (
             <Stamped play={play} className="mt-2 origin-left">
               <h1 className="text-h1 tabular-nums">
@@ -183,6 +187,7 @@ export function SummaryCardView({
         </motion.article>
         <div className="flex gap-2">
           <a
+            aria-label="이미지로 저장"
             className={actionTile}
             href={`/meetings/${summary.meetingId}/summary/image`}
             download={`moyeorak-${summary.meetingId}.png`}
@@ -190,7 +195,7 @@ export function SummaryCardView({
             <span className={actionIcon}>
               <IconPhoto aria-hidden="true" size={24} stroke={2} />
             </span>
-            이미지로 저장
+            이미지 저장
           </a>
           <button type="button" className={actionTile} onClick={onCopy}>
             <span className={actionIcon}>
